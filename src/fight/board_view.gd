@@ -114,12 +114,12 @@ func setup_position(board: Dictionary, units: UnitMap = null, animate: bool = tr
 		var p := _spawn(String(board[sq]), int(sq), units.unit_at(int(sq)) if units != null else 0)
 		if animate:
 			p.visible = false
-			var delay := 0.04 * float(order.find(sq))
-			get_tree().create_timer(delay).timeout.connect(func():
-				if is_instance_valid(p):
-					p.visible = true
-					p.play("spawn")
-					Fx.burst(_fx_root, p.global_position + Vector3(0, 0.1, 0), MOVE_COLOR if p.white else CAPTURE_COLOR, "spawn"))
+			var tw := p.create_tween()
+			tw.tween_interval(0.04 * float(order.find(sq)))
+			tw.tween_callback(func():
+				p.visible = true
+				p.play("spawn")
+				Fx.burst(_fx_root, p.global_position + Vector3(0, 0.1, 0), MOVE_COLOR if p.white else CAPTURE_COLOR, "spawn"))
 
 
 func _spawn(letter: String, sq: int, unit_id: int = 0) -> PieceView:

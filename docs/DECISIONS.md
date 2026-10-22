@@ -114,8 +114,8 @@ are a one-file edit. Mirrored to Notion: Project Slay the Stockfish → Build de
 
 ## UI design system
 
-- **Textured kit, not vector UI**: Blender-rendered frames (iron, bone, stone) and Gemini-
-  generated textures, nine-sliced in Godot (`assets/ui/kit/`, `kit.json` holds margins). Every
+- **Textured kit, not vector UI**: Blender-rendered frames (iron, bone, stone) and
+  Gemini-generated textures, nine-sliced in Godot (`assets/ui/kit/`, `kit.json` holds margins). Every
   element falls back to a flat style if a texture is missing, so the game never breaks on art.
 - **One modal component** (`UiModal`) for every dialog: blurred backdrop, plaque title, crest,
   close button, footer. Screens build into its `body` and `footer`.
