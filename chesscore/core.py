@@ -7,6 +7,7 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -16,7 +17,9 @@ from pathlib import Path
 import pyffish as sf
 
 HERE = Path(__file__).resolve().parent
-ENGINE_PATH = Path(os.environ.get("STS_ENGINE", HERE / "bin" / "fairy-stockfish"))
+WINDOWS = sys.platform == "win32"
+ENGINE_NAME = "fairy-stockfish.exe" if WINDOWS else "fairy-stockfish"
+ENGINE_PATH = Path(os.environ.get("STS_ENGINE", HERE / "bin" / ENGINE_NAME))
 PLAYER_KING = "W"
 
 
@@ -58,7 +61,7 @@ class Engine:
             raise CoreError(f"engine binary missing: {path} (run chesscore/build_engine.sh)")
         self.proc = subprocess.Popen(
             [str(path)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-            text=True, bufsize=1,
+            text=True, bufsize=1, creationflags=subprocess.CREATE_NO_WINDOW if WINDOWS else 0,
         )
         self.lock = threading.Lock()
         self._send("uci")
@@ -155,9 +158,10 @@ class ChessCore:
     # --- rules --------------------------------------------------------------------------------
     def validate(self, fen: str) -> dict:
         # pyffish counts only the variant's king letter; the player's pseudo-royal king is
-        # checked as a K (see the handover, Engine integration).
+        # checked as a K (see the handover, Engine integration). The Regent's twin stays a W:
+        # only the last of them is royal, so pyffish must see exactly one K.
         board, _, rest = fen.partition(" ")
-        probe = board.replace(PLAYER_KING, "K") + " " + rest
+        probe = board.replace(PLAYER_KING, "K", 1) + " " + rest
         with captured_c_output() as out:
             code = sf.validate_fen(probe, self.variant)
         if code != sf.FEN_OK:

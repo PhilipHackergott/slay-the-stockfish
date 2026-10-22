@@ -50,6 +50,12 @@ func apply_move(uci: String, board: Dictionary, side: String, pawn_letters: Stri
 	var to := Fen.sq(uci.substr(2, 2))
 	ev["from"] = from
 	ev["to"] = to
+	if from == to:
+		# A pass (rule relic): the king "moves" to its own square.
+		ev["pass"] = true
+		ev["mover"] = board.get(from, "")
+		ev["mover_unit"] = unit_at(from)
+		return ev
 	if uci.length() > 4:
 		var p := uci.substr(4, 1)
 		ev["promotion"] = p.to_upper() if side == "w" else p.to_lower()

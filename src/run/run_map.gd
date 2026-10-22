@@ -54,6 +54,23 @@ static func generate(rows_spec: PackedStringArray, rng: RandomNumberGenerator, p
 	return m
 
 
+func to_dict() -> Dictionary:
+	var out: Array = []
+	for n in nodes:
+		out.append({"id": n["id"], "row": n["row"], "x": n["x"], "type": String(n["type"]),
+			"encounter": String(n["encounter"]), "edges": n["edges"].duplicate()})
+	return {"rows": rows, "nodes": out}
+
+
+static func from_dict(d: Dictionary) -> RunMap:
+	var m := RunMap.new()
+	m.rows = int(d.get("rows", 0))
+	for n in d.get("nodes", []):
+		m.nodes.append({"id": int(n["id"]), "row": int(n["row"]), "x": float(n["x"]), "type": StringName(n["type"]),
+			"encounter": StringName(n["encounter"]), "edges": Array(n["edges"]).map(func(e): return int(e))})
+	return m
+
+
 func node(id: int) -> Dictionary:
 	return nodes[id]
 
@@ -66,8 +83,9 @@ func next_nodes(id: int) -> Array:
 	return nodes[id]["edges"].duplicate()
 
 
+## The act's last node (guardian or boss).
 func boss_node() -> int:
 	for n in nodes:
-		if n["type"] == &"boss":
+		if n["type"] == &"boss" or n["type"] == &"guardian":
 			return n["id"]
 	return -1

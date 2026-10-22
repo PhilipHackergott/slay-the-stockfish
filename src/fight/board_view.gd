@@ -160,6 +160,7 @@ func present_move(ev: Dictionary) -> void:
 	if String(ev.get("drop", "")) != "":
 		var dropped := _spawn(String(ev["drop"]), to, int(ev.get("mover_unit", 0)))
 		var dd := dropped.play("drop")
+		get_tree().create_timer(dd * 0.6).timeout.connect(Audio.play.bind("piece_drop"))
 		await get_tree().create_timer(dd * 0.75).timeout
 		Fx.burst(_fx_root, sq_pos(to) + Vector3(0, 0.05, 0), side_color, "land")
 		Fx.flash(_fx_root, sq_pos(to) + Vector3(0, 0.6, 0), side_color, 2.5, 0.4)
@@ -169,6 +170,12 @@ func present_move(ev: Dictionary) -> void:
 	var from := int(ev["from"])
 	var piece: PieceView = pieces.get(from)
 	if piece == null:
+		_after_move(ev)
+		return
+	if ev.get("pass", false):
+		Audio.play("pass")
+		Fx.flash(_fx_root, sq_pos(from) + Vector3(0, 1.0, 0), side_color, 2.0, 0.5)
+		await get_tree().create_timer(piece.play("move")).timeout
 		_after_move(ev)
 		return
 	pieces.erase(from)
@@ -184,6 +191,7 @@ func present_move(ev: Dictionary) -> void:
 	piece.set_glow(0.0)
 	piece.face(end - start)
 	var dur := piece.play("leap" if leap else "move")
+	Audio.play("piece_leap" if leap else "piece_move", 0.0, randf_range(0.94, 1.06))
 	var tw := create_tween()
 	tw.tween_property(piece, "position", end, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	if victim != null:
@@ -196,6 +204,7 @@ func present_move(ev: Dictionary) -> void:
 		Fx.burst(_fx_root, end + Vector3(0, 0.4, 0), side_color, "spawn")
 		Fx.flash(_fx_root, end + Vector3(0, 1.0, 0), side_color, 4.0, 0.6)
 		var promo := String(ev["promotion"])
+		Audio.play("promote")
 		await piece.morph(promo.to_upper() if ev["side"] == "w" else promo.to_lower())
 	_after_move(ev)
 
@@ -208,6 +217,7 @@ func _after_move(ev: Dictionary) -> void:
 		_persistent.append([int(ev["from"]), LAST_COLOR, 2.0])
 	_persistent.append([int(ev["to"]), LAST_COLOR, 2.0])
 	if ev.get("check", false):
+		Audio.play("check_bell")
 		var king := "k" if ev["side"] == "w" else VariantGen.PLAYER_KING.to_upper()
 		for sq in pieces:
 			if pieces[sq].letter == king:
@@ -219,6 +229,7 @@ func _kill(victim: PieceView, by_player: bool) -> void:
 	var pos := victim.global_position
 	var col := Color(1.0, 0.45, 0.12) if by_player else Color(0.5, 0.75, 1.0)
 	var d := victim.play("capture")
+	Audio.play("piece_capture", 0.0, randf_range(0.92, 1.05))
 	Fx.burst(_fx_root, pos + Vector3(0, 0.5, 0), col, "capture")
 	Fx.burst(_fx_root, pos + Vector3(0, 0.3, 0), Color(0.08, 0.06, 0.1, 0.8), "smoke")
 	Fx.flash(_fx_root, pos + Vector3(0, 0.8, 0), col, 5.0, 0.7)
@@ -231,6 +242,7 @@ func present_swap(a: int, b: int) -> void:
 	if pa == null or pb == null:
 		return
 	var d := maxf(pa.play("leap"), pb.play("leap"))
+	Audio.play("swap")
 	var tw := create_tween().set_parallel(true)
 	tw.tween_property(pa, "position", sq_pos(b), d).set_trans(Tween.TRANS_SINE)
 	tw.tween_property(pb, "position", sq_pos(a), d).set_trans(Tween.TRANS_SINE)
@@ -240,6 +252,44 @@ func present_swap(a: int, b: int) -> void:
 	for sq in [a, b]:
 		Fx.burst(_fx_root, sq_pos(sq), SWAP_COLOR, "land")
 	Fx.flash(_fx_root, (sq_pos(a) + sq_pos(b)) * 0.5 + Vector3(0, 1, 0), SWAP_COLOR, 3.0, 0.6)
+
+
+## The move edit: the piece dissolves on one square and lands on another.
+func present_teleport(from: int, to: int) -> void:
+	var p: PieceView = pieces.get(from)
+	if p == null:
+		return
+	pieces.erase(from)
+	Audio.play("swap")
+	Fx.burst(_fx_root, sq_pos(from) + Vector3(0, 0.4, 0), SWAP_COLOR, "spawn")
+	var tw := create_tween()
+	tw.tween_property(p, "scale", Vector3(0.05, 1.6, 0.05), 0.25).set_trans(Tween.TRANS_QUAD)
+	await tw.finished
+	p.position = sq_pos(to)
+	pieces[to] = p
+	var tw2 := create_tween()
+	tw2.tween_property(p, "scale", Vector3.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var d := p.play("drop")
+	await get_tree().create_timer(d * 0.7).timeout
+	Fx.burst(_fx_root, sq_pos(to) + Vector3(0, 0.05, 0), SWAP_COLOR, "land")
+	Fx.flash(_fx_root, sq_pos(to) + Vector3(0, 0.8, 0), SWAP_COLOR, 3.0, 0.5)
+	clear_marks()
+
+
+## The hybrid: the piece rises into the pocket and is gone from the board.
+func present_lift(sq: int) -> void:
+	var p: PieceView = pieces.get(sq)
+	if p == null:
+		return
+	pieces.erase(sq)
+	Audio.play("piece_spawn")
+	Fx.burst(_fx_root, sq_pos(sq) + Vector3(0, 0.3, 0), Color(0.94, 0.77, 0.44), "spawn")
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(p, "position:y", 2.6, 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_property(p, "scale", Vector3(0.2, 0.2, 0.2), 0.55)
+	await tw.finished
+	p.queue_free()
+	clear_marks()
 
 
 # --- markers ------------------------------------------------------------------------------------

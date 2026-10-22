@@ -9,8 +9,17 @@ const PLAYER_KING := "w"
 const LETTER_POOL := "acdefghijlmostuvxyz"
 
 
-## custom: Array of {id, betza, ini_extra (PackedStringArray, "{L}" = the letter)} for every
-## non-standard piece type on either side. relic_lines: rule-relic lines. pocket: drops on.
+## Letters for showing custom pieces outside a fight (map, title): the same pool, in order.
+static func assign_letters(ids: Array) -> Dictionary:
+	var out := {}
+	for id in ids:
+		if not out.has(id) and out.size() < LETTER_POOL.length():
+			out[id] = LETTER_POOL[out.size()]
+	return out
+
+
+## custom: Array of {id, betza, pawn_like, ini_extra (PackedStringArray, "{L}" = the letter)} for
+## every non-standard piece type on either side. relic_lines: rule-relic lines. pocket: drops on.
 ## Returns {ini, letters: {id: letter}} or {error}.
 static func build(variant_name: String, king_betza: String, custom: Array, relic_lines: PackedStringArray,
 		pocket: bool) -> Dictionary:
@@ -28,6 +37,7 @@ static func build(variant_name: String, king_betza: String, custom: Array, relic
 	])
 	var letters := {}
 	var extra := PackedStringArray()
+	var pawn_letters := "p"
 	for c in custom:
 		var id: StringName = c["id"]
 		if letters.has(id):
@@ -37,8 +47,14 @@ static func build(variant_name: String, king_betza: String, custom: Array, relic
 		var letter := LETTER_POOL[letters.size()]
 		letters[id] = letter
 		lines.append("customPiece%d = %s:%s" % [letters.size() + 1, letter, c["betza"]])
+		if c.get("pawn_like", false):
+			pawn_letters += letter
 		for line in c.get("ini_extra", PackedStringArray()):
 			extra.append(String(line).replace("{L}", letter))
+	# Custom pawns promote like pawns; p stays first (the engine's main pawn type).
+	if pawn_letters.length() > 1:
+		lines.append("promotionPawnTypesWhite = %s" % pawn_letters)
+		lines.append("promotionPawnTypesBlack = %s" % pawn_letters)
 	lines.append_array(extra)
 	if pocket:
 		lines.append_array(PackedStringArray([

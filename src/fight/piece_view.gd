@@ -4,11 +4,11 @@ extends Node3D
 ## -> yaw (facing) -> glb root (its own clips animate height, pitch and scale).
 
 const CLIP_LEN := {"move": 0.55, "leap": 0.75, "capture": 0.9, "drop": 0.6, "spawn": 0.5}
-const HEIGHT := {&"pawn": 0.85, &"rook": 1.0, &"knight": 1.1, &"bishop": 1.2, &"queen": 1.45, &"king": 1.6}
 
 var letter: String = ""
 var white: bool = true
 var type: StringName = &"pawn"
+var def: PieceDef
 var unit_id: int = 0
 var rest_yaw: float = 0.0
 
@@ -26,31 +26,41 @@ func setup(p_letter: String, p_unit_id: int = 0) -> void:
 	letter = p_letter
 	white = p_letter == p_letter.to_upper()
 	unit_id = p_unit_id
-	var def: PieceDef = Content.piece_by_letter(p_letter.to_lower())
+	def = Content.piece_by_letter(p_letter.to_lower(), white)
 	type = def.id if def != null else &"pawn"
 	_yaw = Node3D.new()
 	_yaw.name = "Yaw"
 	add_child(_yaw)
 	rest_yaw = PI if white else 0.0
-	if type == &"knight":
+	if family() == &"knight":
 		rest_yaw += -0.75 if white else 0.75
 	_yaw.rotation.y = rest_yaw
-	_build_body(def)
+	_build_body()
 
 
 func height() -> float:
-	return HEIGHT.get(type, 1.0)
+	return def.height if def != null else 1.0
 
 
-func _build_body(def: PieceDef) -> void:
+## The model family (pawn, knight, ...) used for stand-ins and facing.
+func family() -> StringName:
+	return def.base if def != null and def.base != &"" else type
+
+
+func _build_body() -> void:
 	if _body != null:
 		_body.queue_free()
 	_anim = null
 	_meshes.clear()
-	var path := ""
+	var scene: PackedScene = null
+	var stand_in := false
 	if def != null and def.model != "":
-		path = def.model
-	var scene := _load_scene(path)
+		scene = _load_scene(def.model)
+	if scene == null and def != null and def.base != &"" and def.base != type:
+		var base_def: PieceDef = Content.piece(def.base)
+		if base_def != null:
+			scene = _load_scene(base_def.model)
+			stand_in = scene != null
 	if scene != null:
 		_body = scene.instantiate()
 		_yaw.add_child(_body)
@@ -61,11 +71,28 @@ func _build_body(def: PieceDef) -> void:
 	else:
 		_body = _fallback_body()
 		_yaw.add_child(_body)
+	if stand_in:
+		_add_halo()
 	for mi in _body.find_children("*", "MeshInstance3D", true, false):
 		_meshes.append(mi)
 	if _body is MeshInstance3D:
 		_meshes.append(_body)
 	_apply_glow()
+
+
+## Marks a fairy piece that still borrows its family's model: a glowing ring above it.
+func _add_halo() -> void:
+	var ring := MeshInstance3D.new()
+	var t := TorusMesh.new()
+	t.inner_radius = 0.16
+	t.outer_radius = 0.2
+	t.rings = 24
+	t.ring_segments = 8
+	ring.mesh = t
+	ring.position = Vector3(0, height() + 0.18, 0)
+	ring.set_surface_override_material(0, Mats.piece("piece_glow", white))
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_body.add_child(ring)
 
 
 static func _load_scene(path: String) -> PackedScene:
@@ -155,9 +182,11 @@ func morph(new_letter: String) -> void:
 	tw.tween_property(_yaw, "scale", Vector3(0.05, 1.3, 0.05), 0.18).set_trans(Tween.TRANS_QUAD)
 	await tw.finished
 	letter = new_letter
-	var def: PieceDef = Content.piece_by_letter(new_letter.to_lower())
-	type = def.id if def != null else type
-	_build_body(def)
+	var nd: PieceDef = Content.piece_by_letter(new_letter.to_lower(), white)
+	if nd != null:
+		def = nd
+		type = nd.id
+	_build_body()
 	var tw2 := create_tween()
 	tw2.tween_property(_yaw, "scale", Vector3.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	await tw2.finished
@@ -180,13 +209,14 @@ const PROFILES := {
 
 
 func _fallback_body() -> MeshInstance3D:
-	var key := "%s/%s" % [type, white]
+	var fam := family()
+	var key := "%s/%s" % [fam, white]
 	var mi := MeshInstance3D.new()
 	if not _fallback_cache.has(key):
-		_fallback_cache[key] = _lathe(PROFILES.get(type, PROFILES[&"pawn"]))
+		_fallback_cache[key] = _lathe(PROFILES.get(fam, PROFILES[&"pawn"]))
 	mi.mesh = _fallback_cache[key]
 	mi.set_surface_override_material(0, Mats.piece("piece_body", white))
-	if type == &"knight":
+	if fam == &"knight":
 		var head := MeshInstance3D.new()
 		var box := PrismMesh.new()
 		box.size = Vector3(0.26, 0.55, 0.5)

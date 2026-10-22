@@ -13,7 +13,12 @@ import os
 import sys
 import traceback
 
-PROTO = os.fdopen(os.dup(1), "w", buffering=1)
+# Godot reads UTF-8 lines ending in a bare '\n', so no newline or CRT text-mode translation on Windows.
+_proto_fd = os.dup(1)
+if sys.platform == "win32":
+    import msvcrt
+    msvcrt.setmode(_proto_fd, os.O_BINARY)
+PROTO = os.fdopen(_proto_fd, "w", encoding="utf-8", newline="\n", buffering=1)
 os.dup2(2, 1)
 sys.stdout = sys.stderr
 
@@ -50,8 +55,8 @@ def handle(core: ChessCore, req: dict) -> dict:
 
 def main() -> None:
     core = ChessCore()
-    for line in sys.stdin:
-        line = line.strip()
+    for raw in sys.stdin.buffer:
+        line = raw.decode("utf-8", "replace").strip()
         if not line:
             continue
         rid = None

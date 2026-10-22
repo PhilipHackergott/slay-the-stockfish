@@ -19,6 +19,8 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 
 ChessCore="*res://src/core/chess_core.gd"
 Content="*res://src/data/content.gd"
+Profile="*res://src/meta/profile.gd"
+Audio="*res://src/audio/audio.gd"
 Run="*res://src/run/run_state.gd"
 
 [display]
