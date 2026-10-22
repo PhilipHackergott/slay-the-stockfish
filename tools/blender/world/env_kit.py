@@ -611,6 +611,48 @@ def gravestone(rng, kind=None):
     return bm
 
 
+def tomb_pinnacle(rng, h=3.0):
+    """Gothic tomb monument: stepped plinth, niched shaft with corner colonnettes, gables and a truncated spire
+    with a flat cap (perch). Returns (bm, perch point)."""
+    bm = bmesh.new()
+    C.merge(bm, C.box(1.15, 1.15, 0.34, bevel=0.03, center=(0, 0, 0.05)), mat=STONE)
+    C.merge(bm, C.box(0.95, 0.95, 0.5, bevel=0.03, center=(0, 0, 0.47)), mat=STONE)
+    C.merge(bm, C.box(1.03, 1.03, 0.08, bevel=0.02, center=(0, 0, 0.76)), mat=STONE)
+    z0 = 0.8
+    hs = max(0.9, h - 2.03)
+    z1 = z0 + hs
+    C.merge(bm, C.box(0.7, 0.7, hs, bevel=0.02, center=(0, 0, (z0 + z1) / 2)), mat=STONE)
+    arch = [(x, z + z1 - 0.14 - C.arch_height(0.36)) for x, z in C.pointed_arch(0.36, 1.0, n=5)]
+    niche = [(-0.18, z0 + 0.16)] + arch + [(0.18, z0 + 0.16)]
+    rib = [(-0.03, 0), (-0.015, 0.03), (0.015, 0.03), (0.03, 0)]
+    for k in range(4):
+        rot = Matrix.Rotation(k * math.pi / 2, 4, 'Z')
+        C.merge(bm, xz_to_y(niche, -0.36, -0.345), mat=DARK, matrix=rot)
+        path = [Vector((x, -0.352, z)) for x, z in niche]
+        C.merge(bm, C.sweep(path, rib, up=(0, -1, 0), closed=False, closed_profile=False, caps=False), mat=STONE,
+                matrix=rot)
+        # gable over the niche
+        gable = [(-0.38, z1), (0.38, z1), (0.0, z1 + 0.5)]
+        C.merge(bm, xz_to_y(gable, -0.37, -0.25), mat=STONE, matrix=rot)
+        # corner colonnette + pinnacle
+        cx, cy = 0.35 * math.cos(math.pi / 4 + k * math.pi / 2) * math.sqrt(2), \
+            0.35 * math.sin(math.pi / 4 + k * math.pi / 2) * math.sqrt(2)
+        col = C.lathe([(0.0, z0), (0.07, z0), (0.05, z0 + 0.06), (0.05, z1 - 0.06), (0.075, z1), (0.0, z1)], seg=6)
+        C.merge(bm, col, mat=STONE, matrix=Matrix.Translation((cx, cy, 0)))
+        pin = C.lathe([(0.0, z1), (0.07, z1), (0.07, z1 + 0.12), (0.0, z1 + 0.42)], seg=4, phase=math.pi / 4)
+        C.merge(bm, pin, mat=STONE, matrix=Matrix.Translation((cx, cy, 0)))
+    C.merge(bm, C.box(0.84, 0.84, 0.08, bevel=0.02, center=(0, 0, z1 + 0.04)), mat=STONE)
+    # truncated spire + cap
+    zs = z1 + 0.08
+    sp = C.lathe([(0.0, zs), (0.5, zs), (0.21, zs + 0.95), (0.0, zs + 0.95)], seg=4, phase=math.pi / 4)
+    C.merge(bm, sp, mat=STONE)
+    top = zs + 0.95
+    C.merge(bm, C.box(0.3, 0.3, 0.07, bevel=0.015, center=(0, 0, top + 0.035)), mat=STONE)
+    C.displace(bm, 0.006, 4.0, seed=rng.randint(0, 999))
+    moss_tops(bm, thresh=0.8, scale=2.5, cut=0.15, seed=rng.uniform(0, 50))
+    return bm, Vector((0, 0, top + 0.07))
+
+
 # ----------------------------------------------------------------------------------------------- trees
 
 def dead_tree(rng, height=6.0, spread=1.0, gnarl=1.0, depth=4):

@@ -166,11 +166,21 @@ def build():
     grave_specs = [(8.3, -4.4, "round"), (9.5, -2.0, "gothic"), (8.5, 0.5, "cross"), (10.3, 1.6, "slab"),
                    (9.0, 2.8, "celtic"), (11.2, -0.6, "round"), (10.8, -4.6, "gothic"),
                    (-8.6, 7.6, "gothic"), (-9.9, 8.9, "round"), (-7.6, 9.1, "cross"), (-10.7, 5.8, "celtic"),
-                   (-5.6, -11.4, "round"), (-11.6, -3.4, "slab"), (4.5, 13.6, "gothic"), (0.6, 12.6, "round")]
+                   (-5.6, -11.4, "round"), (-11.6, -3.4, "slab"), (4.5, 13.6, "gothic"), (0.6, 12.6, "round"),
+                   (-8.7, -0.6, "gothic"), (-8.2, 1.9, "celtic"), (-9.6, -1.9, "round")]
     for x, y, kind in grave_specs:
         yaw = face_origin(x, y) + rng.uniform(-0.35, 0.35)
         G["env_graves"].add(K.gravestone(rng, kind),
                             M((x, y, FLOOR - 0.06), yaw, rx=rng.uniform(-0.18, 0.12), ry=rng.uniform(-0.14, 0.14)))
+    # tomb pinnacles flanking the board in the game view; low enough to stay under the orbit sightlines and
+    # placed so their moon shadows fall past the board
+    tomb_perches = []
+    for x, y, h in ((-7.7, -2.2, 3.0), (7.7, -2.0, 3.0)):
+        tb, perch = K.tomb_pinnacle(rng, h)
+        m = M((x, y, FLOOR - 0.05), face_origin(x, y) + rng.uniform(-0.15, 0.15),
+              rx=rng.uniform(-0.03, 0.03), ry=rng.uniform(-0.03, 0.03))
+        G["env_graves"].add(tb, m)
+        tomb_perches.append(m @ perch)
     for x, y in ((8.9, -3.1), (-8.8, 8.2), (-7.2, -8.7), (1.8, 14.0), (11.4, 3.6), (-12.2, 2.6), (7.6, 9.8)):
         G["env_graves"].add(K.bone_pile(rng, rng.randint(2, 4)), M((x, y, FLOOR), rng.uniform(0, 6.3)))
     for i in range(10):
@@ -206,6 +216,10 @@ def build():
     crow_spots = [pillar_tops[2], pillar_tops[3], pillar_tops[0], pillar_tops[7]] + perches[:1] + perches[1:2]
     poses = ["perch", "perch", "spread", "perch", "perch", "perch"]
     placed = 0
+    for p in tomb_perches:
+        G["env_crows"].add(K.crow(rng, "perch", head_turn=rng.uniform(-0.6, 0.6)),
+                           M((p.x, p.y, p.z - 0.01), math.atan2(-p.y, -p.x) + rng.uniform(-0.5, 0.5), s=1.15))
+        placed += 1
     for spot, pose in zip(crow_spots, poses):
         hit = raycast_top(bvhs, spot.x, spot.y)
         if hit is None or hit.z < FLOOR + 1.0:

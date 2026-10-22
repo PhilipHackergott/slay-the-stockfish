@@ -43,6 +43,8 @@ Stockfish" → Build decisions (private to Philip). Kit and lessons from Felsenb
   one `STS FIGHT` line per fight and `STS RUN END`, with no ERROR or WARNING lines.
 - Screens (windowed only): `$GODOT --path . -- --screen=fight --seed=7 --relics=reliquary_bishop --shot=res://build/shots/x.png --quit-after-shot`
   (`--screen=title|relic|map|fight|elite|boss|reward|campfire|event|end`, `--autoplay` to play moves). Read the PNG.
+- Input (windowed): `--click=e2,e4,b1` sends real mouse clicks to those squares 2.5 s apart (picking, selection, moves);
+  pair it with `--shot-delay=12`.
 - Headless runs frames uncapped: use `--quit-after-boot`/`--quit-on-end`, not small `--quit-after` values.
 - Never grep for `ERROR` to judge a run; the engine prints leak lines at exit.
 

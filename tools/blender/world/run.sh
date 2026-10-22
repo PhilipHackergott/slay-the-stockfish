@@ -7,4 +7,4 @@ SCRIPT="$1"; shift
 LIMIT="${1:-900}"; [ $# -gt 0 ] && shift
 mkdir -p "$HERE/../../../build/blender/world"
 exec perl -e 'alarm shift; exec @ARGV' "$LIMIT" \
-  "$BLENDER" --background --factory-startup --python "$HERE/$SCRIPT" "$@"
+  "$BLENDER" --background --factory-startup --python-exit-code 1 --python "$HERE/$SCRIPT" "$@"
