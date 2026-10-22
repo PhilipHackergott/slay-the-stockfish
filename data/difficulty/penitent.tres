@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DifficultyDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/difficulty_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+level = 1
+id = &"penitent"
+display_name = "Penitent"
+description = "Enemies in fights and elites play two Skill Levels stronger."
+skill_bonus = 2

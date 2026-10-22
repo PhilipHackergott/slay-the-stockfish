@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ActDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/act_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"act3"
+index = 3
+display_name = "The Engine's Throne"
+subtitle = "The engine's own cathedral"
+flavor = "At the bottom of the ruin, something calculates. It has been waiting for you specifically."
+map_rows = PackedStringArray("fight,event", "fight,shop,fight", "elite,campfire,event", "fight,fight,shop", "elite,event", "campfire,campfire")
+fight_tier = 3
+late_fight_tier = 4
+late_from_row = 2
+elite_tier = 3
+final_encounter = &"stockfish"
+reward_rarity = {"fight": {"common": 50, "uncommon": 38, "legendary": 12}, "elite": {"common": 15, "uncommon": 50, "legendary": 35}}
+gold = {"fight": [22, 30], "elite": [55, 70]}
+shop_rarity = {"common": 30, "uncommon": 45, "legendary": 25}

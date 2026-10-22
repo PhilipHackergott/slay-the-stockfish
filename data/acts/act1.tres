@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ActDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/act_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"act1"
+index = 1
+display_name = "The Ossuary Stair"
+subtitle = "Where the first pieces fell"
+flavor = "The descent begins among the bones of every army that came before yours."
+map_rows = PackedStringArray("fight", "fight,event,fight", "shop,campfire,fight", "elite,event,fight", "fight,event", "campfire,shop")
+fight_tier = 1
+late_fight_tier = 2
+late_from_row = 2
+elite_tier = 1
+final_encounter = &"choir_engine"
+reward_rarity = {"fight": {"common": 85, "uncommon": 15}, "elite": {"common": 45, "uncommon": 45, "legendary": 10}, "guardian": {"uncommon": 70, "legendary": 30}}
+gold = {"fight": [14, 22], "elite": [35, 50], "guardian": [60, 80]}
+shop_rarity = {"common": 55, "uncommon": 38, "legendary": 7}

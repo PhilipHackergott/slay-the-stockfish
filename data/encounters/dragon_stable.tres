@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"dragon_stable"
+display_name = "The Dragon Stable"
+kind = &"elite"
+tier = 2
+layout = {"a7": &"pawn", "b7": &"pawn", "c7": &"pawn", "c8": &"dragon_horse", "d6": &"pawn", "e7": &"pawn", "e8": &"king", "f7": &"pawn", "f8": &"dragon_horse", "g7": &"pawn", "h8": &"rook"}
+movetime_ms = 300
+skill = 4
+flavor = "Two bishops grew horns in the dark. They do not pray any more."

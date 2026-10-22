@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DifficultyDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/difficulty_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+level = 3
+id = &"damned"
+display_name = "Damned"
+description = "You begin without one of your pawns."
+remove_from_start = Array[StringName]([&"pawn"])

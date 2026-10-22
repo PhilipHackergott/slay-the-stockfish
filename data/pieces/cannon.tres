@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cannon"
+display_name = "Cannon"
+betza = "mRcpR"
+value = 4
+upgrades = Array[StringName]([&"banner"])
+rarity = &"uncommon"
+reward_weight = 10
+base = &"rook"
+height = 0.9
+model = "res://models/pieces/cannon.glb"
+moves_text = "Moves like a rook; captures only by jumping over exactly one piece."
+flavor = "Loaded with grave dirt and old teeth."

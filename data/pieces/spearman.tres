@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"spearman"
+display_name = "Spearman"
+betza = "fWfcFifmnD"
+value = 2
+upgrades = Array[StringName]([&"pikeman"])
+pawn_like = true
+rarity = &"uncommon"
+reward_weight = 12
+base = &"pawn"
+height = 0.9
+model = "res://models/pieces/spearman.glb"
+moves_text = "A pawn that may also capture straight ahead."
+flavor = "The spear is older than the hand that holds it."

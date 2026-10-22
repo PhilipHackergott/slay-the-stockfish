@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"siege_line"
+display_name = "The Siege Line"
+kind = &"fight"
+tier = 4
+layout = {"a7": &"pawn", "a8": &"cannon", "b7": &"pawn", "b8": &"knight", "c7": &"pawn", "d7": &"pawn", "d8": &"banner", "e6": &"pawn", "e8": &"king", "f7": &"pawn", "g7": &"pawn", "g8": &"knight", "h7": &"pawn", "h8": &"cannon"}
+movetime_ms = 250
+skill = 5
+flavor = "Every cannon in the ruin, aimed at one king."

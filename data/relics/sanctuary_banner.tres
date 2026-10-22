@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"sanctuary_banner"
+display_name = "Sanctuary Banner"
+kind = &"rule"
+description = "Rule relic. Your king also wins by reaching the 8th rank. The engine knows, and defends the far rank."
+ini_lines = PackedStringArray("flagPieceWhite = w", "flagRegionWhite = *8")
+price = 120
+unlock = &"runs_1"
+icon = "res://assets/ui/icons/icon_relic_flag_256.png"

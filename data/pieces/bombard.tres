@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bombard"
+display_name = "Bombard"
+betza = "QcpRcpB"
+value = 11
+upgrades = Array[StringName]([])
+base = &"queen"
+height = 1.55
+model = "res://models/pieces/bombard.glb"
+moves_text = "A queen with cannon captures over one piece in all eight directions. A final form."
+flavor = "Her crown is a ring of smoking mortars."

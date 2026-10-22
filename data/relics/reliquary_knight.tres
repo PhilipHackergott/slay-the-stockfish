@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"reliquary_knight"
+display_name = "Reliquary Knight"
+kind = &"pocket"
+description = "Pocket relic. Start each fight with a knight in your pocket. Drop it on ranks 1-4 as a move."
+pocket = "N"
+price = 100
+icon = "res://assets/ui/icons/icon_relic_pocket_knight_256.png"

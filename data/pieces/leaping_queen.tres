@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"leaping_queen"
+display_name = "Leaping Queen"
+betza = "QAD"
+value = 10
+upgrades = Array[StringName]([&"maharani"])
+base = &"queen"
+height = 1.5
+model = "res://models/pieces/leaping_queen.glb"
+moves_text = "A queen that also jumps exactly two squares straight or diagonally, over anything."
+flavor = "Raven wings, and no patience for walls."

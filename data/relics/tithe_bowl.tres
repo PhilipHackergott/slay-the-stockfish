@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"tithe_bowl"
+display_name = "Tithe Bowl"
+kind = &"gold"
+description = "Gold relic. +50 % gold from every won fight."
+gold_bonus = 0.5
+price = 80
+icon = "res://assets/ui/icons/icon_relic_gold_256.png"

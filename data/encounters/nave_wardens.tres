@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"nave_wardens"
+display_name = "Wardens of the Nave"
+kind = &"fight"
+tier = 3
+layout = {"b8": &"knight", "c7": &"pawn", "c8": &"bishop", "d7": &"pawn", "d8": &"wazir", "e6": &"pawn", "e8": &"king", "f7": &"pawn", "f8": &"wazir", "g7": &"pawn"}
+movetime_ms = 150
+skill = 0
+flavor = "Stone wardens that only know four directions, and a priest who knows the rest."

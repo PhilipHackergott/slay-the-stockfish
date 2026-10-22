@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"nightmare"
+display_name = "The Nightmare"
+betza = "QNN"
+value = 14
+upgrades = Array[StringName]([])
+rarity = &"legendary"
+reward_weight = 6
+base = &"queen"
+height = 1.6
+model = "res://models/pieces/nightmare.glb"
+unlock = &"win"
+moves_text = "A queen that also rides knight lines: repeated knight leaps in one direction. A final form."
+flavor = "The engine dreams, too. This is what it dreams about."

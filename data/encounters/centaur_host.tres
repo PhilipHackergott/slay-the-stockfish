@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"centaur_host"
+display_name = "The Centaur Host"
+kind = &"fight"
+tier = 4
+layout = {"a7": &"pawn", "a8": &"rook", "b7": &"pawn", "b8": &"centaur", "c7": &"pawn", "d6": &"pawn", "e7": &"pawn", "e8": &"king", "f7": &"pawn", "f8": &"bishop", "g7": &"pawn", "g8": &"centaur", "h7": &"pawn", "h8": &"rook"}
+movetime_ms = 250
+skill = 5
+flavor = "Riders and mounts grown into one, galloping in circles around the throne."

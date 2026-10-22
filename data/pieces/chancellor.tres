@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"chancellor"
+display_name = "Chancellor"
+betza = "RN"
+value = 8
+upgrades = Array[StringName]([&"amazon", &"aiwok"])
+base = &"rook"
+height = 1.25
+model = "res://models/pieces/chancellor.glb"
+moves_text = "Slides along ranks and files or leaps like a knight."
+flavor = "It signs the death warrants. All of them."

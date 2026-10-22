@@ -4,7 +4,7 @@ extends Resource
 
 @export var id: StringName
 @export var display_name: String
-## fight, elite or boss
+## fight, elite, guardian (an act's lesser engine) or boss (the final fight)
 @export var kind: StringName = &"fight"
 @export var tier: int = 1
 ## Engine side (black): square name -> piece id, e.g. {"e8": &"king", "d7": &"pawn"}.

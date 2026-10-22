@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"centaur"
+display_name = "Centaur"
+betza = "KN"
+value = 5
+upgrades = Array[StringName]([&"amazon"])
+base = &"knight"
+height = 1.2
+model = "res://models/pieces/centaur.glb"
+moves_text = "Steps one square in any direction or leaps like a knight."
+flavor = "Half rider, half mount, wholly hungry."

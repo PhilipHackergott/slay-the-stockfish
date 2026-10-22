@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"candle_of_patience"
+display_name = "Candle of Patience"
+kind = &"clock"
+description = "Clock relic. +2 s increment on every move."
+increment_bonus_s = 2
+price = 70
+icon = "res://assets/ui/icons/icon_relic_candle_256.png"

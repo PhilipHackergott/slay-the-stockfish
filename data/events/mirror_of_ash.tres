@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/event_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"mirror_of_ash"
+title = "The Mirror of Ash"
+text = "A tall mirror stands in the rubble. Your pieces' reflections do not match them: the shapes are wrong, and stronger."
+options = Array[Dictionary]([{"label": "Let one step through (a random non-king piece becomes a random uncommon piece)", "effect": "transform_random", "rarity": "uncommon", "result": "Your piece steps into the glass. Something else steps out."}, {"label": "Shatter the mirror (+20 gold)", "effect": "gold", "amount": 20, "result": "Silver shards, worth a little."}, {"label": "Turn away", "effect": "nothing", "result": "You do not look back. Your reflection does."}])

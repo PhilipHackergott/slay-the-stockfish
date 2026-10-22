@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ActDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/act_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"act2"
+index = 2
+display_name = "The Drowned Nave"
+subtitle = "The water remembers every game"
+flavor = "Black water fills the cathedral to the knees. Things with fairy moves wade through it."
+map_rows = PackedStringArray("fight,fight", "event,fight,shop", "campfire,elite,fight", "fight,event,fight", "elite,shop", "campfire,campfire")
+fight_tier = 2
+late_fight_tier = 3
+late_from_row = 2
+elite_tier = 2
+final_encounter = &"abbot_engine"
+reward_rarity = {"fight": {"common": 65, "uncommon": 30, "legendary": 5}, "elite": {"common": 25, "uncommon": 55, "legendary": 20}, "guardian": {"uncommon": 50, "legendary": 50}}
+gold = {"fight": [18, 26], "elite": [45, 60], "guardian": [80, 100]}
+shop_rarity = {"common": 40, "uncommon": 45, "legendary": 15}

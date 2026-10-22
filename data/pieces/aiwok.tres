@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"aiwok"
+display_name = "Aiwok"
+betza = "RNF"
+value = 10
+upgrades = Array[StringName]([])
+rarity = &"legendary"
+reward_weight = 8
+base = &"rook"
+height = 1.35
+model = "res://models/pieces/aiwok.glb"
+unlock = &"guardian_2"
+moves_text = "Slides straight, leaps like a knight, or steps one square diagonally. A final form."
+flavor = "A crowned keep that walks on its own foundations."

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"knibis_procession"
+display_name = "The Knibis Procession"
+kind = &"fight"
+tier = 3
+layout = {"a8": &"kniroo", "b7": &"pawn", "b8": &"knibis", "c7": &"pawn", "d7": &"pawn", "e6": &"pawn", "e8": &"king", "f7": &"pawn", "g7": &"pawn", "g8": &"knibis"}
+movetime_ms = 150
+skill = 1
+flavor = "Horses in mitres. They move like cavalry and strike like clergy."

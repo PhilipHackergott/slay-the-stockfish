@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DifficultyDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/difficulty_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+level = 5
+id = &"abyssal"
+display_name = "Abyssal"
+description = "Elites play three Skill Levels stronger, every engine thinks longer, and none resign early."
+elite_skill_bonus = 3
+movetime_mult = 1.5
+resign_cp_delta = 300

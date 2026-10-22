@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"kniroo"
+display_name = "Kniroo"
+betza = "mNcR"
+value = 5
+upgrades = Array[StringName]([&"chancellor"])
+rarity = &"uncommon"
+reward_weight = 8
+base = &"knight"
+height = 1.15
+model = "res://models/pieces/kniroo.glb"
+moves_text = "Moves like a knight, captures like a rook."
+flavor = "It wears a battlement as a collar, like a dog of war."

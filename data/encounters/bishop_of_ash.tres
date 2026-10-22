@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bishop_of_ash"
+display_name = "The Bishop of Ash"
+kind = &"elite"
+tier = 2
+layout = {"a8": &"rook", "b7": &"pawn", "c7": &"pawn", "d7": &"pawn", "d8": &"archbishop", "e6": &"pawn", "e8": &"king", "f7": &"pawn", "g7": &"pawn", "h8": &"rook"}
+movetime_ms = 300
+skill = 4
+flavor = "Its mitre split open long ago. What climbed out took the crozier."

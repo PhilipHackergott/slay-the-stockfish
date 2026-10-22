@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"puppeteers_string"
+display_name = "Puppeteer's String"
+kind = &"edit"
+description = "Edit relic. Once per fight, instead of moving, pull one of your pieces (not the king) to any empty square on ranks 1-4. The engine only sees it afterwards."
+charges_per_fight = 1
+edit_kind = &"move"
+price = 110
+unlock = &"runs_2"
+icon = "res://assets/ui/icons/icon_relic_string_256.png"

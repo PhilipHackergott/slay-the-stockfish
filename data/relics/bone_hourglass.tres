@@ -9,4 +9,5 @@ display_name = "Bone Hourglass"
 kind = &"clock"
 description = "Clock relic. +60 seconds on your clock in every fight."
 clock_bonus_s = 60
+price = 70
 icon = "res://assets/ui/icons/icon_relic_clock_256.png"

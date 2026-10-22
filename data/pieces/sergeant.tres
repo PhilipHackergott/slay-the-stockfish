@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"sergeant"
+display_name = "Sergeant"
+betza = "WfF"
+value = 3
+upgrades = Array[StringName]([&"rook"])
+base = &"pawn"
+height = 0.95
+model = "res://models/pieces/sergeant.glb"
+moves_text = "Steps one square straight in any direction or diagonally forward. No longer a pawn: it may retreat but never promotes."
+flavor = "It gave up the dream of the last rank to live a little longer."

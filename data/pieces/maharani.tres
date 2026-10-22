@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"maharani"
+display_name = "Maharani"
+betza = "QNAD"
+value = 12
+upgrades = Array[StringName]([])
+base = &"queen"
+height = 1.55
+model = "res://models/pieces/maharani.glb"
+moves_text = "A queen with knight leaps and two-square jumps. A final form."
+flavor = "Every crown in the ruin bows to hers."

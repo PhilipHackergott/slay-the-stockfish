@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"amazon"
+display_name = "Amazon"
+betza = "QN"
+value = 12
+upgrades = Array[StringName]([])
+rarity = &"legendary"
+reward_weight = 10
+base = &"queen"
+height = 1.5
+model = "res://models/pieces/amazon.glb"
+unlock = &"guardian_1"
+moves_text = "Slides in every direction or leaps like a knight. A final form."
+flavor = "The engine has a word for her. It is not a polite one."

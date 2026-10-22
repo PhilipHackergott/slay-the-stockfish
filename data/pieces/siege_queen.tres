@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"siege_queen"
+display_name = "Siege Queen"
+betza = "QcpR"
+value = 10
+upgrades = Array[StringName]([&"bombard"])
+base = &"queen"
+height = 1.5
+model = "res://models/pieces/siege_queen.glb"
+moves_text = "A queen that may also capture like a cannon: over exactly one piece along a rank or file."
+flavor = "She brought the walls down herself."

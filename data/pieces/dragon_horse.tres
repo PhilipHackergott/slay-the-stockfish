@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"dragon_horse"
+display_name = "Dragon Horse"
+betza = "BW"
+value = 6
+upgrades = Array[StringName]([&"queen"])
+base = &"bishop"
+height = 1.25
+model = "res://models/pieces/dragon_horse.glb"
+moves_text = "Slides along diagonals or steps one square straight."
+flavor = "Horns grew where the prayers used to be."

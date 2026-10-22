@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"twin_dragons"
+display_name = "The Twin Dragons"
+kind = &"elite"
+tier = 3
+layout = {"a8": &"dragon_king", "b7": &"pawn", "c7": &"pawn", "c8": &"dragon_horse", "d7": &"pawn", "e6": &"pawn", "e8": &"king", "f7": &"pawn", "f8": &"dragon_horse", "g7": &"pawn", "h8": &"dragon_king"}
+movetime_ms = 400
+skill = 8
+flavor = "Two towers with wings, two bishops with horns. They guard the last stair."

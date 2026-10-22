@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"the_amazon"
+display_name = "The Amazon"
+kind = &"elite"
+tier = 3
+layout = {"a7": &"pawn", "a8": &"rook", "b7": &"pawn", "c7": &"pawn", "d6": &"pawn", "d8": &"amazon", "e7": &"pawn", "e8": &"king", "f7": &"pawn", "g7": &"pawn", "g8": &"knight", "h7": &"pawn", "h8": &"rook"}
+movetime_ms = 400
+skill = 8
+flavor = "A queen who learned to leap. The engine built her to end runs like yours."

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"last_choir"
+display_name = "The Last Choir"
+kind = &"fight"
+tier = 4
+layout = {"a7": &"pawn", "a8": &"dragon_king", "b7": &"pawn", "c7": &"shieldbearer", "c8": &"bishop", "d6": &"shieldbearer", "e7": &"shieldbearer", "e8": &"king", "f7": &"shieldbearer", "f8": &"bishop", "g7": &"pawn", "g8": &"knight", "h7": &"pawn"}
+movetime_ms = 250
+skill = 6
+flavor = "Shields up, voices raised. It is the last song they know."
