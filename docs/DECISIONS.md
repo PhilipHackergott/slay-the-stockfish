@@ -136,10 +136,27 @@ are a one-file edit. Mirrored to Notion: Project Slay the Stockfish → Build de
 
 ## Packaging
 
-- Filled in after the packaging pass (see bottom of this file).
+- **Bundled Python, not a rewrite.** The chess core stays a Python sidecar (pyffish +
+  Fairy-Stockfish). Each build ships a standalone CPython 3.12 with pyffish and the engine:
+  `Contents/Resources/chesscore` on macOS, `chesscore/` next to the exe on Windows. It runs with
+  `-E -s -B`, so the player's Python setup never interferes and nothing is written into the bundle.
+- **macOS: one universal app** (arm64 + x86_64), because the official 4.7.1 template is universal.
+  Python, pyffish and the engine are merged per architecture with lipo. Ad-hoc signed, not
+  notarized: players need "Open Anyway" once.
+- **Windows: x86-64 only.** Engine cross-compiled with mingw-w64 at the pinned commit (static).
+  `msvcp140.dll` ships next to `python.exe` because pyffish needs it and CPython does not include
+  it. Unsigned: SmartScreen shows "Run anyway". No console window (Godot starts the sidecar with
+  `CREATE_NO_WINDOW`).
+- **Verified**: both exports boot with `STS BOOT OK core=ok` from the bundled runtime only (Mac
+  native and under Rosetta; Windows on a GitHub `windows-latest` runner).
+- **Licences**: Fairy-Stockfish and pyffish are GPL-3.0; their licences, source URL and commit ship
+  in `chesscore/licenses/` and `RUNTIME.txt`.
+- Build: `tools/package/package.sh v0.1` → `dist/slay-the-stockfish/v0.1/` (zips + SHA256SUMS).
 
 ## Known gaps in v0.1
 
 - An army with more than 19 distinct fairy piece types cannot fight (letter budget).
 - Save points are map-only (no mid-fight save).
 - No controller support; mouse only.
+- Builds are not notarized (macOS) or Authenticode-signed (Windows).
+- Windows usernames outside the system code page may break variant loading (temp path). Untested.
