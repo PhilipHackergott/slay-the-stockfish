@@ -1,0 +1,291 @@
+{
+  "generator": "tools/audio/make_audio.py",
+  "sample_rate": 44100,
+  "files": {
+    "ambience_wind": {
+      "path": "res://assets/audio/music/ambience_wind.ogg",
+      "category": "ambience",
+      "duration": 100.0,
+      "volume_db": -10.0,
+      "loop": true,
+      "loop_samples": 4410000,
+      "peak_dbfs": -3.27,
+      "lufs": -18.0
+    },
+    "check_bell": {
+      "path": "res://assets/audio/sfx/check_bell.wav",
+      "category": "sfx",
+      "duration": 8.268,
+      "volume_db": -6.0,
+      "loop": false,
+      "peak_dbfs": -3.04,
+      "lufs": -19.2
+    },
+    "clock_low": {
+      "path": "res://assets/audio/sfx/clock_low.wav",
+      "category": "sfx",
+      "duration": 0.8,
+      "volume_db": -6.0,
+      "loop": true,
+      "peak_dbfs": -3.0,
+      "lufs": -19.9
+    },
+    "engine_think": {
+      "path": "res://assets/audio/sfx/engine_think.wav",
+      "category": "sfx",
+      "duration": 2.0,
+      "volume_db": -14.0,
+      "loop": true,
+      "peak_dbfs": -3.0,
+      "lufs": -18.2
+    },
+    "event_page": {
+      "path": "res://assets/audio/sfx/event_page.wav",
+      "category": "sfx",
+      "duration": 0.811,
+      "volume_db": -3.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -21.7
+    },
+    "gold": {
+      "path": "res://assets/audio/sfx/gold.wav",
+      "category": "sfx",
+      "duration": 0.672,
+      "volume_db": -4.0,
+      "loop": false,
+      "peak_dbfs": -4.36,
+      "lufs": -16.6
+    },
+    "level_up": {
+      "path": "res://assets/audio/sfx/level_up.wav",
+      "category": "sfx",
+      "duration": 4.5,
+      "volume_db": -1.0,
+      "loop": false,
+      "peak_dbfs": -3.62,
+      "lufs": -17.4
+    },
+    "loss_sting": {
+      "path": "res://assets/audio/sfx/loss_sting.wav",
+      "category": "sfx",
+      "duration": 4.0,
+      "volume_db": 0.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -17.3
+    },
+    "map_step": {
+      "path": "res://assets/audio/sfx/map_step.wav",
+      "category": "sfx",
+      "duration": 0.8,
+      "volume_db": -2.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -27.1
+    },
+    "music_boss": {
+      "path": "res://assets/audio/music/music_boss.ogg",
+      "category": "music",
+      "duration": 80.0,
+      "volume_db": 0.0,
+      "loop": true,
+      "loop_samples": 3528000,
+      "peak_dbfs": -4.71,
+      "lufs": -18.0
+    },
+    "music_campfire": {
+      "path": "res://assets/audio/music/music_campfire.ogg",
+      "category": "music",
+      "duration": 90.0,
+      "volume_db": 0.0,
+      "loop": true,
+      "loop_samples": 3969000,
+      "peak_dbfs": -1.5,
+      "lufs": -18.0
+    },
+    "music_fight": {
+      "path": "res://assets/audio/music/music_fight.ogg",
+      "category": "music",
+      "duration": 85.333,
+      "volume_db": 0.0,
+      "loop": true,
+      "loop_samples": 3763200,
+      "peak_dbfs": -1.5,
+      "lufs": -18.0
+    },
+    "music_map": {
+      "path": "res://assets/audio/music/music_map.ogg",
+      "category": "music",
+      "duration": 90.0,
+      "volume_db": 0.0,
+      "loop": true,
+      "loop_samples": 3969000,
+      "peak_dbfs": -4.8,
+      "lufs": -18.0
+    },
+    "music_title": {
+      "path": "res://assets/audio/music/music_title.ogg",
+      "category": "music",
+      "duration": 96.0,
+      "volume_db": 0.0,
+      "loop": true,
+      "loop_samples": 4233600,
+      "peak_dbfs": -4.18,
+      "lufs": -18.0
+    },
+    "pass": {
+      "path": "res://assets/audio/sfx/pass.wav",
+      "category": "sfx",
+      "duration": 6.0,
+      "volume_db": -3.0,
+      "loop": false,
+      "peak_dbfs": -4.13,
+      "lufs": -19.3
+    },
+    "piece_capture": {
+      "path": "res://assets/audio/sfx/piece_capture.wav",
+      "category": "sfx",
+      "duration": 1.819,
+      "volume_db": 0.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -26.5
+    },
+    "piece_drop": {
+      "path": "res://assets/audio/sfx/piece_drop.wav",
+      "category": "sfx",
+      "duration": 2.152,
+      "volume_db": -1.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -24.2
+    },
+    "piece_leap": {
+      "path": "res://assets/audio/sfx/piece_leap.wav",
+      "category": "sfx",
+      "duration": 1.5,
+      "volume_db": 0.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -24.1
+    },
+    "piece_move": {
+      "path": "res://assets/audio/sfx/piece_move.wav",
+      "category": "sfx",
+      "duration": 1.0,
+      "volume_db": 0.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -25.5
+    },
+    "piece_select": {
+      "path": "res://assets/audio/sfx/piece_select.wav",
+      "category": "sfx",
+      "duration": 0.5,
+      "volume_db": -4.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -26.1
+    },
+    "piece_spawn": {
+      "path": "res://assets/audio/sfx/piece_spawn.wav",
+      "category": "sfx",
+      "duration": 3.5,
+      "volume_db": -2.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -18.1
+    },
+    "promote": {
+      "path": "res://assets/audio/sfx/promote.wav",
+      "category": "sfx",
+      "duration": 4.5,
+      "volume_db": -1.0,
+      "loop": false,
+      "peak_dbfs": -3.75,
+      "lufs": -17.6
+    },
+    "relic": {
+      "path": "res://assets/audio/sfx/relic.wav",
+      "category": "sfx",
+      "duration": 6.0,
+      "volume_db": -1.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -19.3
+    },
+    "shop_buy": {
+      "path": "res://assets/audio/sfx/shop_buy.wav",
+      "category": "sfx",
+      "duration": 0.778,
+      "volume_db": -3.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -21.5
+    },
+    "swap": {
+      "path": "res://assets/audio/sfx/swap.wav",
+      "category": "sfx",
+      "duration": 2.5,
+      "volume_db": -2.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -19.7
+    },
+    "ui_click": {
+      "path": "res://assets/audio/sfx/ui_click.wav",
+      "category": "sfx",
+      "duration": 0.471,
+      "volume_db": -3.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -20.5
+    },
+    "ui_close": {
+      "path": "res://assets/audio/sfx/ui_close.wav",
+      "category": "sfx",
+      "duration": 1.0,
+      "volume_db": -3.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -19.9
+    },
+    "ui_deny": {
+      "path": "res://assets/audio/sfx/ui_deny.wav",
+      "category": "sfx",
+      "duration": 0.514,
+      "volume_db": -2.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -23.5
+    },
+    "ui_hover": {
+      "path": "res://assets/audio/sfx/ui_hover.wav",
+      "category": "sfx",
+      "duration": 0.25,
+      "volume_db": -10.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -26.8
+    },
+    "ui_open": {
+      "path": "res://assets/audio/sfx/ui_open.wav",
+      "category": "sfx",
+      "duration": 1.4,
+      "volume_db": -2.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -19.1
+    },
+    "win_sting": {
+      "path": "res://assets/audio/sfx/win_sting.wav",
+      "category": "sfx",
+      "duration": 4.0,
+      "volume_db": 0.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -17.0
+    }
+  }
+}
