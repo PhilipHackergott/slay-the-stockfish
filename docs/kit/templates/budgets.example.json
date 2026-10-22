@@ -1,0 +1,15 @@
+{
+  "machine": "<dev machine; numbers below are measured here>",
+  "target_machine": "<exact target PC; measured with GPU timestamps before each release>",
+  "fps_target": 30,
+  "regression_block_pct": 10,
+  "scenes": {
+    "default_camera": {"frame_avg_ms": 14, "frame_p95_ms": 20, "frame_max_ms": 25, "gpu_ms": 7, "draws": 1500, "primitives_m": 3.0, "shadow_draws": 500},
+    "built_base": {"frame_avg_ms": 16, "frame_max_ms": 25, "main_cpu_ms": 8, "tick_ms": 3, "draws": 1800},
+    "heavy_wave_start": {"frame_max_ms": 25, "main_cpu_ms": 14, "tick_ms": 6, "spikes_over_25ms_per_20s": 5, "path_queries_per_tick": 3},
+    "heavy_wave": {"frame_p95_ms": 25, "main_cpu_ms": 14, "tick_ms": 6, "rigs_advanced_per_frame": 120},
+    "night": {"frame_avg_ms": 16, "gpu_ms": 8}
+  },
+  "systems_ms_per_tick": {"combat": 3.5, "population": 1.0, "wildlife": 0.5, "water": 1.0, "economy": 0.3},
+  "systems_ms_per_frame": {"hud": 0.5, "anim": 1.0, "input": 0.6}
+}

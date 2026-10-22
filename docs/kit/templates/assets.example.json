@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "palette": "art/palette.json",
+  "classes": {
+    "structure": {"vox": 0.125, "tris": 12000, "shadow": true, "materials": 1, "seen_at_m": [25, 60, 150]},
+    "prop_small": {"vox": 0.0625, "tris": 2500, "shadow": false, "materials": 1, "seen_at_m": [15, 40, 90]},
+    "tree": {"vox": 0.125, "tris": 6000, "shadow": true, "materials": 1, "lods": [80, 150], "seen_at_m": [25, 60, 150]},
+    "unit": {"vox": 0.05, "tris": 4000, "shadow": true, "materials": 1, "rig": "vox_humanoid", "seen_at_m": [15, 40, 90]}
+  },
+  "rules": {
+    "masonry_blocks": "Stone faces from blocks of 2 x 2 or 4 x 2 cubes in a running bond, one colour per block, one-cube inset darker mortar; no per-cube noise, no checkerboard.",
+    "natural_rock": "Rock never reads as a box, tower or slab with a flat front: a terraced, lopsided mass of large offset blocks with connected moss caps.",
+    "real_scale": "Real-world size unless the class states an exaggeration factor.",
+    "game_light": "Colours from the approved palette board; dark accents darker than on grey; no gloss on dark materials."
+  },
+  "assets": {
+    "watchtower": {
+      "class": "structure",
+      "h": 9.0,
+      "fit": [4.0, 4.0, "max"],
+      "desc": "a timber watchtower on stone footings",
+      "contract": "Footprint at most 4 x 4 m. Platform floor at 7.0 m with a waist-high railing; a ladder on the front (-Y); four posts on stone footings that reach down to -1.0 m (foundation shows on slopes).",
+      "set": "defences",
+      "style_ref": "palisade_section",
+      "refs": ["art/targets/defences/towers_ref.png"],
+      "anti_refs": ["art/targets/anti/tower_too_thin.png"],
+      "rules": ["masonry_blocks", "game_light"],
+      "parts": {},
+      "host": null,
+      "context": "golden_base",
+      "views": ["iso", "front", "gameplay_mid"]
+    },
+    "spearman": {
+      "class": "unit",
+      "h": 1.7,
+      "fit": [0.9, 0.6, "max"],
+      "desc": "a defending spearman",
+      "contract": "Rest pose, arms straight down, the spear upright in the right fist through the grip cell; team colour on tunic and shield.",
+      "set": "defenders",
+      "style_ref": "archer",
+      "rules": ["real_scale", "game_light"],
+      "work": "thrust",
+      "context": "golden_wall",
+      "views": ["iso", "front", "pose_strip", "gameplay_near"]
+    }
+  }
+}
