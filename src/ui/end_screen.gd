@@ -1,48 +1,49 @@
 class_name EndScreen
 extends Control
-## Run over: the engine fell, or your king did.
+## Run over: the engine fell, or your king did. Shows what the run unlocked.
 
 signal new_run
 signal to_title
 
 var victory := false
 var reason := ""
+## Unlock keys this run earned (Profile.UNLOCKS / difficulty_N).
+var unlocked: Array = []
 
 
-func setup(p_victory: bool, p_reason: String) -> EndScreen:
+func setup(p_victory: bool, p_reason: String, p_unlocked: Array = []) -> EndScreen:
 	victory = p_victory
 	reason = p_reason
+	unlocked = p_unlocked
 	return self
 
 
 func _ready() -> void:
 	UiKit.full(self)
-	mouse_filter = Control.MOUSE_FILTER_STOP
-	var shade := ColorRect.new()
-	shade.color = Color(0, 0, 0.02, 0.55)
-	UiKit.full(shade)
-	add_child(shade)
-	add_child(UiKit.vignette())
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var accent := UiKit.GOLD if victory else UiKit.BLOOD
-	var p := UiKit.panel(accent, Color(0.03, 0.025, 0.045, 0.94), 30)
-	p.custom_minimum_size = Vector2(1000, 0)
-	var col := UiKit.vbox(12)
-	p.add_child(col)
-	var cc := UiKit.centered(p)
-	UiKit.full(cc)
-	add_child(cc)
-	var t := UiKit.title("The Engine Falls" if victory else "Your King Falls", 72, accent)
-	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(t)
-	var r := UiKit.label(reason, 24, UiKit.BONE)
-	r.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(r)
+	var m := UiModal.new().setup("The Engine Falls" if victory else "Your King Falls", 1100, false, reason, 560)
+	m.accent = accent
+	add_child(m)
+	Audio.music("")
+	Audio.play("win_sting" if victory else "loss_sting")
+	var col := m.body
 	var s: Dictionary = Run.stats
-	var st := UiKit.label("Seed %d · %d nodes · %d fights won · %d pieces lost" % [Run.seed_value, Run.visited.size(),
-		int(s.get("fights_won", 0)), int(s.get("units_lost", 0))], 20, UiKit.MUTED)
+	var act := Run.current_act()
+	var diff := Content.difficulty(Run.difficulty)
+	var st := UiKit.label("%s · %s · seed %d · %d fights won · %d pieces lost · %d gold earned" % [
+		act.display_name if act else "Act %d" % (Run.act_index + 1), diff.display_name if diff else "Mortal",
+		Run.seed_value, int(s.get("fights_won", 0)), int(s.get("units_lost", 0)), int(s.get("gold_earned", 0))], 19, UiKit.MUTED, true)
 	st.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(st)
-	col.add_child(UiKit.heading("Your army at the end", 26))
+	if not unlocked.is_empty():
+		col.add_child(UiKit.divider(600, true))
+		col.add_child(UiKit.caption("Unlocked", 20, UiKit.GOLD))
+		for key in unlocked:
+			var l := UiKit.label(Profile.unlock_text(String(key)), 21, UiKit.SOUL)
+			col.add_child(l)
+	col.add_child(UiKit.divider(600, true))
+	col.add_child(UiKit.caption("Your army at the end", 20, UiKit.BONE))
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 40)
@@ -50,10 +51,5 @@ func _ready() -> void:
 	col.add_child(grid)
 	for u in Run.units:
 		grid.add_child(ArmyPanel.row(u, true))
-	var btns := UiKit.hbox(20)
-	btns.alignment = BoxContainer.ALIGNMENT_CENTER
-	btns.add_child(UiKit.button("Begin a new run", func(): new_run.emit(), 24))
-	btns.add_child(UiKit.button("Title", func(): to_title.emit(), 24))
-	col.add_child(UiKit.spacer(8))
-	col.add_child(btns)
-	UiKit.fade_in(self, 0.8)
+	m.footer.add_child(UiKit.button("Title", func(): to_title.emit(), 22))
+	m.footer.add_child(UiKit.button("Begin a new run", func(): new_run.emit(), 24, true))

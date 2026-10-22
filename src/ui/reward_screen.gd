@@ -1,7 +1,7 @@
 class_name RewardScreen
 extends Control
-## After a won fight: XP summary, level-ups (the only place they happen), a recruit, and a relic
-## after elites.
+## After a won fight: gold and XP summary, level-ups (the only place they happen), a recruit, and a
+## relic after elites and guardians.
 
 signal done
 
@@ -20,62 +20,69 @@ var _relic_done := true
 func setup(p_outcome: Dictionary, p_kind: StringName) -> RewardScreen:
 	outcome = p_outcome
 	kind = p_kind
-	_relic_done = p_kind != &"elite"
+	_relic_done = not _has_relic()
 	return self
+
+
+func _has_relic() -> bool:
+	return kind == &"elite" or kind == &"guardian"
 
 
 func _ready() -> void:
 	UiKit.full(self)
-	mouse_filter = Control.MOUSE_FILTER_STOP
-	var shade := ColorRect.new()
-	shade.color = Color(0, 0, 0.02, 0.5)
-	UiKit.full(shade)
-	add_child(shade)
-	add_child(UiKit.vignette())
-	var p := UiKit.panel(UiKit.GOLD, Color(0.03, 0.025, 0.045, 0.94), 26)
-	p.custom_minimum_size = Vector2(1180, 0)
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(1130, 900)
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	p.add_child(scroll)
-	var col := UiKit.vbox(14)
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(col)
-	var cc := UiKit.centered(p)
-	UiKit.full(cc)
-	add_child(cc)
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var enc: EncounterDef = Content.encounter(outcome.get("encounter", &""))
-	var t := UiKit.title("Spoils of Victory", 56, UiKit.GOLD)
-	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(t)
-	var sub := UiKit.label("%s · %s" % [enc.display_name if enc else "Fight", outcome.get("reason", "")], 22, UiKit.MUTED)
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(sub)
+	var title := "The Guardian Falls" if kind == &"guardian" else "Spoils of Victory"
+	var m := UiModal.new().setup(title, 1240, false,
+		"%s · %s" % [enc.display_name if enc else "Fight", outcome.get("reason", "")], 690)
+	add_child(m)
+	var col := m.body
+	col.add_child(_gold_summary())
 	col.add_child(_xp_summary())
-	col.add_child(UiKit.heading("Level-ups", 28))
-	_levels = UiKit.vbox(10)
+	col.add_child(UiKit.divider(700, true))
+	col.add_child(UiKit.caption("Level-ups", 20, UiKit.GOLD))
+	_levels = UiKit.vbox(12)
 	col.add_child(_levels)
 	_rebuild_levels()
-	col.add_child(UiKit.heading("Recruit a piece", 28))
+	col.add_child(UiKit.divider(700, true))
+	col.add_child(UiKit.caption("Recruit a piece", 20, UiKit.GOLD))
 	_recruit = UiKit.vbox(10)
 	col.add_child(_recruit)
 	_build_recruits()
-	if kind == &"elite":
-		col.add_child(UiKit.heading("The elite's relic", 28))
+	if _has_relic():
+		col.add_child(UiKit.divider(700, true))
+		col.add_child(UiKit.caption("The %s's relic" % ("guardian" if kind == &"guardian" else "elite"), 20, UiKit.GOLD))
 		_relic = UiKit.vbox(10)
 		col.add_child(_relic)
 		_build_relics()
-	_continue = UiKit.button("Continue the descent", func(): done.emit(), 26)
-	col.add_child(UiKit.spacer(6))
-	col.add_child(UiKit.centered(_continue))
+	_continue = UiKit.button("Continue the descent" if kind != &"guardian" else "Descend further", func(): done.emit(), 26, true)
+	_continue.custom_minimum_size.x = 380
+	m.footer.add_child(_continue)
 	_update_continue()
-	UiKit.fade_in(self)
 	if autoplay:
 		_auto()
 
 
+func _gold_summary() -> Control:
+	var h := UiKit.hbox(14)
+	h.alignment = BoxContainer.ALIGNMENT_CENTER
+	var g := int(outcome.get("gold", 0))
+	var o := int(outcome.get("overflow_gold", 0))
+	h.add_child(UiKit.gold_label(g + o, 30))
+	var parts: Array = ["%d for the victory" % g]
+	if o > 0:
+		parts.append("%d from XP your finished pieces could not use" % o)
+	h.add_child(UiKit.label(" · ".join(parts), 20, UiKit.MUTED))
+	if g + o > 0:
+		Audio.play("gold")
+	return h
+
+
 func _xp_summary() -> Control:
-	var box := UiKit.vbox(4)
+	var box := HFlowContainer.new()
+	box.add_theme_constant_override("h_separation", 26)
+	box.add_theme_constant_override("v_separation", 6)
+	box.alignment = FlowContainer.ALIGNMENT_CENTER
 	var per: Dictionary = {}
 	for e in outcome.get("xp", []):
 		var id := int(e["unit"])
@@ -89,9 +96,9 @@ func _xp_summary() -> Control:
 		var u := Run.unit(id)
 		if u == null:
 			continue
-		var h := UiKit.hbox(10)
-		h.add_child(UiKit.portrait(u.type, true, 40))
-		h.add_child(UiKit.label("%s  +%d XP  (%d capture%s)" % [UiKit.unit_name(u), per[id][0], per[id][1], "" if per[id][1] == 1 else "s"], 21, UiKit.GOLD))
+		var h := UiKit.hbox(8)
+		h.add_child(UiKit.portrait(u.type, true, 44))
+		h.add_child(UiKit.label("%s  +%d XP" % [UiKit.unit_name(u), per[id][0]], 20, UiKit.GOLD))
 		box.add_child(h)
 	return box
 
@@ -104,47 +111,68 @@ func _rebuild_levels() -> void:
 		_levels.add_child(UiKit.label("No piece has enough XP to rise yet.", 19, UiKit.MUTED))
 		return
 	for u in pending:
+		var block := UiKit.vbox(8)
 		var row := UiKit.hbox(14)
 		row.add_child(UiKit.portrait(u.type, true, 72))
 		var info := UiKit.vbox(2)
-		info.custom_minimum_size = Vector2(330, 0)
-		info.add_child(UiKit.heading(UiKit.unit_name(u), 22))
-		info.add_child(UiKit.label("%d / %d XP · level %d → %d" % [u.xp, Run.xp_needed(u), u.level, u.level + 1], 18, UiKit.GOLD))
+		info.add_child(UiKit.heading(UiKit.unit_name(u), 24))
+		info.add_child(UiKit.label("%d / %d XP · level %d → %d · choose what it becomes" % [u.xp, Run.xp_needed(u), u.level, u.level + 1], 18, UiKit.GOLD))
 		row.add_child(info)
+		block.add_child(row)
+		var flow := HFlowContainer.new()
+		flow.add_theme_constant_override("h_separation", 14)
+		flow.add_theme_constant_override("v_separation", 14)
 		for opt in Run.upgrade_options(u):
 			var t: StringName = opt
-			var parts := UiKit.card(190, 92, func():
-				Run.level_up(u, t)
-				_rebuild_levels(), UiKit.GOLD)
-			var c: VBoxContainer = parts[1]
-			var h := UiKit.hbox(8)
-			h.add_child(UiKit.portrait(t, true, 52))
-			h.add_child(UiKit.heading(UiKit.piece_name(t), 20))
-			c.add_child(h)
-			row.add_child(parts[0])
-		_levels.add_child(row)
+			flow.add_child(_upgrade_card(u, t))
+		block.add_child(flow)
+		_levels.add_child(block)
+
+
+func _upgrade_card(u: Unit, t: StringName) -> Control:
+	var def: PieceDef = Content.piece(t)
+	var parts := UiKit.card(214, 236, func():
+		Run.level_up(u, t)
+		Audio.play("level_up")
+		_rebuild_levels())
+	var c: VBoxContainer = parts[1]
+	c.add_theme_constant_override("separation", 4)
+	c.add_child(UiKit.centered(UiKit.portrait(t, true, 84)))
+	var n := UiKit.heading(UiKit.piece_name(t), 20)
+	n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	c.add_child(n)
+	if def != null:
+		c.add_child(UiKit.rarity_badge(def.rarity))
+		var v := UiKit.label("Value %d%s" % [def.value, " · final form" if def.is_final() else ""], 16, UiKit.MUTED)
+		v.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		c.add_child(v)
+		parts[0].tooltip_text = "%s\n%s" % [def.moves_text, def.flavor]
+	return parts[0]
 
 
 func _build_recruits() -> void:
 	for c in _recruit.get_children():
 		c.queue_free()
 	var row := UiKit.hbox(18)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_recruit.add_child(row)
 	for opt in Run.reward_choices(kind):
 		var t: StringName = opt
 		var def: PieceDef = Content.piece(t)
-		var parts := UiKit.card(250, 300, func(): _take_recruit(t))
+		var parts := UiKit.card(270, 360, func(): _take_recruit(t))
 		var c: VBoxContainer = parts[1]
-		c.add_child(UiKit.centered(UiKit.portrait(t, true, 130)))
+		c.add_theme_constant_override("separation", 6)
+		c.add_child(UiKit.centered(UiKit.portrait(t, true, 128)))
 		var n := UiKit.heading(UiKit.piece_name(t), 24)
 		n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		c.add_child(n)
+		c.add_child(UiKit.rarity_badge(def.rarity if def else &"common"))
 		var v := UiKit.label("Value %d" % (def.value if def else 0), 17, UiKit.GOLD)
 		v.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		c.add_child(v)
-		var m := UiKit.label(UiKit.MOVES.get(t, ""), 16, UiKit.MUTED, true)
-		m.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		c.add_child(m)
+		var mv := UiKit.label(UiKit.moves_text(t), 16, UiKit.MUTED, true)
+		mv.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		c.add_child(mv)
 		row.add_child(parts[0])
 	row.add_child(UiKit.centered(UiKit.button("Skip", func(): _take_recruit(&""))))
 
@@ -157,31 +185,36 @@ func _take_recruit(t: StringName) -> void:
 	else:
 		var u := Run.add_unit(t)
 		var h := UiKit.hbox(10)
+		h.alignment = BoxContainer.ALIGNMENT_CENTER
 		h.add_child(UiKit.portrait(t, true, 56))
 		h.add_child(UiKit.label("%s joins your army." % UiKit.unit_name(u), 22, UiKit.SOUL))
 		_recruit.add_child(h)
+		Audio.play("piece_spawn")
 	_recruit_done = true
 	_update_continue()
 
 
 func _build_relics() -> void:
-	var ids := Run.relic_choices(Content.config.elite_relic_choices)
+	var n := Content.config.guardian_relic_choices if kind == &"guardian" else Content.config.elite_relic_choices
+	var ids := Run.relic_choices(n)
 	if ids.is_empty():
 		_relic.add_child(UiKit.label("You already carry every relic.", 20, UiKit.MUTED))
 		_relic_done = true
 		return
 	var row := UiKit.hbox(18)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_relic.add_child(row)
 	for id in ids:
 		var r: RelicDef = Content.relic(id)
-		var parts := UiKit.card(360, 150, func(): _take_relic(r.id), UiKit.KIND_COLOR.get(r.kind, UiKit.EDGE))
+		var parts := UiKit.card(340, 190, func(): _take_relic(r.id), UiKit.KIND_COLOR.get(r.kind, UiKit.EDGE))
 		var c: VBoxContainer = parts[1]
 		var h := UiKit.hbox(12)
-		h.add_child(UiKit.icon(r.icon, 100))
+		h.add_child(UiKit.icon(r.icon, 96))
 		var info := UiKit.vbox(2)
-		info.custom_minimum_size = Vector2(200, 0)
+		info.custom_minimum_size = Vector2(180, 0)
 		info.add_child(UiKit.heading(r.display_name, 20))
-		info.add_child(UiKit.label(r.description, 16, UiKit.MUTED, true))
+		info.add_child(UiKit.caption(String(UiKit.KIND_LABEL.get(r.kind, r.kind)), 13, UiKit.KIND_COLOR.get(r.kind, UiKit.MUTED)))
+		info.add_child(UiKit.label(r.description, 15, UiKit.MUTED, true))
 		h.add_child(info)
 		c.add_child(h)
 		row.add_child(parts[0])
@@ -193,6 +226,7 @@ func _take_relic(id: StringName) -> void:
 		c.queue_free()
 	if id != &"":
 		Run.add_relic(id)
+		Audio.play("relic")
 		_relic.add_child(UiKit.label("You claim %s." % Content.relic(id).display_name, 22, UiKit.SOUL))
 	else:
 		_relic.add_child(UiKit.label("You leave the relic behind.", 20, UiKit.MUTED))
@@ -213,7 +247,7 @@ func _auto() -> void:
 	_rebuild_levels()
 	var choices := Run.reward_choices(kind)
 	_take_recruit(choices[0] if not choices.is_empty() else &"")
-	if kind == &"elite":
+	if _has_relic():
 		var ids := Run.relic_choices(1)
 		_take_relic(ids[0] if not ids.is_empty() else &"")
 	await get_tree().create_timer(0.2).timeout

@@ -3,10 +3,13 @@ extends Control
 ## The act map (Slay the Spire style, bottom to top) with the army roster and relics.
 
 signal node_chosen(id: int)
+signal formation_changed
 
 const ICONS := {&"fight": "icon_fight", &"elite": "icon_elite", &"campfire": "icon_campfire",
-	&"event": "icon_event", &"boss": "icon_boss"}
-const TYPE_NAME := {&"fight": "Fight", &"elite": "Elite fight", &"campfire": "Campfire", &"event": "Event", &"boss": "Boss: Stockfish"}
+	&"event": "icon_event", &"boss": "icon_boss", &"guardian": "icon_guardian", &"shop": "icon_shop"}
+const TYPE_NAME := {&"fight": "Fight", &"elite": "Elite fight", &"campfire": "Campfire", &"event": "Event",
+	&"boss": "Boss", &"guardian": "Guardian", &"shop": "The Bone Merchant"}
+const ROMAN := ["I", "II", "III", "IV", "V"]
 
 var _map_area: Control
 var _positions: Dictionary = {}
@@ -30,10 +33,30 @@ func _ready() -> void:
 	root.add_child(center)
 	var col := UiKit.vbox(6)
 	center.add_child(col)
-	var head := UiKit.title("The Descent", 48)
+	var act := Run.current_act()
+	var bar := UiKit.hbox(14)
+	col.add_child(bar)
+	var gold := UiKit.gold_label(Run.gold, 26)
+	gold.tooltip_text = "Gold: earned in fights, spent at the Bone Merchant and in events."
+	gold.mouse_filter = Control.MOUSE_FILTER_PASS
+	bar.add_child(gold)
+	var diff := Content.difficulty(Run.difficulty)
+	if diff != null and diff.level > 0:
+		var dl := UiKit.caption(diff.display_name, 16, UiKit.BLOOD)
+		dl.tooltip_text = diff.description
+		dl.mouse_filter = Control.MOUSE_FILTER_PASS
+		bar.add_child(dl)
+	bar.add_child(UiKit.spacer(0, 0))
+	bar.get_child(bar.get_child_count() - 1).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.add_child(UiKit.button("Arrange", func():
+		var f := FormationModal.open_formation(self)
+		f.saved.connect(func(): formation_changed.emit()), 18))
+	bar.add_child(UiKit.button("Codex", func(): CodexModal.open_codex(self), 18))
+	var head := UiKit.title(act.display_name if act else "The Descent", 46)
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(head)
-	var sub := UiKit.label("Act I · choose your path towards the engine", 20, UiKit.MUTED)
+	var sub := UiKit.label("Act %s of %s · %s" % [ROMAN[mini(Run.act_index, 4)], ROMAN[mini(Run.act_count() - 1, 4)],
+		act.subtitle if act else "choose your path towards the engine"], 20, UiKit.MUTED)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(sub)
 	_map_area = Control.new()
@@ -66,12 +89,12 @@ func _side_panel() -> Control:
 	col.add_child(UiKit.spacer(16))
 	col.add_child(UiKit.heading("The Run", 28))
 	var s: Dictionary = Run.stats
-	col.add_child(UiKit.label("Seed %d" % Run.seed_value, 18, UiKit.MUTED))
+	col.add_child(UiKit.label("Seed %d · gold %d" % [Run.seed_value, Run.gold], 18, UiKit.MUTED))
 	col.add_child(UiKit.label("Fights won: %d" % int(s.get("fights_won", 0)), 19))
 	col.add_child(UiKit.label("Pieces lost: %d" % int(s.get("units_lost", 0)), 19))
 	col.add_child(UiKit.label("Nodes cleared: %d" % maxi(0, Run.visited.size()), 19))
 	col.add_child(UiKit.spacer(16))
-	col.add_child(UiKit.label("Captured pieces stay dead until a campfire restores them. XP is gained by capturing; level-ups happen after fights.", 16, UiKit.MUTED, true))
+	col.add_child(UiKit.label("Captured pieces stay dead until a campfire or the merchant restores them. XP is gained by capturing; level-ups happen after fights. Each act ends with a guardian engine.", 16, UiKit.MUTED, true))
 	return p
 
 
@@ -99,8 +122,9 @@ func _node_button(n: Dictionary) -> Control:
 	var t: StringName = n["type"]
 	var visited := Run.visited.has(id)
 	var avail := _available.has(id)
-	var size := 120 if t == &"boss" else 76
-	var dim := 0.0 if avail or t == &"boss" else (0.3 if visited else 0.15)
+	var big := t == &"boss" or t == &"guardian"
+	var size := 120 if big else 76
+	var dim := 0.0 if avail or big else (0.3 if visited else 0.15)
 	var desat := 0.0 if avail else 0.35
 	var b := Button.new()
 	b.flat = true
@@ -116,11 +140,24 @@ func _node_button(n: Dictionary) -> Control:
 	var ic := UiKit.icon("res://assets/ui/icons/%s_256.png" % ICONS.get(t, "icon_unknown"), size, dim, desat)
 	UiKit.full(ic)
 	b.add_child(ic)
+	var ring_tex := UiKit.kit_tex("node_ring_available" if avail else ("node_ring_visited" if visited else "node_ring"))
+	if ring_tex != null:
+		var ring := TextureRect.new()
+		ring.texture = ring_tex
+		ring.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ring.stretch_mode = TextureRect.STRETCH_SCALE
+		var grow := size * 0.2
+		ring.position = Vector2(-grow, -grow)
+		ring.size = Vector2(size + grow * 2.0, size + grow * 2.0)
+		ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(ring)
 	var tip: String = TYPE_NAME.get(t, String(t))
 	if String(n["encounter"]) != "":
 		var e: EncounterDef = Content.encounter(n["encounter"])
 		if e != null:
 			tip += ": %s\n%s" % [e.display_name, e.flavor]
+	elif t == &"shop":
+		tip += "\nBuy pieces and relics, or raise the fallen."
 	b.tooltip_text = tip
 	b.pivot_offset = Vector2(size, size) * 0.5
 	if avail:
@@ -128,7 +165,7 @@ func _node_button(n: Dictionary) -> Control:
 		tw.tween_property(b, "scale", Vector2(1.08, 1.08), 0.7).set_trans(Tween.TRANS_SINE)
 		tw.tween_property(b, "scale", Vector2.ONE, 0.7).set_trans(Tween.TRANS_SINE)
 		b.pressed.connect(func(): node_chosen.emit(id))
-	if visited:
+	if visited and ring_tex == null:
 		var mark := UiKit.label("✓", int(size * 0.45), UiKit.GOLD)
 		mark.position = Vector2(size * 0.62, -size * 0.12)
 		b.add_child(mark)
@@ -140,8 +177,8 @@ func _draw_edges() -> void:
 	if map == null:
 		return
 	for n in map.nodes:
-		if _positions.has(n["id"]):
-			var r := 66.0 if n["type"] == &"boss" else 44.0
+		if _positions.has(n["id"]) and not UiKit.has_kit():
+			var r := 66.0 if n["type"] == &"boss" or n["type"] == &"guardian" else 44.0
 			_map_area.draw_circle(_positions[n["id"]], r, Color(0.24, 0.21, 0.32, 0.55))
 		for e in n["edges"]:
 			if not _positions.has(n["id"]) or not _positions.has(e):
@@ -154,5 +191,5 @@ func _draw_edges() -> void:
 			var dir := (b - a).normalized()
 			_map_area.draw_dashed_line(a + dir * 42.0, b - dir * 42.0, col, 3.0 if walked or open else 2.0, 10.0)
 	for id in _available:
-		if _positions.has(id):
+		if _positions.has(id) and not UiKit.has_kit():
 			_map_area.draw_arc(_positions[id], 50.0, 0.0, TAU, 48, Color(UiKit.SOUL, 0.55), 2.0)

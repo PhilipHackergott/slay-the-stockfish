@@ -1,0 +1,172 @@
+class_name UiModal
+extends Control
+## A modal: blurred backdrop, forged frame, crest and title plaque on its top edge, a body and a
+## footer. Screens (reward, campfire, shop, ...) use it as their frame; popups (pause, settings,
+## codex, confirm) open it over anything with UiModal.open().
+
+signal closed
+
+var title_text := ""
+var subtitle_text := ""
+var width := 1100
+## > 0: the body scrolls beyond this height.
+var max_body_height := 0
+## Close button and Esc.
+var closable := false
+var accent := UiKit.GOLD
+var backdrop_dim := 0.55
+var body: VBoxContainer
+var footer: HBoxContainer
+
+var _root: CenterContainer
+var _frame: PanelContainer
+var _overlay: Control
+var _plaque: Control
+var _crest: TextureRect
+var _close: BaseButton
+var _edge := 0.0
+var _closing := false
+
+
+func setup(p_title: String, p_width: int = 1100, p_closable: bool = false, p_subtitle: String = "",
+		p_max_body_height: int = 0) -> UiModal:
+	title_text = p_title
+	width = p_width
+	closable = p_closable
+	subtitle_text = p_subtitle
+	max_body_height = p_max_body_height
+	return self
+
+
+static func open(parent: Node, p_title: String, p_width: int = 900, p_closable: bool = true) -> UiModal:
+	var m := UiModal.new().setup(p_title, p_width, p_closable)
+	parent.add_child(m)
+	return m
+
+
+## A yes/no question; on_yes runs after the modal closes.
+static func confirm(parent: Node, p_title: String, text: String, yes_text: String, on_yes: Callable,
+		no_text: String = "Not yet") -> UiModal:
+	var m := open(parent, p_title, 760, true)
+	var l := UiKit.label(text, 23, UiKit.BONE, true)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	m.body.add_child(l)
+	m.footer.add_child(UiKit.button(no_text, m.close, 22))
+	m.footer.add_child(UiKit.button(yes_text, func():
+		m.closed.connect(on_yes)
+		m.close(), 22, true))
+	return m
+
+
+func _ready() -> void:
+	UiKit.full(self)
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(UiKit.backdrop(backdrop_dim))
+	_root = CenterContainer.new()
+	UiKit.full(_root)
+	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_root)
+	_frame = PanelContainer.new()
+	var fs := UiKit.frame("modal")
+	if fs != null:
+		_edge = fs.texture_margin_top * 0.3
+		_frame.add_theme_stylebox_override("panel", fs)
+	else:
+		var f := StyleBoxFlat.new()
+		f.bg_color = Color(0.03, 0.025, 0.045, 0.96)
+		f.border_color = Color(accent, 0.75)
+		f.set_border_width_all(2)
+		f.set_corner_radius_all(4)
+		f.shadow_color = Color(0, 0, 0, 0.6)
+		f.shadow_size = 16
+		f.set_content_margin_all(30)
+		_frame.add_theme_stylebox_override("panel", f)
+	_frame.custom_minimum_size = Vector2(width, 0)
+	_frame.mouse_filter = Control.MOUSE_FILTER_STOP
+	_root.add_child(_frame)
+	_overlay = Control.new()
+	_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(_overlay)
+	var col := UiKit.vbox(14)
+	_frame.add_child(col)
+	var top_margin := _frame.get_theme_stylebox("panel").get_margin(SIDE_TOP)
+	if title_text != "":
+		_plaque = UiKit.plaque(title_text, 40, accent)
+		_overlay.add_child(_plaque)
+		var ps := _plaque.get_combined_minimum_size()
+		var spacer := UiKit.spacer(int(maxf(0.0, _edge + ps.y * 0.5 - top_margin + 10.0)))
+		col.add_child(spacer)
+		var crest := UiKit.kit_tex("modal_crest")
+		if crest != null:
+			_crest = TextureRect.new()
+			_crest.texture = crest
+			_crest.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_overlay.add_child(_crest)
+			_overlay.move_child(_crest, 0)
+	if subtitle_text != "":
+		var s := UiKit.label(subtitle_text, 21, UiKit.MUTED, true)
+		s.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col.add_child(s)
+	body = UiKit.vbox(14)
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if max_body_height > 0:
+		var scroll := ScrollContainer.new()
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.custom_minimum_size = Vector2(0, max_body_height)
+		scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_child(scroll)
+		scroll.add_child(body)
+	else:
+		col.add_child(body)
+	footer = UiKit.hbox(22)
+	footer.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_child(footer)
+	if closable:
+		_close = UiKit.close_button(close)
+		_overlay.add_child(_close)
+	_frame.resized.connect(_place)
+	_place.call_deferred()
+	UiKit.pop_in(_root)
+	Audio.play("ui_open")
+
+
+## The ornaments sit on the frame's top edge; the overlay is a zero-size control at its centre.
+func _place() -> void:
+	if _frame == null:
+		return
+	var half := _frame.size * 0.5
+	if _plaque != null:
+		var ps := _plaque.get_combined_minimum_size()
+		_plaque.size = ps
+		_plaque.position = Vector2(-ps.x * 0.5, -half.y + _edge - ps.y * 0.5)
+		if _crest != null:
+			var cs := _crest.texture.get_size()
+			_crest.size = cs
+			_crest.position = Vector2(-cs.x * 0.5, _plaque.position.y - cs.y * 0.62)
+	if _close != null:
+		var bs := _close.get_combined_minimum_size()
+		var st := _frame.get_theme_stylebox("panel")
+		_close.size = bs
+		_close.position = Vector2(half.x - st.get_margin(SIDE_RIGHT) * 0.55 - bs.x * 0.5,
+			-half.y + st.get_margin(SIDE_TOP) * 0.55 - bs.y * 0.5)
+
+
+func close() -> void:
+	if _closing:
+		return
+	_closing = true
+	Audio.play("ui_close")
+	_root.pivot_offset = _root.size * 0.5
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(self, "modulate:a", 0.0, 0.18)
+	tw.tween_property(_root, "scale", Vector2(0.97, 0.97), 0.18)
+	await tw.finished
+	closed.emit()
+	queue_free()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if closable and not _closing and event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		close()

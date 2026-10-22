@@ -10,8 +10,9 @@ var autoplay := false
 
 var selected := -1
 var targets: Dictionary = {}  # sq -> Array of uci
-var swap_mode := false
-var swap_first := -1
+## "" or the active relic edit: "swap" (Soul Exchange), "move" (Puppeteer's String), "lift" (Soul Lantern).
+var edit_mode := ""
+var edit_first := -1
 var drop_letter := ""
 
 var _clock: Label
@@ -22,7 +23,12 @@ var _turn: Label
 var _log: VBoxContainer
 var _pocket_box: HBoxContainer
 var _swap_btn: Button
+var _move_btn: Button
+var _lift_btn: Button
+var _pass_btn: Button
 var _resign_btn: Button
+var _clock_bar: ProgressBar
+var _clock_max := 1.0
 var _info: PanelContainer
 var _info_body: VBoxContainer
 var _overlay: Control
@@ -48,11 +54,18 @@ func _ready() -> void:
 	fight.unit_lost.connect(_on_lost)
 	fight.message.connect(func(t: String): _add_log(t, UiKit.MUTED))
 	fight.fight_finished.connect(_on_finished)
+	fight.lifted.connect(func(_sq: int): _refresh_pocket())
 	board.square_clicked.connect(_on_square)
 	board.square_hovered.connect(_on_hover)
 	board.right_clicked.connect(_cancel)
 	_refresh_pocket()
-	_refresh_swap()
+	_refresh_actions()
+	Audio.music("music_boss" if fight.encounter.kind == &"boss" or fight.encounter.kind == &"guardian" else "music_fight")
+
+
+func _exit_tree() -> void:
+	Audio.loop("clock_low", false)
+	Audio.loop("engine_think", false)
 
 
 func _build() -> void:
@@ -64,35 +77,40 @@ func _build() -> void:
 	add_child(enemy)
 	var ec := UiKit.vbox(4)
 	enemy.add_child(ec)
-	var kind_text: String = {&"fight": "Fight", &"elite": "Elite", &"boss": "Boss"}.get(enc.kind, "Fight")
-	ec.add_child(UiKit.label(kind_text.to_upper() + " · TIER %d" % enc.tier, 16, UiKit.EMBER))
+	var kind_text: String = {&"fight": "Fight", &"elite": "Elite", &"guardian": "Guardian", &"boss": "Boss"}.get(enc.kind, "Fight")
+	ec.add_child(UiKit.caption(kind_text + " · tier %d" % enc.tier, 16, UiKit.EMBER))
 	ec.add_child(UiKit.heading(enc.display_name, 30))
 	if enc.flavor != "":
 		ec.add_child(UiKit.label(enc.flavor, 17, UiKit.MUTED, true))
-	ec.add_child(UiKit.label("Fairy-Stockfish · skill %d · %d ms per move" % [enc.skill, enc.movetime_ms], 16, UiKit.DIM))
+	ec.add_child(UiKit.label("Fairy-Stockfish · skill %d · %d ms per move" % [fight.engine_skill(), fight.engine_movetime()], 16, UiKit.DIM))
 	_think = UiKit.heading("", 20, UiKit.EMBER)
 	ec.add_child(_think)
 	_eval = UiKit.label("", 18, UiKit.MUTED)
 	ec.add_child(_eval)
 	# Top right: relics.
-	var relics := UiKit.hbox(10)
-	relics.position = Vector2(1920 - 28 - 70 * maxi(1, fight.relic_defs.size()), 28)
+	var relics := UiKit.hbox(8)
+	relics.anchor_left = 1.0
+	relics.anchor_right = 1.0
+	relics.offset_right = -28
+	relics.offset_top = 24
+	relics.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	relics.alignment = BoxContainer.ALIGNMENT_END
 	relics.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(relics)
 	for r in fight.relic_defs:
-		var ic := UiKit.icon(r.icon, 64)
-		ic.mouse_filter = Control.MOUSE_FILTER_PASS
-		ic.tooltip_text = "%s\n%s" % [r.display_name, r.description]
-		relics.add_child(ic)
+		var ic := UiKit.icon(r.icon, 60)
+		var sl := UiKit.slot(ic)
+		sl.tooltip_text = "%s\n%s" % [r.display_name, r.description]
+		relics.add_child(sl)
 	# Bottom right: clock and actions.
 	_clock_panel = UiKit.panel(UiKit.SOUL, Color(0.03, 0.03, 0.05, 0.9), 14)
 	_clock_panel.anchor_left = 1.0
 	_clock_panel.anchor_right = 1.0
 	_clock_panel.anchor_top = 1.0
 	_clock_panel.anchor_bottom = 1.0
-	_clock_panel.offset_left = -330
+	_clock_panel.offset_left = -400
 	_clock_panel.offset_right = -28
-	_clock_panel.offset_top = -270
+	_clock_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_clock_panel.offset_bottom = -28
 	add_child(_clock_panel)
 	var cc := UiKit.vbox(8)
@@ -103,16 +121,30 @@ func _build() -> void:
 	_clock = UiKit.heading("5:00", 64)
 	_clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	cc.add_child(_clock)
+	_clock_max = maxf(fight.player_ms, 1.0)
+	_clock_bar = UiKit.bar(fight.player_ms, _clock_max, "ember", 320)
+	cc.add_child(UiKit.centered(_clock_bar))
 	var inc := UiKit.label("+%d s per move" % (fight.increment_ms / 1000), 16, UiKit.MUTED)
 	inc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	cc.add_child(inc)
-	var actions := UiKit.hbox(10)
-	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	var actions := HFlowContainer.new()
+	actions.alignment = FlowContainer.ALIGNMENT_CENTER
+	actions.add_theme_constant_override("h_separation", 8)
+	actions.add_theme_constant_override("v_separation", 8)
 	cc.add_child(actions)
-	_swap_btn = UiKit.button("Soul Exchange", _toggle_swap, 18)
+	_swap_btn = UiKit.button("Soul Exchange", _toggle_edit.bind("swap"), 17)
 	_swap_btn.tooltip_text = "Swap two of your pieces instead of moving."
 	actions.add_child(_swap_btn)
-	_resign_btn = UiKit.button("Resign", _on_resign, 18)
+	_move_btn = UiKit.button("String", _toggle_edit.bind("move"), 17)
+	_move_btn.tooltip_text = "Puppeteer's String: pull one of your pieces (not the king) to an empty square on ranks 1-3 instead of moving."
+	actions.add_child(_move_btn)
+	_lift_btn = UiKit.button("Lantern", _toggle_edit.bind("lift"), 17)
+	_lift_btn.tooltip_text = "Soul Lantern: lift one of your pieces into your pocket (free action). Drop it later as a move."
+	actions.add_child(_lift_btn)
+	_pass_btn = UiKit.button("Hold Breath", _on_pass, 17)
+	_pass_btn.tooltip_text = "Pass this turn: the engine must move."
+	actions.add_child(_pass_btn)
+	_resign_btn = UiKit.button("Resign", _on_resign, 17)
 	actions.add_child(_resign_btn)
 	# Bottom left: log.
 	var log_panel := UiKit.panel(UiKit.EDGE, Color(0.03, 0.025, 0.045, 0.75), 14)
@@ -164,10 +196,17 @@ func _process(delta: float) -> void:
 	_clock.text = "%d:%02d" % [s / 60, s % 60]
 	var low := s <= 30
 	_clock.add_theme_color_override("font_color", UiKit.BLOOD if low else UiKit.BONE)
+	_clock_bar.value = ms
+	_clock_bar.max_value = maxf(_clock_max, ms)
+	Audio.loop("clock_low", low and fight.clock_running and not fight.finished, -6.0)
 	if _thinking:
 		_think_t += delta
 		_think.text = "Stockfish is thinking" + ".".repeat(1 + int(_think_t * 3.0) % 3)
-	_swap_btn.disabled = not fight.can_swap()
+	var mine := fight.is_player_turn() and not fight.busy
+	_swap_btn.disabled = not fight.can_swap() or not mine
+	_move_btn.disabled = not fight.can_edit_move() or not mine
+	_lift_btn.disabled = not fight.can_lift() or not mine
+	_pass_btn.disabled = not mine or fight.pass_move() == ""
 
 
 # --- turn flow ----------------------------------------------------------------------------------
@@ -177,13 +216,14 @@ func _on_turn(side: String) -> void:
 	_turn.text = "Your move" if side == "w" else "The engine moves"
 	_turn.add_theme_color_override("font_color", UiKit.SOUL if side == "w" else UiKit.EMBER)
 	_refresh_pocket()
-	_refresh_swap()
+	_refresh_actions()
 	if side == "w" and autoplay:
 		_autoplay_move()
 
 
 func _on_thinking(on: bool) -> void:
 	_thinking = on
+	Audio.loop("engine_think", on, -14.0)
 	_think_t = 0.0
 	if not on:
 		_think.text = ""
@@ -199,6 +239,8 @@ func _on_thinking(on: bool) -> void:
 func _on_moved(ev: Dictionary) -> void:
 	var who := "You" if ev["side"] == "w" else "Engine"
 	var text := "%s: %s" % [who, String(ev["uci"])]
+	if ev.get("pass", false):
+		text = "%s: hold breath (pass)" % who
 	var captured := String(ev.get("captured", ""))
 	if captured != "":
 		var def: PieceDef = Content.piece_by_letter(captured.to_lower())
@@ -235,8 +277,8 @@ func _add_log(text: String, color: Color) -> void:
 func _on_square(sq: int) -> void:
 	if not fight.is_player_turn():
 		return
-	if swap_mode:
-		_swap_click(sq)
+	if edit_mode != "":
+		_edit_click(sq)
 		return
 	if drop_letter != "":
 		var uci := "%s@%s" % [drop_letter, Fen.sq_name(sq)]
@@ -277,10 +319,10 @@ func _cancel() -> void:
 	selected = -1
 	targets.clear()
 	drop_letter = ""
-	if swap_mode:
-		swap_mode = false
-		swap_first = -1
-	_refresh_swap()
+	if edit_mode != "":
+		edit_mode = ""
+		edit_first = -1
+	_refresh_actions()
 	board.set_selected(-1)
 	board.clear_marks()
 
@@ -297,38 +339,25 @@ func _do_move(uci: String) -> void:
 
 
 func _ask_promotion(opts: Array) -> void:
-	var modal := Control.new()
-	UiKit.full(modal)
-	modal.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(modal)
-	var shade := ColorRect.new()
-	shade.color = Color(0, 0, 0, 0.5)
-	UiKit.full(shade)
-	modal.add_child(shade)
-	var p := UiKit.panel(UiKit.SOUL)
-	var col := UiKit.vbox(12)
-	p.add_child(col)
-	col.add_child(UiKit.heading("Promote to", 30))
+	var m := UiModal.open(self, "Promote", 200 + 190 * opts.size(), true)
+	m.accent = UiKit.SOUL
 	var row := UiKit.hbox(14)
-	col.add_child(row)
-	for m in opts:
-		var promo := String(m).substr(4, 1)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	m.body.add_child(row)
+	for mv in opts:
+		var promo := String(mv).substr(4, 1)
 		var def: PieceDef = Content.piece_by_letter(promo)
 		var t: StringName = def.id if def != null else &"queen"
-		var parts := UiKit.card(150, 190, func():
-			modal.queue_free()
-			_do_move(String(m)))
+		var parts := UiKit.card(170, 230, func():
+			m.close()
+			_do_move(String(mv)))
 		var c: VBoxContainer = parts[1]
 		c.add_child(UiKit.centered(UiKit.portrait(t, true, 100)))
-		var n := UiKit.heading(UiKit.piece_name(t), 20)
+		var n := UiKit.heading(UiKit.piece_name(t), 19)
 		n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		c.add_child(n)
+		parts[0].tooltip_text = UiKit.moves_text(t)
 		row.add_child(parts[0])
-	var cancel := UiKit.button("Cancel", func(): modal.queue_free())
-	col.add_child(UiKit.centered(cancel))
-	var cc := UiKit.centered(p)
-	UiKit.full(cc)
-	modal.add_child(cc)
 
 
 # --- pocket and swap ----------------------------------------------------------------------------
@@ -345,7 +374,7 @@ func _refresh_pocket() -> void:
 	var p := UiKit.panel(UiKit.GOLD, Color(0.04, 0.035, 0.03, 0.88), 12)
 	var col := UiKit.vbox(6)
 	p.add_child(col)
-	col.add_child(UiKit.label("POCKET", 16, UiKit.GOLD))
+	col.add_child(UiKit.caption("Pocket", 16, UiKit.GOLD))
 	var row := UiKit.hbox(8)
 	col.add_child(row)
 	for ch in mine:
@@ -373,52 +402,105 @@ func _arm_drop(letter: String) -> void:
 	_add_log("Choose a square in your half to drop the %s." % UiKit.piece_name(Content.piece_by_letter(letter.to_lower()).id).to_lower(), UiKit.GOLD)
 
 
-func _refresh_swap() -> void:
-	_swap_btn.visible = fight.edit_charges > 0 or _has_edit_relic()
-	_swap_btn.text = ("Cancel exchange" if swap_mode else "Soul Exchange (%d)" % fight.edit_charges)
+func _refresh_actions() -> void:
+	_swap_btn.visible = fight.edit_charges > 0 or _has_relic(&"edit", &"swap")
+	_swap_btn.text = "Cancel" if edit_mode == "swap" else "Soul Exchange (%d)" % fight.edit_charges
+	_move_btn.visible = fight.move_charges > 0 or _has_relic(&"edit", &"move")
+	_move_btn.text = "Cancel" if edit_mode == "move" else "String (%d)" % fight.move_charges
+	_lift_btn.visible = fight.lift_charges > 0 or _has_relic(&"hybrid", &"")
+	_lift_btn.text = "Cancel" if edit_mode == "lift" else "Lantern (%d)" % fight.lift_charges
+	_pass_btn.visible = fight.can_pass
 
 
-func _has_edit_relic() -> bool:
+func _has_relic(kind: StringName, edit_kind: StringName) -> bool:
 	for r in fight.relic_defs:
-		if r.kind == &"edit":
+		if r.kind == kind and (edit_kind == &"" or r.edit_kind == edit_kind or (edit_kind == &"swap" and r.edit_kind == &"")):
 			return true
 	return false
 
 
-func _toggle_swap() -> void:
-	if swap_mode:
+const EDIT_HINT := {"swap": "Soul Exchange: pick two of your pieces of different kinds.",
+	"move": "Puppeteer's String: pick one of your pieces (not the king), then an empty square on ranks 1-3.",
+	"lift": "Soul Lantern: pick one of your pieces (not the king) to lift into your pocket."}
+
+
+func _toggle_edit(mode: String) -> void:
+	if edit_mode == mode:
 		_cancel()
 		return
-	if not fight.can_swap():
+	var ok: bool = {"swap": fight.can_swap(), "move": fight.can_edit_move(), "lift": fight.can_lift()}.get(mode, false)
+	if not ok:
 		return
 	_cancel()
-	swap_mode = true
-	swap_first = -1
-	_refresh_swap()
-	_add_log("Soul Exchange: pick two of your pieces of different kinds.", Color(0.72, 0.56, 1.0))
+	edit_mode = mode
+	edit_first = -1
+	_refresh_actions()
+	_add_log(EDIT_HINT[mode], Color(0.72, 0.56, 1.0) if mode != "lift" else UiKit.GOLD)
 
 
-func _swap_click(sq: int) -> void:
+func _is_own(sq: int) -> bool:
 	var letter := String(fight.board.get(sq, ""))
-	if letter == "" or letter != letter.to_upper():
+	return letter != "" and letter == letter.to_upper()
+
+
+func _edit_click(sq: int) -> void:
+	var mode := edit_mode
+	if mode == "lift":
+		if not _is_own(sq):
+			return
+		_end_edit()
+		var res: Dictionary = await fight.try_lift(sq)
+		_after_edit_result(res, "The lantern fails")
 		return
-	if swap_first < 0:
-		swap_first = sq
+	if edit_first < 0:
+		if not _is_own(sq):
+			return
+		edit_first = sq
 		board.clear_marks()
 		board.mark(sq, BoardView.SWAP_COLOR, 2.0)
 		board.set_selected(sq)
+		if mode == "move":
+			var marks := {}
+			for t in 24:
+				if not fight.board.has(t):
+					marks[t] = false
+			board.show_selection(sq, marks)
 		return
-	var a := swap_first
-	swap_mode = false
-	swap_first = -1
+	var a := edit_first
+	_end_edit()
+	var res: Dictionary
+	if mode == "swap":
+		if not _is_own(sq):
+			return
+		res = await fight.try_swap(a, sq)
+		_after_edit_result(res, "The exchange fails")
+	else:
+		res = await fight.try_edit_move(a, sq)
+		_after_edit_result(res, "The string snaps")
+
+
+func _end_edit() -> void:
+	edit_mode = ""
+	edit_first = -1
 	board.set_selected(-1)
 	board.clear_marks()
 	board.interactive = false
-	var res: Dictionary = await fight.try_swap(a, sq)
-	_refresh_swap()
+
+
+func _after_edit_result(res: Dictionary, fail_text: String) -> void:
+	_refresh_actions()
+	_refresh_pocket()
 	if not res.get("ok", false):
-		_add_log("The exchange fails: %s" % res.get("reason", "illegal"), UiKit.BLOOD)
-		board.interactive = fight.is_player_turn()
+		_add_log("%s: %s" % [fail_text, res.get("reason", "illegal")], UiKit.BLOOD)
+		Audio.play("ui_deny")
+	board.interactive = fight.is_player_turn() and not fight.finished
+
+
+func _on_pass() -> void:
+	var mv := fight.pass_move()
+	if mv != "" and fight.is_player_turn():
+		_cancel()
+		_do_move(mv)
 
 
 func _on_resign() -> void:
@@ -445,7 +527,7 @@ func _on_hover(sq: int) -> void:
 		return
 	var letter := String(fight.board[sq])
 	var white := letter == letter.to_upper()
-	var def: PieceDef = Content.piece_by_letter(letter.to_lower())
+	var def: PieceDef = Content.piece_by_letter(letter.to_lower(), white)
 	var t: StringName = def.id if def != null else &"pawn"
 	var h := UiKit.hbox(12)
 	h.add_child(UiKit.portrait(t, white, 72))
@@ -468,7 +550,7 @@ func _on_hover(sq: int) -> void:
 	else:
 		col.add_child(UiKit.heading("Engine %s" % UiKit.piece_name(t).to_lower(), 20, UiKit.EMBER))
 		col.add_child(UiKit.label("Worth %d XP if captured" % (def.value if def != null else 0), 17, UiKit.GOLD))
-	col.add_child(UiKit.label(UiKit.MOVES.get(t, ""), 16, UiKit.DIM, true))
+	col.add_child(UiKit.label(UiKit.moves_text(t), 16, UiKit.DIM, true))
 	col.custom_minimum_size = Vector2(250, 0)
 	_info_body.add_child(h)
 	_info.visible = true
@@ -487,29 +569,20 @@ func _on_finished(outcome: Dictionary) -> void:
 
 
 func _show_result(outcome: Dictionary) -> void:
-	_overlay = Control.new()
-	UiKit.full(_overlay)
-	_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(_overlay)
-	var shade := ColorRect.new()
-	shade.color = Color(0, 0, 0.02, 0.45)
-	UiKit.full(shade)
-	_overlay.add_child(shade)
+	Audio.loop("clock_low", false)
+	Audio.loop("engine_think", false)
 	var state := String(outcome.get("state", "draw"))
 	var accent := UiKit.GOLD if state == "win" else (UiKit.BLOOD if state == "loss" else UiKit.MUTED)
-	var p := UiKit.panel(accent, Color(0.03, 0.025, 0.045, 0.94), 28)
-	p.custom_minimum_size = Vector2(640, 0)
-	var col := UiKit.vbox(10)
-	p.add_child(col)
-	var t := UiKit.title({"win": "Victory", "loss": "Defeat", "draw": "Stalemate"}.get(state, "Draw"), 72, accent)
-	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(t)
-	var r := UiKit.label(String(outcome.get("reason", "")), 24, UiKit.BONE)
-	r.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(r)
+	var m := UiModal.new().setup({"win": "Victory", "loss": "Defeat", "draw": "Stalemate"}.get(state, "Draw"), 760, false,
+		String(outcome.get("reason", "")))
+	m.accent = accent
+	m.backdrop_dim = 0.4
+	add_child(m)
+	_overlay = m
+	Audio.play("win_sting" if state == "win" else ("loss_sting" if state == "loss" else "ui_open"))
 	var info := UiKit.label("%d plies played" % int(outcome.get("plies", 0)), 18, UiKit.MUTED)
 	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(info)
+	m.body.add_child(info)
 	var lost: Array = outcome.get("slain", [])
 	if not lost.is_empty():
 		var names: Array = []
@@ -520,14 +593,10 @@ func _show_result(outcome: Dictionary) -> void:
 		if not names.is_empty():
 			var l := UiKit.label("Slain: " + ", ".join(names), 19, UiKit.BLOOD, true)
 			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			col.add_child(l)
-	var btn := UiKit.button("Continue", func(): continue_pressed.emit(outcome), 26)
-	col.add_child(UiKit.spacer(8))
-	col.add_child(UiKit.centered(btn))
-	var cc := UiKit.centered(p)
-	UiKit.full(cc)
-	_overlay.add_child(cc)
-	UiKit.fade_in(_overlay, 0.5)
+			m.body.add_child(l)
+	var btn := UiKit.button("Continue", func(): continue_pressed.emit(outcome), 26, true)
+	btn.custom_minimum_size.x = 300
+	m.footer.add_child(btn)
 	if autoplay:
 		get_tree().create_timer(0.3).timeout.connect(func(): continue_pressed.emit(outcome))
 

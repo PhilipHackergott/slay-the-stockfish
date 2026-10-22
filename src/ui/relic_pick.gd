@@ -1,6 +1,6 @@
 class_name RelicPick
 extends Control
-## Choose one relic from a few cards (run start and after elites).
+## Choose one relic from a few cards (run start).
 
 signal picked(id: StringName)
 
@@ -20,47 +20,33 @@ func setup(p_title: String, p_subtitle: String, p_ids: Array, p_allow_skip: bool
 
 func _ready() -> void:
 	UiKit.full(self)
-	mouse_filter = Control.MOUSE_FILTER_STOP
-	var shade := ColorRect.new()
-	shade.color = Color(0.0, 0.0, 0.02, 0.55)
-	UiKit.full(shade)
-	add_child(shade)
-	add_child(UiKit.vignette())
-	var col := UiKit.vbox(18)
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	UiKit.full(col)
-	add_child(col)
-	var t := UiKit.title(title_text, 64)
-	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(t)
-	if subtitle_text != "":
-		var s := UiKit.label(subtitle_text, 24, UiKit.MUTED)
-		s.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		col.add_child(s)
-	col.add_child(UiKit.spacer(16))
-	var row := UiKit.hbox(28)
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var m := UiModal.new().setup(title_text, mini(1500, 380 * ids.size() + 120), false, subtitle_text)
+	add_child(m)
+	var row := UiKit.hbox(24)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_child(row)
+	m.body.add_child(row)
 	for id in ids:
 		var r: RelicDef = Content.relic(id)
 		if r == null:
 			continue
 		var kind_col: Color = UiKit.KIND_COLOR.get(r.kind, UiKit.BONE)
-		var parts := UiKit.card(330, 470, func(): picked.emit(r.id), Color(kind_col, 0.7))
+		var parts := UiKit.card(330, 480, func():
+			Audio.play("relic")
+			picked.emit(r.id), Color(kind_col, 0.7))
 		var c: VBoxContainer = parts[1]
-		c.add_child(UiKit.centered(UiKit.icon(r.icon, 180)))
-		var n := UiKit.heading(r.display_name, 28)
+		c.add_child(UiKit.centered(UiKit.icon(r.icon, 170)))
+		var n := UiKit.heading(r.display_name, 26)
 		n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		c.add_child(n)
-		var k := UiKit.label(String(UiKit.KIND_LABEL.get(r.kind, r.kind)).to_upper(), 16, kind_col)
+		var k := UiKit.caption(String(UiKit.KIND_LABEL.get(r.kind, r.kind)), 15, kind_col)
 		k.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		c.add_child(k)
-		var d := UiKit.label(r.description, 20, UiKit.BONE, true)
+		c.add_child(UiKit.divider(200, true))
+		var d := UiKit.label(r.description, 19, UiKit.BONE, true)
 		d.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		d.custom_minimum_size = Vector2(290, 0)
+		d.custom_minimum_size = Vector2(270, 0)
 		c.add_child(d)
 		row.add_child(parts[0])
 	if allow_skip:
-		var b := UiKit.button("Take nothing", func(): picked.emit(&""))
-		col.add_child(UiKit.centered(b))
-	UiKit.fade_in(self)
+		m.footer.add_child(UiKit.button("Take nothing", func(): picked.emit(&"")))

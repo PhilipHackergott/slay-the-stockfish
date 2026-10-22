@@ -8,6 +8,7 @@ var _title: Label
 
 func _ready() -> void:
 	add_theme_stylebox_override("panel", UiKit.panel_style(Color(0.035, 0.03, 0.05, 0.88), UiKit.EDGE, 16))
+	mouse_filter = Control.MOUSE_FILTER_STOP
 	custom_minimum_size = Vector2(380, 0)
 	var col := UiKit.vbox(8)
 	add_child(col)
@@ -29,14 +30,13 @@ func refresh() -> void:
 		return
 	for c in _list.get_children():
 		c.queue_free()
-	var order := [&"king", &"queen", &"rook", &"bishop", &"knight", &"pawn"]
 	var units := Run.units.duplicate()
 	units.sort_custom(func(a, b):
 		if a.is_healthy() != b.is_healthy():
 			return a.is_healthy()
-		var ia := order.find(a.type)
-		var ib := order.find(b.type)
-		return ia < ib if ia != ib else a.id < b.id)
+		var va: int = 99 if Content.piece(a.type).is_royal() else Content.piece(a.type).value
+		var vb: int = 99 if Content.piece(b.type).is_royal() else Content.piece(b.type).value
+		return va > vb if va != vb else a.id < b.id)
 	_title.text = "Your Army  (%d / %d)" % [Run.healthy_units().size(), Run.units.size()]
 	for u in units:
 		_list.add_child(row(u))
@@ -57,28 +57,19 @@ static func row(u: Unit, compact: bool = false) -> Control:
 	if slain:
 		top.add_child(UiKit.label("slain", 18, UiKit.BLOOD))
 	var need := Run.xp_needed(u)
-	if u.type != &"king":
-		var bar_row := UiKit.hbox(8)
-		col.add_child(bar_row)
-		var bar := ProgressBar.new()
-		bar.custom_minimum_size = Vector2(150, 8)
-		bar.show_percentage = false
-		bar.max_value = maxf(1.0, float(need if need > 0 else u.xp))
-		bar.value = float(u.xp)
-		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		if Run.can_level_up(u):
-			var fill := StyleBoxFlat.new()
-			fill.bg_color = UiKit.GOLD
-			bar.add_theme_stylebox_override("fill", fill)
-		bar_row.add_child(bar)
-		var xp_text := "%d / %d XP" % [u.xp, need] if need > 0 and not Run.upgrade_options(u).is_empty() else "%d XP · final form" % u.xp
-		bar_row.add_child(UiKit.label(xp_text, 16, UiKit.MUTED))
+	var bar_row := UiKit.hbox(8)
+	col.add_child(bar_row)
+	var maxed := Run.is_maxed(u)
+	var bar := UiKit.bar(float(u.xp), float(need if need > 0 and not maxed else maxi(u.xp, 1)),
+		"gold" if Run.can_level_up(u) or maxed else "soul", 150)
+	bar_row.add_child(bar)
+	var xp_text := "%d XP · final form (XP → gold)" % u.xp if maxed else "%d / %d XP" % [u.xp, need]
+	bar_row.add_child(UiKit.label(xp_text, 16, UiKit.MUTED))
 	if u.lineage.size() > 1 and not compact:
 		var names: Array = []
 		for t in u.lineage:
 			names.append(UiKit.piece_name(StringName(t)))
 		col.add_child(UiKit.label(" → ".join(names), 15, UiKit.MUTED))
-	h.tooltip_text = "%s\nCaptures: %d · Fights: %d" % [UiKit.unit_name(u), u.captures, u.fights]
+	h.tooltip_text = "%s\n%s\nCaptures: %d · Fights: %d" % [UiKit.unit_name(u), UiKit.moves_text(u.type), u.captures, u.fights]
 	h.mouse_filter = Control.MOUSE_FILTER_PASS
 	return h
