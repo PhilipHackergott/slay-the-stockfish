@@ -267,7 +267,7 @@ func _engine_turn() -> void:
 		engine_bad_streak += 1
 	else:
 		engine_bad_streak = 0
-	if engine_bad_streak >= cfg.resign_moves:
+	if engine_bad_streak >= cfg.resign_moves and ply_count >= cfg.resign_min_plies:
 		_finish("win", "the engine resigns")
 		return
 	await _play(String(res["move"]), "b")

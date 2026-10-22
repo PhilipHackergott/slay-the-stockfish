@@ -115,8 +115,15 @@ def box(sx, sy, sz, bevel=0.0, seg=1, center=(0, 0, 0)):
     return bm
 
 
+def signed_area(pts):
+    return 0.5 * sum(pts[i][0] * pts[(i + 1) % len(pts)][1] - pts[(i + 1) % len(pts)][0] * pts[i][1]
+                     for i in range(len(pts)))
+
+
 def prism(outline, z0, z1, bevel=0.0, seg=1, bevel_top_only=False):
-    """Extrude a CCW 2D outline [(x,y),...] between z0 and z1."""
+    """Extrude a 2D outline [(x,y),...] (any winding) between z0 and z1."""
+    if signed_area(outline) < 0:
+        outline = list(reversed(outline))
     bm = bmesh.new()
     bot = [bm.verts.new((x, y, z0)) for x, y in outline]
     top = [bm.verts.new((x, y, z1)) for x, y in outline]
@@ -128,8 +135,6 @@ def prism(outline, z0, z1, bevel=0.0, seg=1, bevel_top_only=False):
         bm.faces.new([bot[i], bot[j], top[j], top[i]])
     if bevel > 0:
         if bevel_top_only:
-            edges = [e for e in bm.edges if all(v.co.z > (z0 + z1) * 0.5 for v in e.verts)
-                     or (abs(e.verts[0].co.z - e.verts[1].co.z) > 1e-6)]
             edges = [e for e in bm.edges if any(v.co.z > (z0 + z1) * 0.5 for v in e.verts)]
         else:
             edges = list(bm.edges)
@@ -158,7 +163,7 @@ def lathe(profile, seg=16, cap_bottom=True, cap_top=True, phase=0.0):
             if len(a) == 1 and len(b) == 1:
                 continue
             if len(a) == 1:
-                bm.faces.new([a[0], b[i], b[j]][::-1] if False else [a[0], b[j], b[i]][::-1])
+                bm.faces.new([a[0], b[j], b[i]])
             elif len(b) == 1:
                 bm.faces.new([a[i], a[j], b[0]])
             else:
@@ -248,6 +253,7 @@ def sweep(path, profile, up=None, closed=False, closed_profile=True, scale=None,
     """
     path = [Vector(p) for p in path]
     n = len(path)
+    fresh = bm is None
     if bm is None:
         bm = bmesh.new()
     frames = _frames(path, closed, up)
@@ -286,6 +292,8 @@ def sweep(path, profile, up=None, closed=False, closed_profile=True, scale=None,
             bm.faces.new(rings[-1])
         except ValueError:
             pass
+    if closed_profile and (closed or caps) and fresh:
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     return bm
 
 
@@ -342,6 +350,27 @@ def foil(lobes, a, b, n=48, rot=0.0):
 def polar_outline(fn, n):
     return [(fn(2 * math.pi * i / n) * math.cos(2 * math.pi * i / n),
              fn(2 * math.pi * i / n) * math.sin(2 * math.pi * i / n)) for i in range(n)]
+
+
+def catmull(points, n=6, closed=False):
+    """Catmull-Rom spline through 3D points, n samples per span."""
+    P = [Vector(p) for p in points]
+    out = []
+    m = len(P)
+    spans = m if closed else m - 1
+    for i in range(spans):
+        p0 = P[(i - 1) % m] if closed else P[max(i - 1, 0)]
+        p1 = P[i % m]
+        p2 = P[(i + 1) % m] if closed else P[min(i + 1, m - 1)]
+        p3 = P[(i + 2) % m] if closed else P[min(i + 2, m - 1)]
+        for k in range(n):
+            t = k / n
+            t2, t3 = t * t, t * t * t
+            out.append(0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2
+                              + (-p0 + 3 * p1 - 3 * p2 + p3) * t3))
+    if not closed:
+        out.append(P[-1])
+    return out
 
 
 def to3d(pts2, plane="xz", origin=(0, 0, 0)):
@@ -540,8 +569,10 @@ def bake_ao(objs, samples=32, distance=1.0):
 
 def export_glb(path, objs):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    for o in bpy.context.view_layer.objects:
-        o.select_set(False)
+    bpy.context.view_layer.update()
+    for o in bpy.data.objects:
+        if o.name in bpy.context.view_layer.objects:
+            o.select_set(False)
     for o in objs:
         o.select_set(True)
     bpy.ops.export_scene.gltf(

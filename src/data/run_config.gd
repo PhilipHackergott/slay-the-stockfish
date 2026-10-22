@@ -10,6 +10,8 @@ extends Resource
 ## The engine resigns when its evaluation stays at or below -resign_cp for resign_moves moves.
 @export var resign_cp: int = 600
 @export var resign_moves: int = 3
+## ...but never before this many plies, so outnumbered early enemies still make you play.
+@export var resign_min_plies: int = 30
 ## Open questions (handover), with the proposal in use:
 ## draw: "survive" = no reward, the run goes on. loss of a normal fight ends the run.
 @export var draw_outcome: StringName = &"survive"

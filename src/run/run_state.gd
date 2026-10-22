@@ -14,6 +14,7 @@ var next_unit_id := 1
 var active := false
 var stats := {}
 var last_outcome: Dictionary = {}
+var used_events: Array = []
 
 
 func cfg() -> RunConfig:
@@ -26,6 +27,7 @@ func new_run(p_seed: int) -> void:
 	units.clear()
 	relics.clear()
 	visited.clear()
+	used_events.clear()
 	current_node = -1
 	next_unit_id = 1
 	stats = {"fights_won": 0, "units_lost": 0, "captures": 0, "nodes": 0}
@@ -152,6 +154,18 @@ func relic_choices(n: int) -> Array:
 
 
 # --- events -----------------------------------------------------------------------------------
+
+func pick_event() -> EventDef:
+	var pool: Array = Content.events.keys().filter(func(id): return not used_events.has(id))
+	if pool.is_empty():
+		pool = Content.events.keys()
+	if pool.is_empty():
+		return null
+	pool.sort()
+	var id: StringName = pool[rng.randi_range(0, pool.size() - 1)]
+	used_events.append(id)
+	return Content.events[id]
+
 
 ## Applies one event option and returns the text to show.
 func apply_event_option(opt: Dictionary) -> String:

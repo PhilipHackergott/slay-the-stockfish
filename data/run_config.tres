@@ -10,6 +10,7 @@ clock_base_s = 300
 clock_increment_s = 3
 resign_cp = 600
 resign_moves = 3
+resign_min_plies = 30
 draw_outcome = &"survive"
 loss_ends_run = true
 formation = {"bishop": PackedStringArray("c1", "f1"), "king": PackedStringArray("e1"), "knight": PackedStringArray("b1", "g1"), "pawn": PackedStringArray("e2", "d2", "f2", "c2", "g2", "b2", "h2", "a2"), "queen": PackedStringArray("d1"), "rook": PackedStringArray("a1", "h1")}

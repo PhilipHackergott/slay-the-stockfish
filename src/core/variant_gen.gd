@@ -22,6 +22,9 @@ static func build(variant_name: String, king_betza: String, custom: Array, relic
 		"extinctionPseudoRoyal = true",
 		"extinctionValue = loss",
 		"castling = false",
+		# 0 means "no override" to the engine; without this it values the royal piece like a commoner.
+		"pieceValueMg = %s:1" % PLAYER_KING,
+		"pieceValueEg = %s:1" % PLAYER_KING,
 	])
 	var letters := {}
 	var extra := PackedStringArray()
