@@ -30,11 +30,11 @@ func is_running() -> bool:
 func start() -> bool:
 	if _pid > 0:
 		return not _dead
-	var py := _python_path()
-	var script := ProjectSettings.globalize_path("res://chesscore/server.py")
-	var info: Dictionary = OS.execute_with_pipe(py, PackedStringArray([script]))
+	var cmd := core_command()
+	var info: Dictionary = {} if cmd.is_empty() else OS.execute_with_pipe(cmd[0], cmd.slice(1))
 	if info.is_empty():
-		push_warning("chess core: could not start %s %s" % [py, script])
+		push_warning("chess core: could not start %s" % (" ".join(cmd) if not cmd.is_empty()
+			else "(no server.py found; set STS_CHESSCORE and/or STS_PYTHON)"))
 		_dead = true
 		_pid = 0
 		return false
@@ -48,14 +48,42 @@ func start() -> bool:
 	return true
 
 
-func _python_path() -> String:
-	var env := OS.get_environment("STS_PYTHON")
-	if env != "":
-		return env
-	var venv := ProjectSettings.globalize_path("res://chesscore/.venv/bin/python")
-	if FileAccess.file_exists(venv):
-		return venv
-	return "python3"
+## [python, args..., server.py] for the chess core sidecar, or [] if there is no server.py. Lookup order:
+## 1. STS_CHESSCORE (folder with server.py) and/or STS_PYTHON (interpreter) from the environment.
+## 2. Source tree, editor builds only (`godot --path .`): res://chesscore with its .venv python.
+## 3. Runtime bundled by tools/package: <app>/Contents/Resources/chesscore on macOS, <exe dir>/chesscore on
+##    Windows. Its python runs with -E -s -B: no PYTHON* env vars, no user site-packages, no .pyc writes
+##    into the (signed, possibly read-only) bundle.
+## Exported builds never use globalize_path("res://..."): it returns a path relative to the working directory there.
+func core_command() -> PackedStringArray:
+	var core_dir := OS.get_environment("STS_CHESSCORE")
+	var python := OS.get_environment("STS_PYTHON")
+	if core_dir == "" and OS.has_feature("editor"):
+		var src := ProjectSettings.globalize_path("res://chesscore")
+		if FileAccess.file_exists(src.path_join("server.py")):
+			core_dir = src
+	if core_dir == "":
+		var exe_dir := OS.get_executable_path().get_base_dir()
+		if OS.has_feature("macos"):
+			core_dir = exe_dir.get_base_dir().path_join("Resources/chesscore")
+		else:
+			core_dir = exe_dir.path_join("chesscore")
+	var server := core_dir.path_join("server.py")
+	if not FileAccess.file_exists(server):
+		return PackedStringArray()
+	var cmd := PackedStringArray()
+	if python == "":
+		for rel: String in ["python/python.exe", "python/bin/python3.12", "python/bin/python3"]:
+			if FileAccess.file_exists(core_dir.path_join(rel)):
+				cmd = PackedStringArray([core_dir.path_join(rel), "-E", "-s", "-B"])
+				break
+	if cmd.is_empty():
+		for rel: String in [".venv/bin/python", ".venv/Scripts/python.exe"]:
+			if python == "" and FileAccess.file_exists(core_dir.path_join(rel)):
+				python = core_dir.path_join(rel)
+		cmd = PackedStringArray([python if python != "" else "python3"])
+	cmd.append(server)
+	return cmd
 
 
 func call_core(req: Dictionary) -> Dictionary:
