@@ -24,6 +24,8 @@ const KIT_SCALE := {"modal": 0.78, "modal_crest": 0.62, "title_plaque": 0.7, "pa
 	"medallion": 1.0, "slot": 0.56, "bar_frame": 0.6, "bar_fill": 0.6, "scroll": 0.6, "slider": 0.6,
 	"check": 0.55, "close": 0.6, "coin_small": 1.0, "coin": 1.0, "cursor": 0.5, "menu_marker": 0.6,
 	"node_ring": 1.0, "bg_slate": 1.0}
+## Darkens the big stone fills (and their frames) so bone and gold text keep their contrast.
+const KIT_TINT := {"modal": Color(0.7, 0.68, 0.72), "panel": Color(0.72, 0.7, 0.75), "card": Color(0.84, 0.82, 0.84)}
 
 const RARITY_COLOR := {&"common": Color(0.78, 0.74, 0.66), &"uncommon": SOUL, &"legendary": Color(1.0, 0.62, 0.22)}
 const KIND_LABEL := {&"rule": "Rule relic", &"pocket": "Pocket relic", &"edit": "Edit relic", &"clock": "Clock relic",
@@ -138,6 +140,7 @@ static func frame(name: String, scale: float = -1.0, pad: float = -1.0) -> Style
 		return null
 	var s := StyleBoxTexture.new()
 	s.texture = k["tex"]
+	s.modulate_color = KIT_TINT.get(_family(name), Color.WHITE)
 	var m: Array = k["margin"]
 	s.texture_margin_left = m[0]
 	s.texture_margin_top = m[1]

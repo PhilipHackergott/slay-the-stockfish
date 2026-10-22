@@ -1,0 +1,909 @@
+{
+ "panel": {
+  "file": "panel.png",
+  "size": [
+   512,
+   512
+  ],
+  "margin": [
+   104,
+   104,
+   104,
+   104
+  ],
+  "content": [
+   72,
+   72,
+   72,
+   72
+  ]
+ },
+ "modal": {
+  "file": "modal.png",
+  "size": [
+   1024,
+   1024
+  ],
+  "margin": [
+   176,
+   176,
+   176,
+   176
+  ],
+  "content": [
+   112,
+   112,
+   112,
+   112
+  ]
+ },
+ "modal_crest": {
+  "file": "modal_crest.png",
+  "size": [
+   384,
+   160
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "title_plaque": {
+  "file": "title_plaque.png",
+  "size": [
+   768,
+   128
+  ],
+  "margin": [
+   112,
+   50,
+   112,
+   50
+  ],
+  "content": [
+   104,
+   30,
+   104,
+   30
+  ]
+ },
+ "tooltip": {
+  "file": "tooltip.png",
+  "size": [
+   256,
+   256
+  ],
+  "margin": [
+   26,
+   26,
+   26,
+   26
+  ],
+  "content": [
+   20,
+   16,
+   20,
+   16
+  ]
+ },
+ "card": {
+  "file": "card.png",
+  "size": [
+   384,
+   544
+  ],
+  "margin": [
+   72,
+   72,
+   72,
+   72
+  ],
+  "content": [
+   58,
+   58,
+   58,
+   58
+  ]
+ },
+ "card_hover": {
+  "file": "card_hover.png",
+  "size": [
+   384,
+   544
+  ],
+  "margin": [
+   72,
+   72,
+   72,
+   72
+  ],
+  "content": [
+   58,
+   58,
+   58,
+   58
+  ]
+ },
+ "card_pressed": {
+  "file": "card_pressed.png",
+  "size": [
+   384,
+   544
+  ],
+  "margin": [
+   72,
+   72,
+   72,
+   72
+  ],
+  "content": [
+   58,
+   58,
+   58,
+   58
+  ]
+ },
+ "card_disabled": {
+  "file": "card_disabled.png",
+  "size": [
+   384,
+   544
+  ],
+  "margin": [
+   72,
+   72,
+   72,
+   72
+  ],
+  "content": [
+   58,
+   58,
+   58,
+   58
+  ]
+ },
+ "button_normal": {
+  "file": "button_normal.png",
+  "size": [
+   384,
+   96
+  ],
+  "margin": [
+   60,
+   30,
+   60,
+   30
+  ],
+  "content": [
+   64,
+   16,
+   64,
+   16
+  ]
+ },
+ "button_hover": {
+  "file": "button_hover.png",
+  "size": [
+   384,
+   96
+  ],
+  "margin": [
+   60,
+   30,
+   60,
+   30
+  ],
+  "content": [
+   64,
+   16,
+   64,
+   16
+  ]
+ },
+ "button_pressed": {
+  "file": "button_pressed.png",
+  "size": [
+   384,
+   96
+  ],
+  "margin": [
+   60,
+   30,
+   60,
+   30
+  ],
+  "content": [
+   64,
+   16,
+   64,
+   16
+  ]
+ },
+ "button_disabled": {
+  "file": "button_disabled.png",
+  "size": [
+   384,
+   96
+  ],
+  "margin": [
+   60,
+   30,
+   60,
+   30
+  ],
+  "content": [
+   64,
+   16,
+   64,
+   16
+  ]
+ },
+ "button_primary_normal": {
+  "file": "button_primary_normal.png",
+  "size": [
+   384,
+   96
+  ],
+  "margin": [
+   60,
+   30,
+   60,
+   30
+  ],
+  "content": [
+   64,
+   16,
+   64,
+   16
+  ]
+ },
+ "button_primary_hover": {
+  "file": "button_primary_hover.png",
+  "size": [
+   384,
+   96
+  ],
+  "margin": [
+   60,
+   30,
+   60,
+   30
+  ],
+  "content": [
+   64,
+   16,
+   64,
+   16
+  ]
+ },
+ "button_primary_pressed": {
+  "file": "button_primary_pressed.png",
+  "size": [
+   384,
+   96
+  ],
+  "margin": [
+   60,
+   30,
+   60,
+   30
+  ],
+  "content": [
+   64,
+   16,
+   64,
+   16
+  ]
+ },
+ "button_primary_disabled": {
+  "file": "button_primary_disabled.png",
+  "size": [
+   384,
+   96
+  ],
+  "margin": [
+   60,
+   30,
+   60,
+   30
+  ],
+  "content": [
+   64,
+   16,
+   64,
+   16
+  ]
+ },
+ "divider": {
+  "file": "divider.png",
+  "size": [
+   1024,
+   64
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "divider_small": {
+  "file": "divider_small.png",
+  "size": [
+   512,
+   40
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "medallion_player": {
+  "file": "medallion_player.png",
+  "size": [
+   256,
+   256
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   36,
+   36,
+   36,
+   36
+  ],
+  "hole_radius": 92
+ },
+ "medallion_engine": {
+  "file": "medallion_engine.png",
+  "size": [
+   256,
+   256
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   36,
+   36,
+   36,
+   36
+  ],
+  "hole_radius": 92
+ },
+ "node_ring": {
+  "file": "node_ring.png",
+  "size": [
+   192,
+   192
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   31,
+   31,
+   31,
+   31
+  ],
+  "hole_radius": 65
+ },
+ "node_ring_available": {
+  "file": "node_ring_available.png",
+  "size": [
+   192,
+   192
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   31,
+   31,
+   31,
+   31
+  ],
+  "hole_radius": 65
+ },
+ "node_ring_visited": {
+  "file": "node_ring_visited.png",
+  "size": [
+   192,
+   192
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   31,
+   31,
+   31,
+   31
+  ],
+  "hole_radius": 65
+ },
+ "slot": {
+  "file": "slot.png",
+  "size": [
+   128,
+   128
+  ],
+  "margin": [
+   32,
+   32,
+   32,
+   32
+  ],
+  "content": [
+   24,
+   24,
+   24,
+   24
+  ]
+ },
+ "slot_hover": {
+  "file": "slot_hover.png",
+  "size": [
+   128,
+   128
+  ],
+  "margin": [
+   32,
+   32,
+   32,
+   32
+  ],
+  "content": [
+   24,
+   24,
+   24,
+   24
+  ]
+ },
+ "slot_selected": {
+  "file": "slot_selected.png",
+  "size": [
+   128,
+   128
+  ],
+  "margin": [
+   32,
+   32,
+   32,
+   32
+  ],
+  "content": [
+   24,
+   24,
+   24,
+   24
+  ]
+ },
+ "bar_frame": {
+  "file": "bar_frame.png",
+  "size": [
+   512,
+   48
+  ],
+  "margin": [
+   28,
+   16,
+   28,
+   16
+  ],
+  "content": [
+   24,
+   14,
+   24,
+   14
+  ]
+ },
+ "bar_fill_soul": {
+  "file": "bar_fill_soul.png",
+  "size": [
+   256,
+   24
+  ],
+  "margin": [
+   12,
+   0,
+   12,
+   0
+  ],
+  "content": [
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "bar_fill_ember": {
+  "file": "bar_fill_ember.png",
+  "size": [
+   256,
+   24
+  ],
+  "margin": [
+   12,
+   0,
+   12,
+   0
+  ],
+  "content": [
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "bar_fill_gold": {
+  "file": "bar_fill_gold.png",
+  "size": [
+   256,
+   24
+  ],
+  "margin": [
+   12,
+   0,
+   12,
+   0
+  ],
+  "content": [
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "scroll_track": {
+  "file": "scroll_track.png",
+  "size": [
+   32,
+   256
+  ],
+  "margin": [
+   10,
+   24,
+   10,
+   24
+  ],
+  "content": [
+   8,
+   16,
+   8,
+   16
+  ]
+ },
+ "scroll_grabber": {
+  "file": "scroll_grabber.png",
+  "size": [
+   32,
+   128
+  ],
+  "margin": [
+   10,
+   30,
+   10,
+   30
+  ],
+  "content": [
+   8,
+   20,
+   8,
+   20
+  ]
+ },
+ "scroll_grabber_hover": {
+  "file": "scroll_grabber_hover.png",
+  "size": [
+   32,
+   128
+  ],
+  "margin": [
+   10,
+   30,
+   10,
+   30
+  ],
+  "content": [
+   8,
+   20,
+   8,
+   20
+  ]
+ },
+ "slider_track": {
+  "file": "slider_track.png",
+  "size": [
+   512,
+   32
+  ],
+  "margin": [
+   26,
+   10,
+   26,
+   10
+  ],
+  "content": [
+   24,
+   12,
+   24,
+   12
+  ]
+ },
+ "slider_grabber": {
+  "file": "slider_grabber.png",
+  "size": [
+   48,
+   48
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "slider_grabber_hover": {
+  "file": "slider_grabber_hover.png",
+  "size": [
+   48,
+   48
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "check_off": {
+  "file": "check_off.png",
+  "size": [
+   64,
+   64
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   16,
+   16,
+   16,
+   16
+  ]
+ },
+ "check_on": {
+  "file": "check_on.png",
+  "size": [
+   64,
+   64
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   16,
+   16,
+   16,
+   16
+  ]
+ },
+ "close": {
+  "file": "close.png",
+  "size": [
+   64,
+   64
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   16,
+   16,
+   16,
+   16
+  ]
+ },
+ "close_hover": {
+  "file": "close_hover.png",
+  "size": [
+   64,
+   64
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   16,
+   16,
+   16,
+   16
+  ]
+ },
+ "coin": {
+  "file": "coin.png",
+  "size": [
+   128,
+   128
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "coin_small": {
+  "file": "coin_small.png",
+  "size": [
+   48,
+   48
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "cursor": {
+  "file": "cursor.png",
+  "size": [
+   48,
+   48
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "hotspot": [
+   3,
+   3
+  ]
+ },
+ "cursor_point": {
+  "file": "cursor_point.png",
+  "size": [
+   48,
+   48
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "hotspot": [
+   8,
+   2
+  ]
+ },
+ "menu_marker": {
+  "file": "menu_marker.png",
+  "size": [
+   64,
+   64
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "bg_slate": {
+  "file": "bg_slate.png",
+  "size": [
+   512,
+   512
+  ],
+  "margin": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "content": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "tile": true
+ }
+}
