@@ -47,45 +47,65 @@ func test_xp_goes_to_the_capturing_unit() -> void:
 	assert_eq(fight.unit_map.unit_at(Fen.sq("d3")), capturer)
 
 
-func test_scripted_run_reaches_the_boss() -> void:
+func test_scripted_run_crosses_three_acts_to_the_boss() -> void:
+	Profile.path = "user://profile_test.json"
+	Profile.reset()
 	Run.new_run(42)
 	var start_ids: Array = Run.units.map(func(u): return u.id)
 	var steps := 0
+	var guardians := 0
+	var shops := 0
 	var reached_boss := false
-	while steps < 20:
+	while steps < 80:
 		steps += 1
 		var options := Run.available_nodes()
 		assert_false(options.is_empty(), "the map always continues")
 		var node := Run.enter_node(options[0])
 		match node["type"]:
-			&"fight", &"elite":
+			&"fight", &"elite", &"guardian":
 				assert_ne(node["encounter"], &"", "fight nodes have an encounter")
-				var pawn: Unit = Run.healthy_units().filter(func(u): return u.type == &"pawn").front()
+				var pawns: Array = Run.healthy_units().filter(func(u): return u.type == &"pawn")
+				var pawn: Unit = pawns[0] if not pawns.is_empty() else null
 				var lost: Array = []
+				var xp: Array = []
 				if pawn != null:
 					pawn.xp += 3
+					xp.append({"unit": pawn.id, "amount": 3, "captured": "p"})
 					var other: Array = Run.healthy_units().filter(func(u): return u.type == &"pawn" and u != pawn)
 					if not other.is_empty():
 						lost.append(other[0].id)
-				Run.apply_fight({"state": "win", "slain": lost})
+				Run.apply_fight({"state": "win", "slain": lost, "xp": xp}, node["type"])
 				for u in Run.pending_level_ups():
 					Run.level_up(u, Run.upgrade_options(u)[0])
 				var rewards := Run.reward_choices(node["type"])
 				assert_eq(rewards.size(), Content.config.reward_choices)
 				Run.add_unit(rewards[0])
-				if node["type"] == &"elite":
+				if node["type"] != &"fight":
 					Run.add_relic(Run.relic_choices(2)[0])
+				if node["type"] == &"guardian":
+					guardians += 1
+					assert_eq(node["encounter"], Run.current_act().final_encounter)
+					Run.advance_act()
 			&"campfire":
 				if not Run.slain_units().is_empty():
 					Run.restore(Run.slain_units()[0])
 			&"event":
-				var ev: EventDef = Content.events.values()[0]
-				Run.apply_event_option(ev.options[0])
+				var ev: EventDef = Run.pick_event()
+				for o in ev.options:
+					if Run.can_afford_option(o):
+						Run.apply_event_option(o)
+						break
+			&"shop":
+				shops += 1
+				Run.add_gold(200)
+				assert_not_null(Run.buy(node["id"], "pieces", 0))
 			&"boss":
 				assert_eq(node["encounter"], &"stockfish")
 				reached_boss = true
 				break
 	assert_true(reached_boss, "reached the boss in %d steps" % steps)
+	assert_eq(guardians, 2, "two guardians fell")
+	assert_eq(Run.act_index, 2)
 	for id in start_ids:
 		assert_not_null(Run.unit(id), "unit %d kept its identity" % id)
 	var ids: Array = Run.units.map(func(u): return u.id)
