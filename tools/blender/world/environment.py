@@ -213,8 +213,8 @@ def build():
 
     # ---------------------------------------------------------------- crows on real tops
     bvhs = [BVHTree.FromBMesh(G[n].bm) for n in ("env_pillars", "env_arches", "env_rosewindow")]
-    crow_spots = [pillar_tops[2], pillar_tops[3], pillar_tops[0], pillar_tops[7]] + perches[:1] + perches[1:2]
-    poses = ["perch", "perch", "spread", "perch", "perch", "perch"]
+    crow_spots = perches[:1] + [pillar_tops[3], pillar_tops[2], pillar_tops[0], pillar_tops[7]] + perches[1:2]
+    poses = ["perch", "spread", "perch", "perch", "perch", "perch"]
     placed = 0
     for p in tomb_perches:
         G["env_crows"].add(K.crow(rng, "perch", head_turn=rng.uniform(-0.6, 0.6)),

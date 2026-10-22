@@ -145,12 +145,23 @@ func _build_ruin() -> void:
 	add_child(rose)
 
 
+## The board glb's candelabra_* markers (placed and turned in Blender), else the fixed corner spots.
+func _candle_spots() -> Array:
+	var spots := []
+	for n in board_view.find_children("candelabra_*", "Node3D", true, false):
+		var xf := (n as Node3D).global_transform
+		spots.append(Transform3D(xf.basis.orthonormalized(), xf.origin))
+	if spots.is_empty():
+		for p: Vector3 in CANDLE_SPOTS:
+			spots.append(Transform3D(Basis(Vector3.UP, atan2(-p.x, -p.z)), p))
+	return spots
+
+
 func _build_candelabras() -> void:
-	for spot in CANDLE_SPOTS:
+	for xf: Transform3D in _candle_spots():
 		var holder := Node3D.new()
 		add_child(holder)
-		holder.position = spot
-		holder.rotation.y = atan2(-spot.x, -spot.z)
+		holder.transform = xf
 		var c := _load_glb(CANDELABRA_GLB)
 		var flame_pos := Vector3(0, 2.3, 0)
 		if c != null:
