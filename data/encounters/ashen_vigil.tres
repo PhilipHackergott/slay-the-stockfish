@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"ashen_vigil"
+display_name = "The Ashen Vigil"
+kind = &"fight"
+tier = 2
+layout = {"b7": &"pawn", "c7": &"pawn", "c8": &"bishop", "d7": &"pawn", "e7": &"pawn", "e8": &"king", "f7": &"pawn", "f8": &"bishop"}
+movetime_ms = 100
+skill = -3
+flavor = "Two priests keep watch over a dead fire."

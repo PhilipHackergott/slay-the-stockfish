@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"ascendant_pawns"
+display_name = "Ascendant Pawns"
+kind = &"rule"
+description = "Rule relic. Your pawns promote on the 7th rank. The engine knows, and plans for it."
+ini_lines = PackedStringArray("promotionRegionWhite = *7 *8")
+promotion_ranks = PackedInt32Array(6, 7)
+icon = "res://assets/ui/icons/icon_relic_promotion_256.png"

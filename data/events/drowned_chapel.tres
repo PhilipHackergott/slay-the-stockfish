@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/event_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"drowned_chapel"
+title = "The Drowned Chapel"
+text = "Black water fills the nave to the knees. On the altar a reliquary glints, and the candles around it burn without wax. Something under the water is reciting old games, move by move."
+options = Array[Dictionary]([{"amount": 2, "effect": "xp_all", "label": "Listen to the recitation (all healthy pieces gain 2 XP)", "result": "Your army learns the old lines by heart."}, {"effect": "gain_relic", "label": "Pry the reliquary loose (gain a relic, lose a random pawn)", "result": "The water takes its tithe.", "cost": "lose_pawn"}, {"effect": "nothing", "label": "Leave the chapel", "result": "You leave the dead to their game."}])

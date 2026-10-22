@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bone_hourglass"
+display_name = "Bone Hourglass"
+kind = &"clock"
+description = "Clock relic. +60 seconds on your clock in every fight."
+clock_bonus_s = 60
+icon = "res://assets/ui/icons/icon_relic_clock_256.png"

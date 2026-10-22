@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"soul_exchange"
+display_name = "Soul Exchange"
+kind = &"edit"
+description = "Position-edit relic. Once per fight, swap two of your own pieces instead of moving. The engine only sees it once it has happened."
+charges_per_fight = 1
+icon = "res://assets/ui/icons/icon_relic_swap_256.png"

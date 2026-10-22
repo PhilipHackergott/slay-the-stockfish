@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"crow_wardens"
+display_name = "The Crow Wardens"
+kind = &"fight"
+tier = 1
+layout = {"d7": &"pawn", "e7": &"pawn", "e8": &"king", "f7": &"pawn", "g7": &"pawn", "g8": &"knight"}
+movetime_ms = 60
+skill = -10
+flavor = "A dead horse and four keepers of the gate."

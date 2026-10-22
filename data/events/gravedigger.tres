@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/event_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"gravedigger"
+title = "The Gravedigger"
+text = "An old man leans on his shovel between crooked stones. \"Every piece you lose ends up with me,\" he says. \"I could send one back. Or train the ones you still have.\""
+options = Array[Dictionary]([{"effect": "gain_piece", "label": "Take a fresh recruit (gain a pawn)", "piece": "pawn", "result": "A pawn climbs out of the soil and falls in line."}, {"amount": 4, "effect": "xp_random", "label": "Train with the dead (a random healthy piece gains 4 XP)", "result": "One of your pieces returns from the graves wiser."}, {"effect": "nothing", "label": "Walk on", "result": "He goes back to digging."}])

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cathedral_sentinel"
+display_name = "The Cathedral Sentinel"
+kind = &"elite"
+tier = 3
+layout = {"c7": &"pawn", "d7": &"pawn", "d8": &"queen", "e7": &"pawn", "e8": &"king", "f7": &"pawn", "g7": &"pawn"}
+movetime_ms = 300
+skill = 2
+flavor = "A queen of obsidian guards the nave. Elite: a relic waits behind her."

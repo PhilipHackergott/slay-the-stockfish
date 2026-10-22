@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"rook"
+display_name = "Rook"
+letter = "r"
+value = 5
+upgrades = Array[StringName]([&"queen"])
+model = "res://models/pieces/rook.glb"
+flavor = "A tower with one lit window. Someone is still home."

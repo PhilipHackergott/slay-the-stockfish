@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"king"
+display_name = "King"
+letter = "k"
+value = 0
+royal_betza = "K"
+model = "res://models/pieces/king.glb"
+flavor = "If he falls, the run ends."

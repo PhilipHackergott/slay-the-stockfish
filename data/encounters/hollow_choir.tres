@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hollow_choir"
+display_name = "The Hollow Choir"
+kind = &"fight"
+tier = 1
+layout = {"c7": &"pawn", "c8": &"bishop", "d7": &"pawn", "e7": &"pawn", "e8": &"king", "f7": &"pawn"}
+movetime_ms = 60
+skill = -10
+flavor = "They sing the same diagonal over and over."

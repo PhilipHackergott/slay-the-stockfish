@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PieceDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/piece_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"knight"
+display_name = "Knight"
+letter = "n"
+value = 3
+upgrades = Array[StringName]([&"rook"])
+model = "res://models/pieces/knight.glb"
+flavor = "The horse died long ago. It still jumps."

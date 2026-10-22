@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bone_cavalry"
+display_name = "Bone Cavalry"
+kind = &"fight"
+tier = 2
+layout = {"b8": &"knight", "c7": &"pawn", "d7": &"pawn", "e7": &"pawn", "e8": &"king", "f7": &"pawn", "g8": &"knight"}
+movetime_ms = 100
+skill = -5
+flavor = "Two riders who never learned to stop."

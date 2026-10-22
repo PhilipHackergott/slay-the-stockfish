@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="RunConfig" format=3]
+
+[ext_resource type="Script" path="res://src/data/run_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+starting_army = Array[StringName]([&"king", &"pawn", &"pawn", &"pawn", &"pawn", &"knight", &"bishop"])
+xp_thresholds = PackedInt32Array(3, 8, 15, 24)
+clock_base_s = 300
+clock_increment_s = 3
+resign_cp = 600
+resign_moves = 3
+draw_outcome = &"survive"
+loss_ends_run = true
+formation = {"bishop": PackedStringArray("c1", "f1"), "king": PackedStringArray("e1"), "knight": PackedStringArray("b1", "g1"), "pawn": PackedStringArray("e2", "d2", "f2", "c2", "g2", "b2", "h2", "a2"), "queen": PackedStringArray("d1"), "rook": PackedStringArray("a1", "h1")}
+overflow_squares = PackedStringArray("d1", "f1", "c1", "g1", "b1", "h1", "a1", "e2", "d2", "f2", "c2", "g2", "b2", "h2", "a2", "e3", "d3", "f3", "c3", "g3", "b3", "h3", "a3")
+pawn_overflow_squares = PackedStringArray("e3", "d3", "f3", "c3", "g3", "b3", "h3", "a3")
+map_rows = PackedStringArray("fight", "fight,fight", "event,fight", "campfire,fight,fight", "elite,fight", "fight,event", "fight,campfire", "campfire", "boss")
+reward_weights_fight = {"bishop": 25, "knight": 25, "pawn": 40, "rook": 10}
+reward_weights_elite = {"bishop": 30, "knight": 30, "queen": 15, "rook": 25}
+reward_choices = 3
+start_relic_choices = 4
+elite_relic_choices = 2
