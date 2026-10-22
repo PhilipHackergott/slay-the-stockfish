@@ -1,6 +1,7 @@
 """Contract check for models/pieces/*.glb: re-import into a fresh scene and read the raw glTF.
 
-Blender --background --factory-startup --python verify_pieces.py   (exit code 1 on any failure)
+Blender --background --factory-startup --python verify_pieces.py [-- --set standard|fairy|all] [--only id,id]
+(exit code 1 on any failure; default: every piece in common.ALL_PIECES)
 """
 import json
 import math
@@ -96,7 +97,7 @@ def check_glb(name, path, rows):
     row("glb: attributes", {"POSITION", "NORMAL", "TEXCOORD_0", "COLOR_0"} <= attrs, ",".join(sorted(attrs)))
     names = sorted(a["name"] for a in gl.get("animations", []))
     row("glb: animation names", names == sorted(CLIPS), ",".join(names))
-    h = C.HEIGHTS[name]
+    h = C.top_height(name)
     for anim in gl.get("animations", []):
         clip = anim["name"]
         if clip not in CLIPS:
@@ -143,9 +144,16 @@ def check_import(name, path, rows):
     zmin = min(v.z for v in vs)
     zmax = max(v.z for v in vs)
     h = zmax - zmin
-    target = C.HEIGHTS[name]
-    row("import: height", abs(h - target) <= 0.05 * target and abs(zmin) < 1e-3,
-        "%.3f m (target %.2f, min z %.4f)" % (h, target, zmin))
+    target = C.top_height(name)
+    tol = 0.05 * target if name in C.PIECES else 0.05
+    row("import: height", abs(h - target) <= tol and abs(zmin) < 1e-3,
+        "%.3f m (target %.2f +/- %.3f, min z %.4f)" % (h, target, tol, zmin))
+    if name in C.TIPS:
+        hb = C.body_height(vs)
+        row("import: body height", abs(hb - C.HEIGHTS[name]) <= 0.05,
+            "%.3f m (target %.2f, weapon tip %.3f)" % (hb, C.HEIGHTS[name], h))
+    r_max = max(math.hypot(v.x, v.y) for v in vs)
+    row("import: footprint", r_max <= C.FOOTPRINT_R, "max radius %.3f m (limit %.2f)" % (r_max, C.FOOTPRINT_R))
     low = [v for v in vs if v.z < 0.06]
     dia = 2 * max(math.hypot(v.x, v.y) for v in low)
     row("import: base diameter", 0.70 <= dia <= 0.78, "%.3f m" % dia)
@@ -160,10 +168,23 @@ def check_import(name, path, rows):
     return ok
 
 
+def names_from_args():
+    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    names = list(C.ALL_PIECES)
+    if "--set" in argv:
+        names = list(C.piece_set(argv[argv.index("--set") + 1]))
+    if "--only" in argv:
+        names = [n for n in argv[argv.index("--only") + 1].split(",") if n]
+        unknown = [n for n in names if n not in C.ALL_PIECES]
+        if unknown:
+            raise SystemExit("unknown piece ids: %s" % ",".join(unknown))
+    return names
+
+
 def main():
     rows = []
     ok = True
-    for name in C.PIECES:
+    for name in names_from_args():
         path = os.path.join(C.MODELS, name + ".glb")
         if not os.path.exists(path):
             rows.append((name, "file", "FAIL", path))
@@ -172,14 +193,15 @@ def main():
         ok &= check_glb(name, path, rows)
         ok &= check_import(name, path, rows)
     w = max(len(r[1]) for r in rows)
+    wn = max(len(r[0]) for r in rows)
     print("\nVERIFY TABLE")
     for r in rows:
-        print("%-7s %-*s %s  %s" % (r[0], w, r[1], r[2], r[3]))
+        print("%-*s %-*s %s  %s" % (wn, r[0], w, r[1], r[2], r[3]))
     print("VERIFY %s (%d checks, %d failed)" % ("OK" if ok else "FAILED", len(rows),
                                                 sum(r[2] == "FAIL" for r in rows)))
     with open(os.path.join(C.BUILD, "verify.txt"), "w") as fh:
         for r in rows:
-            fh.write("%-7s %-*s %s  %s\n" % (r[0], w, r[1], r[2], r[3]))
+            fh.write("%-*s %-*s %s  %s\n" % (wn, r[0], w, r[1], r[2], r[3]))
     sys.exit(0 if ok else 1)
 
 

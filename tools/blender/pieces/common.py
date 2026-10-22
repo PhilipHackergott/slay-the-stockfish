@@ -26,6 +26,43 @@ PORTRAITS = os.path.join(ROOT, "art", "portraits")
 PIECES = ("king", "queen", "rook", "bishop", "knight", "pawn")
 HEIGHTS = {"pawn": 0.85, "rook": 1.00, "knight": 1.10, "bishop": 1.20, "queen": 1.45, "king": 1.60}
 
+# Promotion trees and fairy/legendary rewards (built in fairy.py), grouped by base family.
+FAIRY = (
+    "shieldbearer", "sergeant", "skirmisher", "outrider", "spearman", "pikeman",
+    "centaur", "archbishop", "chancellor", "amazon",
+    "dragon_horse",
+    "dragon_king", "aiwok",
+    "leaping_queen", "maharani", "siege_queen", "bombard",
+    "warlord", "conqueror", "regent",
+    "wazir", "commoner", "cannon", "banner", "knibis", "kniroo",
+    "nightmare",
+)
+HEIGHTS.update({
+    "shieldbearer": 0.90, "sergeant": 0.95, "skirmisher": 0.90, "outrider": 0.95, "spearman": 0.90,
+    "pikeman": 0.95, "centaur": 1.20, "archbishop": 1.25, "chancellor": 1.25, "amazon": 1.50,
+    "dragon_horse": 1.25, "dragon_king": 1.15, "aiwok": 1.35, "leaping_queen": 1.50, "maharani": 1.55,
+    "siege_queen": 1.50, "bombard": 1.55, "warlord": 1.65, "conqueror": 1.70, "regent": 1.65, "wazir": 0.80,
+    "commoner": 0.95, "cannon": 0.90, "banner": 1.20, "knibis": 1.15, "kniroo": 1.15, "nightmare": 1.60,
+})
+# Weapons that rise above the body: the clips and the bounding box use the tip, HEIGHTS stays the body.
+TIPS = {"spearman": 1.15, "pikeman": 1.30}
+ALL_PIECES = PIECES + FAIRY
+FOOTPRINT_R = 0.42  # nothing may leave the piece's 1 m square (radius from the centre)
+BODY_R = 0.24  # body height = highest point within this radius of the axis
+
+
+def top_height(name):
+    """Height of the whole model (body or weapon tip); the capture and spawn clips sink by this."""
+    return TIPS.get(name, HEIGHTS[name])
+
+
+def body_height(verts):
+    return max(v[2] for v in verts if math.hypot(v[0], v[1]) < BODY_R)
+
+
+def piece_set(which):
+    return {"standard": PIECES, "fairy": FAIRY, "all": ALL_PIECES}[which]
+
 
 def script_args():
     return sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []

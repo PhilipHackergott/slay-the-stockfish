@@ -1,6 +1,8 @@
-"""Review renders from the exported glbs: line-ups, animation film strips, UI portraits.
+"""Review renders from the exported glbs: line-ups, animation film strips, UI portraits, a game-camera board.
 
 Blender --background --factory-startup --python render_previews.py -- [--what lineup,anim,portraits] [--samples 96]
+  --what: lineup anim portraits (the six) | fairy families board fairy_anim (the fairy set) | turn
+  --pieces a,b  limits portraits / turn / fairy / families to those ids (portraits default: every built glb)
 Materials are swapped by slot name, like the game does, so this also checks the export.
 """
 import math
@@ -16,8 +18,27 @@ import common as C  # noqa: E402
 
 D = math.radians
 LINEUP = ("king", "queen", "bishop", "knight", "rook", "pawn")
-TURN = {"knight": D(58), "bishop": D(22)}
+KNIGHTLIKE = ("knight", "centaur", "archbishop", "chancellor", "amazon", "knibis", "kniroo", "aiwok", "nightmare")
+TURN = {"bishop": D(22), "cannon": D(40), "banner": D(40), "spearman": D(18), "pikeman": D(18)}
+TURN.update({k: D(58) for k in KNIGHTLIKE})
 DEFAULT_TURN = D(28)
+FAMILIES = {
+    "pawn": ("pawn", "shieldbearer", "sergeant", "skirmisher", "outrider", "spearman", "pikeman", "commoner", "wazir"),
+    "knight": ("knight", "centaur", "archbishop", "chancellor", "amazon", "knibis", "kniroo", "nightmare"),
+    "rook_bishop": ("bishop", "dragon_horse", "rook", "dragon_king", "aiwok", "cannon", "banner"),
+    "queen": ("queen", "leaping_queen", "maharani", "siege_queen", "bombard", "amazon", "nightmare"),
+    "king": ("king", "warlord", "conqueror", "regent", "queen"),
+}
+FAIRY_ROWS = (  # front to back for lineup_fairy_*: short pieces in front
+    ("wazir", "shieldbearer", "sergeant", "skirmisher", "outrider", "spearman", "pikeman", "commoner", "cannon"),
+    ("knibis", "kniroo", "centaur", "dragon_king", "banner", "archbishop", "chancellor", "dragon_horse", "aiwok"),
+    ("leaping_queen", "siege_queen", "amazon", "maharani", "bombard", "nightmare", "warlord", "regent", "conqueror"),
+)
+STRIPS_FAIRY = (("spearman", "capture"), ("nightmare", "leap"), ("cannon", "move"))
+
+
+def built(name):
+    return os.path.exists(os.path.join(C.MODELS, name + ".glb"))
 
 
 # ---------------------------------------------------------------- node helpers
@@ -395,8 +416,9 @@ STRIPS = {
 }
 
 
-def strip(clip, samples, theme_name="player"):
-    piece, times = STRIPS[clip]
+def strip(clip, samples, theme_name="player", piece=None, out=None):
+    default_piece, times = STRIPS[clip]
+    piece = piece or default_piece
     scene = setup((1920, 640), samples)
     bloom(scene, 0.35)
     cyclorama()
@@ -422,10 +444,13 @@ def strip(clip, samples, theme_name="player"):
         label("%.2f s" % t, (x0 + i * spacing, -0.75, 0.01))
     src.hide_render = True
     top = {"leap": 2.3, "drop": 3.15}.get(clip, 1.35)
+    top += max(0.0, C.top_height(piece) - 1.2) * ({"leap": 1.0, "drop": 1.0}.get(clip, 0.6))
     dist = max(10.5, top * 4.6)
     rig((0, 0, top / 2), 2.0 * dist / 10.5)
     camera((0.0, -dist, top * 0.55 + 0.9), (0.0, 0.0, top * 0.44), 50)
-    render(os.path.join(C.BUILD, "anim_%s.png" % clip))
+    path = out or os.path.join(C.BUILD, "anim_%s.png" % clip)
+    render(path)
+    return path
 
 
 def turnaround(piece, theme_name, samples, elev=38.0):
@@ -448,13 +473,13 @@ def turnaround(piece, theme_name, samples, elev=38.0):
     render(os.path.join(C.BUILD, "turn_%s_%s.png" % (piece, theme_name)))
 
 
-def portraits(samples):
+def portraits(samples, names=C.PIECES):
     scene = setup((512, 512), samples, transparent=True)
     rig((0, 0, 0.7), 1.3, gain=0.62)
     cam = camera((0, 0, 0), (0, 0, 0), 85)
     dist = 5.1
     elev = D(16)
-    for name in C.PIECES:
+    for name in names:
         ob = import_piece(name)
         ob.matrix_world = Matrix.Rotation(TURN.get(name, DEFAULT_TURN), 4, 'Z')
         pts = [ob.matrix_world @ Vector(c) for c in ob.bound_box]
@@ -465,31 +490,173 @@ def portraits(samples):
             apply_theme(ob, th)
             render(os.path.join(C.PORTRAITS, "%s_%s.png" % (th, name)))
         bpy.data.objects.remove(ob)
-    portrait_sheet()
+    if all(built(n) and os.path.exists(os.path.join(C.PORTRAITS, "player_%s.png" % n)) for n in LINEUP):
+        portrait_sheet(LINEUP, "portraits_sheet.png")
+    fairy = [n for n in C.FAIRY if os.path.exists(os.path.join(C.PORTRAITS, "player_%s.png" % n))]
+    if fairy:
+        portrait_sheet(fairy, "portraits_sheet_fairy.png", cols=9, tile_px=256)
+        portrait_sheet(fairy, "portraits_sheet_fairy_72px.png", cols=9, tile_px=72)
 
 
-def portrait_sheet():
-    """Review sheet: all portraits over the game's dark slate, player row above engine row."""
+def _load_px(path, tile):
     import numpy as np
-    tile = 512
-    sheet = np.zeros((2 * tile, 6 * tile, 4), dtype=np.float32)
+    im = bpy.data.images.load(path)
+    im.colorspace_settings.name = 'Non-Color'
+    if im.size[0] != tile:
+        im.scale(tile, tile)
+    px = np.array(im.pixels[:], dtype=np.float32).reshape(tile, tile, 4)
+    bpy.data.images.remove(im)
+    return px
+
+
+def portrait_sheet(names, filename, cols=None, tile_px=512):
+    """Review sheet over the game's dark slate: per row of `cols` names a player row above an engine row."""
+    import numpy as np
+    tile = tile_px
+    cols = cols or len(names)
+    groups = [names[i:i + cols] for i in range(0, len(names), cols)]
+    rows = 2 * len(groups)
+    sheet = np.zeros((rows * tile, cols * tile, 4), dtype=np.float32)
     sheet[...] = (0.035, 0.04, 0.05, 1.0)
-    for r, th in enumerate(("engine", "player")):  # Blender images are stored bottom-up
-        for c, name in enumerate(LINEUP):
-            im = bpy.data.images.load(os.path.join(C.PORTRAITS, "%s_%s.png" % (th, name)))
-            im.colorspace_settings.name = 'Non-Color'
-            px = np.array(im.pixels[:], dtype=np.float32).reshape(tile, tile, 4)
-            a = px[..., 3:4]
-            cell = sheet[r * tile:(r + 1) * tile, c * tile:(c + 1) * tile]
-            cell[..., :3] = px[..., :3] * a + cell[..., :3] * (1 - a)
-            bpy.data.images.remove(im)
-    out = bpy.data.images.new("sheet", 6 * tile, 2 * tile, alpha=False)
+    for g, group in enumerate(groups):
+        for k, th in enumerate(("player", "engine")):
+            r = rows - 1 - (2 * g + k)  # Blender images are stored bottom-up
+            for c, name in enumerate(group):
+                px = _load_px(os.path.join(C.PORTRAITS, "%s_%s.png" % (th, name)), tile)
+                a = px[..., 3:4]
+                cell = sheet[r * tile:(r + 1) * tile, c * tile:(c + 1) * tile]
+                cell[..., :3] = px[..., :3] * a + cell[..., :3] * (1 - a)
+    out = bpy.data.images.new("sheet", cols * tile, rows * tile, alpha=False)
     out.colorspace_settings.name = 'Non-Color'
     out.pixels.foreach_set(sheet.ravel())
-    out.filepath_raw = os.path.join(C.BUILD, "portraits_sheet.png")
+    out.filepath_raw = os.path.join(C.BUILD, filename)
     out.file_format = 'PNG'
     out.save()
     print("RENDERED", out.filepath_raw)
+
+
+def stack_images(paths, out_path):
+    """Stack equally wide renders vertically (first on top)."""
+    import numpy as np
+    ims = []
+    for p in paths:
+        im = bpy.data.images.load(p)
+        im.colorspace_settings.name = 'Non-Color'
+        w, h = im.size
+        ims.append(np.array(im.pixels[:], dtype=np.float32).reshape(h, w, 4))
+        bpy.data.images.remove(im)
+    sheet = np.concatenate(list(reversed(ims)), axis=0)
+    out = bpy.data.images.new("stack", sheet.shape[1], sheet.shape[0], alpha=False)
+    out.colorspace_settings.name = 'Non-Color'
+    out.pixels.foreach_set(sheet.ravel())
+    out.filepath_raw = out_path
+    out.file_format = 'PNG'
+    out.save()
+    print("RENDERED", out_path)
+
+
+# ---------------------------------------------------------------- fairy set reviews
+
+def row_lineup(names, theme_name, samples, path, res=(1920, 720)):
+    """One row like the original line-up (same lights, lens and elevation), any number of pieces."""
+    scene = setup(res, samples)
+    bloom(scene, 0.45)
+    cyclorama()
+    n = len(names)
+    sp = 1.04
+    dist = max(8.4, (sp * n + 0.8) / 6.87 * 8.4)
+    rig((0, 0, 0.7), 1.6 * dist / 8.4)
+    for i, name in enumerate(names):
+        ob = import_piece(name)
+        apply_theme(ob, theme_name)
+        ob.matrix_world = Matrix.Translation((-sp * (n - 1) / 2 + i * sp, 0, 0)) @ \
+            Matrix.Rotation(TURN.get(name, DEFAULT_TURN), 4, 'Z')
+    camera((0.0, -dist, 2.35 * dist / 8.4), (0.0, 0.0, 0.72), 44)
+    render(path)
+
+
+def fairy_lineup(theme_name, samples, only=None):
+    """All fairy pieces in three staggered rows (short in front), slightly elevated camera."""
+    scene = setup((1920, 1080), samples)
+    bloom(scene, 0.45)
+    cyclorama(flat=9.0)
+    rig((0, 1.2, 0.8), 2.4)
+    sp = 1.12
+    for r, row in enumerate(FAIRY_ROWS):
+        names = [n for n in row if built(n) and (only is None or n in only)]
+        x0 = -sp * (len(row) - 1) / 2 + (sp / 2 if r % 2 else 0.0) - sp / 4
+        for i, name in enumerate(row):
+            if name not in names:
+                continue
+            ob = import_piece(name)
+            apply_theme(ob, theme_name)
+            ob.matrix_world = Matrix.Translation((x0 + i * sp, r * 1.35, 0)) @ \
+                Matrix.Rotation(TURN.get(name, DEFAULT_TURN), 4, 'Z')
+    camera((0.0, -11.8, 4.6), (0.0, 1.2, 0.55), 46)
+    render(os.path.join(C.BUILD, "lineup_fairy_%s.png" % theme_name))
+
+
+def checker_board():
+    import bmesh
+    mats = []
+    for nm, col in (("sq_dark", (0.035, 0.04, 0.05)), ("sq_light", (0.30, 0.31, 0.33))):
+        m = bpy.data.materials.new(nm)
+        b = C.principled(m)
+        b.inputs["Base Color"].default_value = (*col, 1.0)
+        b.inputs["Roughness"].default_value = 0.6
+        mats.append(m)
+    bm = bmesh.new()
+    for i in range(8):
+        for j in range(8):
+            x0, y0 = -4 + i, -4 + j
+            vs = [bm.verts.new((x0 + a, y0 + b, 0.0)) for a, b in ((0, 0), (1, 0), (1, 1), (0, 1))]
+            bm.faces.new(vs).material_index = (i + j + 1) % 2
+    me = bpy.data.meshes.new("board")
+    bm.to_mesh(me)
+    bm.free()
+    for m in mats:
+        me.materials.append(m)
+    ob = bpy.data.objects.new("board", me)
+    bpy.context.scene.collection.objects.link(ob)
+
+
+def board(samples, only=None):
+    """Game camera (fight mode: pitch 53 deg, 15.2 m, 40 deg vertical FOV): the fairy set as the player sees
+    it (bone, ranks 1-4, facing away like PieceView's rest yaw) and as the engine (obsidian, ranks 5-8)."""
+    scene = setup((1920, 1080), samples)
+    bloom(scene, 0.4)
+    cyclorama(color=(0.004, 0.005, 0.007), flat=12.0)
+    checker_board()
+    rig((0, 0, 0.7), 3.2, gain=0.55)
+    names = [n for n in C.FAIRY if built(n) and (only is None or n in only)]
+    names += [n for n in ("pawn", "knight", "bishop", "rook", "queen") if built(n)]
+    names = names[:32]
+    for k, name in enumerate(names):
+        f, r = k % 8, k // 8
+        for th, rank, yaw in (("player", r, math.pi), ("engine", 7 - r, 0.0)):
+            ob = import_piece(name)
+            apply_theme(ob, th)
+            if name == "knight":
+                yaw += -0.75 if th == "player" else 0.75
+            ob.matrix_world = Matrix.Translation((-3.5 + f, -3.5 + rank, 0)) @ Matrix.Rotation(yaw, 4, 'Z')
+    p = D(53)
+    target = Vector((0, -0.75, 0))
+    cam = camera(target + Vector((0, -math.cos(p), math.sin(p))) * 15.2, target, 50)
+    cam.data.sensor_fit = 'VERTICAL'
+    cam.data.angle_y = D(40)
+    render(os.path.join(C.BUILD, "board_fairy.png"))
+
+
+def fairy_strips(samples):
+    paths = []
+    for piece, clip in STRIPS_FAIRY:
+        if not built(piece):
+            continue
+        THEMES.clear()
+        paths.append(strip(clip, samples, piece=piece,
+                           out=os.path.join(C.BUILD, "anim_fairy_%s_%s.png" % (piece, clip))))
+    if paths:
+        stack_images(paths, os.path.join(C.BUILD, "anim_fairy.png"))
 
 
 def main():
@@ -505,14 +672,32 @@ def main():
         for clip in clips:
             THEMES.clear()
             strip(clip, max(32, samples // 2))
+    only = args[args.index("--pieces") + 1].split(",") if "--pieces" in args else None
+    themes = args[args.index("--themes") + 1].split(",") if "--themes" in args else ["player", "engine"]
     if "portraits" in what:
         THEMES.clear()
-        portraits(samples)
-    if "turn" in what:
-        pieces = args[args.index("--pieces") + 1].split(",") if "--pieces" in args else list(C.PIECES)
-        themes = args[args.index("--themes") + 1].split(",") if "--themes" in args else ["player"]
-        for piece in pieces:
+        portraits(samples, only or [n for n in C.ALL_PIECES if built(n)])
+    if "fairy" in what:
+        for th in themes:
+            THEMES.clear()
+            fairy_lineup(th, samples, only)
+    if "families" in what:
+        for fam, names in FAMILIES.items():
+            names = [n for n in names if built(n) and (only is None or n in only or n in C.PIECES)]
+            if len(names) < 2:
+                continue
             for th in themes:
+                THEMES.clear()
+                row_lineup(names, th, samples, os.path.join(C.BUILD, "family_%s_%s.png" % (fam, th)))
+    if "board" in what:
+        THEMES.clear()
+        board(samples, only)
+    if "fairy_anim" in what:
+        fairy_strips(max(32, samples // 2))
+    if "turn" in what:
+        pieces = only or list(C.PIECES)
+        for piece in pieces:
+            for th in (themes if "--themes" in args else ["player"]):
                 THEMES.clear()
                 turnaround(piece, th, samples)
 

@@ -1,6 +1,7 @@
-"""Build the six chess pieces, bake AO, add the clips and export models/pieces/<piece>.glb.
+"""Build the chess pieces (the six standard ones here, the fairy set in fairy.py), bake AO, add the clips and
+export models/pieces/<piece>.glb.
 
-Blender --background --factory-startup --python build_pieces.py -- [--only king,pawn] [--no-ao]
+Blender --background --factory-startup --python build_pieces.py -- [--only king,pawn] [--set standard|fairy|all] [--no-ao]
 """
 import json
 import math
@@ -9,6 +10,7 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.modules.setdefault("build_pieces", sys.modules[__name__])  # fairy.py imports this module by name
 
 import bmesh  # noqa: E402
 import bpy  # noqa: E402
@@ -173,7 +175,8 @@ def smoothstep(e0, e1, x):
 
 # ---------------------------------------------------------------- king
 
-def build_king():
+def king_lower():
+    """King profile up to the neck above the collar (ends at (0.150, ~0.926))."""
     p = plinth(0.38)
     lower_body(p, 0.338, 0.29)
     p.bez((0.292, 0.25), (0.275, 0.30), (0.258, 0.33), n=6)
@@ -182,6 +185,11 @@ def build_king():
     p.to(0.245, 0.370)
     p.bez((0.20, 0.52), (0.143, 0.70), (0.142, 0.835), n=10)
     collar(p, 0.845, 0.218, 0.192, 0.200, 0.150)
+    return p
+
+
+def king_bowl(p):
+    """Crown bowl with its silver rim (1.225-1.254) and a low dome inside (top 1.292)."""
     p.bez((0.128, 0.975), (0.128, 0.99), (0.142, 1.005), n=4)
     p.bez((0.18, 1.06), (0.238, 1.14), (0.242, 1.225), n=7)
     p.to(0.246, 1.232, TRIM)
@@ -191,6 +199,11 @@ def build_king():
     p.to(0.200, 1.20)
     p.to(0.182, 1.192)
     p.bez((0.17, 1.24), (0.10, 1.288), (0.0, 1.292), n=5)
+    return p
+
+
+def build_king():
+    p = king_bowl(king_lower())
     rad = p.radius_fn()
     body = C.harden(C.lathe(p, "king_body", SEGS), bevel=0.005)
 
@@ -222,7 +235,8 @@ def build_king():
 
 # ---------------------------------------------------------------- queen
 
-def build_queen():
+def queen_lower():
+    """Queen profile up to the neck above the collar (ends at (0.140, ~0.846))."""
     p = plinth(0.37)
     lower_body(p, 0.328, 0.28)
     p.bez((0.282, 0.24), (0.265, 0.29), (0.248, 0.318), n=6)
@@ -231,6 +245,11 @@ def build_queen():
     p.to(0.236, 0.352)
     p.bez((0.19, 0.48), (0.134, 0.64), (0.134, 0.755), n=10)
     collar(p, 0.765, 0.210, 0.184, 0.192, 0.140)
+    return p
+
+
+def queen_bowl(p):
+    """Crown bowl with its silver rim (1.15-1.176) and a low dome inside (top 1.205)."""
     p.bez((0.12, 0.895), (0.12, 0.91), (0.13, 0.925), n=4)
     p.bez((0.17, 0.98), (0.228, 1.07), (0.230, 1.15), n=7)
     p.to(0.234, 1.157, TRIM)
@@ -240,6 +259,11 @@ def build_queen():
     p.to(0.192, 1.12)
     p.to(0.172, 1.112)
     p.bez((0.16, 1.16), (0.09, 1.20), (0.0, 1.205), n=5)
+    return p
+
+
+def build_queen():
+    p = queen_bowl(queen_lower())
     rad = p.radius_fn()
     body = C.harden(C.lathe(p, "queen_body", SEGS), bevel=0.005)
 
@@ -254,7 +278,10 @@ def build_queen():
 
 # ---------------------------------------------------------------- bishop
 
-def build_bishop():
+BISHOP_VISOR_Z = 0.79
+
+
+def bishop_profile():
     p = plinth(0.37)
     lower_body(p, 0.325, 0.276)
     p.bez((0.272, 0.25), (0.205, 0.31), (0.172, 0.37), n=8)
@@ -265,18 +292,20 @@ def build_bishop():
     p.to(0.196, 0.526)
     p.bez((0.236, 0.68), (0.16, 1.00), (0.012, 1.118), n=14)
     p.to(0.0, 1.121)
-    rad = p.radius_fn()
-    head = C.lathe(p, "bishop_body", SEGS)
+    return p
 
-    # helm visor: wide eye slit with a breath slit below it; the cut floors glow
-    zv = 0.79
+
+def bishop_visor(head, rad, zv=BISHOP_VISOR_Z, slit_top=None):
+    """Helm visor: wide eye slit with a breath slit below it; the cut floors glow."""
     for cut in (bent_box(-0.15, 0.15, zv - 0.016, zv + 0.016, -0.12, 0.03, "visor", nx=28),
-                bent_box(-0.014, 0.014, 0.60, zv, -0.12, 0.03, "slit", nx=3)):
+                bent_box(-0.014, 0.014, 0.60, slit_top or zv, -0.12, 0.03, "slit", nx=3)):
         C.wrap(cut, rad)
         C.boolean(head, cut)
-    C.harden(head, bevel=0.004)
+    return head
 
-    parts = [head]
+
+def bishop_bands(head, rad, zv=BISHOP_VISOR_Z, crest_keep=None):
+    """Silver crest (front-back strap over the mitre), brow and cheek straps."""
 
     def on_surface(c, tol=0.012):
         return abs(math.hypot(c.x, c.y) - rad(c.z)) < tol
@@ -284,8 +313,9 @@ def build_bishop():
     def front_angle(c):
         return abs(math.atan2(c.x, -c.y))
 
-    parts.append(C.surface_band(head, (0, 0, 0), (1, 0, 0), 0.017, 0.014, "bishop_crest",
-                                keep=lambda c: on_surface(c) and (c.z > 0.845 or (c.y > 0.0 and c.z > 0.53))))
+    crest_keep = crest_keep or (lambda c: c.z > 0.845 or (c.y > 0.0 and c.z > 0.53))
+    parts = [C.surface_band(head, (0, 0, 0), (1, 0, 0), 0.017, 0.014, "bishop_crest",
+                            keep=lambda c: on_surface(c) and crest_keep(c))]
     parts.append(C.surface_band(head, (0, 0, zv + 0.045), (0, 0, 1), 0.011, 0.012, "bishop_brow",
                                 keep=lambda c: on_surface(c) and c.y < 0 and front_angle(c) < D(62)))
     for sx in (-1, 1):
@@ -295,6 +325,18 @@ def build_bishop():
             head, (0, 0, 0), nrm, 0.011, 0.012, "bishop_cheek",
             keep=lambda c, phi=phi: on_surface(c) and 0.53 < c.z < zv + 0.05 and
             c.x * math.cos(phi) + c.y * math.sin(phi) > 0))
+    return parts
+
+
+def build_bishop():
+    p = bishop_profile()
+    rad = p.radius_fn()
+    head = C.lathe(p, "bishop_body", SEGS)
+    bishop_visor(head, rad)
+    C.harden(head, bevel=0.004)
+
+    parts = [head]
+    parts += bishop_bands(head, rad)
     crest_gem = C.gem(0.0, 0.985, 0.016, 0.028, "crest_gem", proud=0.012, back=0.004)
     parts.append(C.wrap(crest_gem, lambda z: rad(z) + 0.010))
     parts += C.gem_set(rad, 0.27, 0.016, 0.05, "bishop_low", around(2))
@@ -326,7 +368,10 @@ def window_cutter(a, z_sill, z_spring, y_back, name, phi=C.FRONT):
     return ob
 
 
-def build_rook():
+ROOK_WINDOW = (0.064, 0.40, 0.60)  # half width, sill, spring of the front arch window
+
+
+def rook_profile():
     p = plinth(0.37)
     lower_body(p, 0.325, 0.278)
     p.bez((0.272, 0.23), (0.246, 0.255), (0.238, 0.28), n=5)
@@ -343,32 +388,46 @@ def build_rook():
     p.to(0.226, 0.993)
     p.to(0.226, 0.942)
     p.to(0.0, 0.938)
-    rad = p.radius_fn()
-    body = C.lathe(p, "rook_body", SEGS, phase=math.pi / SEGS)
+    return p
 
-    for k, phi in enumerate(around(6)):
-        notch = C.box("notch%d" % k, (0.0, -0.25, 1.0), (0.10, 0.16, 0.118))
-        notch.data.transform(Matrix.Rotation(phi + math.pi / 2, 4, 'Z'))
-        C.boolean(body, notch)
-    a, z_sill, z_spring = 0.064, 0.40, 0.60
-    C.boolean(body, window_cutter(a, z_sill, z_spring, -0.188, "window"))
-    for k, phi in enumerate((D(30), D(150))):
-        C.boolean(body, window_cutter(0.019, 0.47, 0.62, -0.20, "slit%d" % k, phi))
-    C.harden(body, bevel=0.005)
 
-    parts = [body]
+def rook_cuts(body, top=1.0, notches=True, window=ROOK_WINDOW, slits=True):
+    """Battlement notches, the front arch window and two back arrow slits (glowing floors)."""
+    if notches:
+        for k, phi in enumerate(around(6)):
+            notch = C.box("notch%d" % k, (0.0, -0.25, top), (0.10, 0.16, 0.118))
+            notch.data.transform(Matrix.Rotation(phi + math.pi / 2, 4, 'Z'))
+            C.boolean(body, notch)
+    if window:
+        a, z_sill, z_spring = window
+        C.boolean(body, window_cutter(a, z_sill, z_spring, -0.188, "window"))
+    if slits:
+        for k, phi in enumerate((D(30), D(150))):
+            C.boolean(body, window_cutter(0.019, 0.47, 0.62, -0.20, "slit%d" % k, phi))
+    return body
+
+
+def rook_window_frame(rad, window=ROOK_WINDOW, name="rook"):
+    a, z_sill, z_spring = window
     f = 0.021
     outer = arch_pts(a + f, z_sill - f, z_spring)
     inner = arch_pts(a, z_sill, z_spring)
-    frame = C.ring_prism(outer, inner, -0.014, 0.014, "rook_frame")
+    frame = C.ring_prism(outer, inner, -0.014, 0.014, name + "_frame")
     C.wrap(frame, rad)
     C.harden(frame, bevel=0.003, segments=1, angle=45)
-    parts.append(frame)
-    sill = C.box("rook_sill", (0.0, -0.012, z_sill - f - 0.008), (2 * (a + f) + 0.03, 0.05, 0.018), TRIM)
+    sill = C.box(name + "_sill", (0.0, -0.012, z_sill - f - 0.008), (2 * (a + f) + 0.03, 0.05, 0.018), TRIM)
     C.wrap(sill, rad)
     C.harden(sill, bevel=0.004, segments=1)
-    parts.append(sill)
-    return parts
+    return [frame, sill]
+
+
+def build_rook():
+    p = rook_profile()
+    rad = p.radius_fn()
+    body = C.lathe(p, "rook_body", SEGS, phase=math.pi / SEGS)
+    rook_cuts(body)
+    C.harden(body, bevel=0.005)
+    return [body] + rook_window_frame(rad)
 
 
 # ---------------------------------------------------------------- knight
@@ -411,14 +470,15 @@ KNIGHT_MANE = [  # anchor (y, z), direction (y, z), length
 ]
 
 
-def knight_head():
+def knight_head(target_tris=5600, ears=True, mane=True):
+    """Knight head in the knight's frame (neck base at z 0.335, ears to 1.106). Returns (head, eyes)."""
     parts = [O.inflate(KNIGHT_OUTLINE, knight_width, "k_slab")]
-    for sx in (-1, 1):
+    for sx in (-1, 1) if ears else ():
         parts.append(C.cone("k_ear", (sx * 0.048, -0.055, 0.985), (sx * 0.072, -0.085, 1.106), 0.05,
                             segs=12, flatten=(1.0, 0.55)))
     parts.append(C.cone("k_forelock", (0.0, -0.075, 1.0), (0.0, -0.165, 1.012), 0.032, segs=10,
                         flatten=(0.7, 1.0)))
-    for i, ((y, z), (dy, dz), ln) in enumerate(KNIGHT_MANE):
+    for i, ((y, z), (dy, dz), ln) in enumerate(KNIGHT_MANE if mane else ()):
         nrm = Vector((0, dy, dz)).normalized()
         base = Vector((0, y - 0.03 * nrm.y, z - 0.03 * nrm.z))
         parts.append(C.cone("k_mane%d" % i, base, base + nrm * (ln + 0.03), 0.046, segs=10, flatten=(0.36, 1.0)))
@@ -445,36 +505,22 @@ def knight_head():
     cut.append(mouth)
     for c in cut:
         C.boolean(head, c)
-    C.decimate(head, 5600)
+    C.decimate(head, target_tris)
     C.soften(head, 70)
     return head, eyes
 
 
-def build_knight():
-    p = plinth(0.37)
-    lower_body(p, 0.325, 0.276)
-    p.bez((0.272, 0.245), (0.25, 0.28), (0.236, 0.298), n=6)
-    p.to(0.241, 0.30, TRIM)
-    p.bead(0.010, 0.024, mat=TRIM)
-    p.to(0.232, 0.328)
-    p.to(0.228, 0.345)
-    p.to(0.236, 0.348, TRIM)
-    p.up(0.016, TRIM)
-    p.to(0.224, 0.368)
-    p.to(0.212, 0.374)
-    p.to(0.0, 0.374)
-    rad = p.radius_fn()
-    base = C.harden(C.lathe(p, "knight_body", SEGS), bevel=0.005)
-    head, eyes = knight_head()
-    parts = [base, head] + eyes
-    parts += C.gem_set(rad, 0.252, 0.02, 0.032, "knight_low", around(4))
-
+def knight_bridle(head, headpiece=True, cheeks=True, band=0.013):
+    """Silver noseband, headpiece over the poll, cheek straps with rosettes, fitted to the knight's head."""
     nose_c = Vector((0, -0.2985, 0.722))
-    parts.append(C.surface_band(head, nose_c, (0, -0.942, -0.336), 0.013, 0.016, "k_noseband",
-                                keep=lambda c: (c - nose_c).length < 0.15))
-    poll_c = Vector((0, -0.005, 1.02))
-    parts.append(C.surface_band(head, poll_c, (0, 0.971, -0.238), 0.013, 0.016, "k_headpiece",
-                                keep=lambda c: c.z > 0.585 and (c - Vector((0, -0.06, 0.80))).length < 0.33))
+    parts = [C.surface_band(head, nose_c, (0, -0.942, -0.336), band, 0.016, "k_noseband",
+                            keep=lambda c: (c - nose_c).length < 0.15)]
+    if headpiece:
+        poll_c = Vector((0, -0.005, 1.02))
+        parts.append(C.surface_band(head, poll_c, (0, 0.971, -0.238), band, 0.016, "k_headpiece",
+                                    keep=lambda c: c.z > 0.585 and (c - Vector((0, -0.06, 0.80))).length < 0.33))
+    if not cheeks:
+        return parts
     tree = C.bvh(head)
     for sx in (-1, 1):
         ros, rn = C.surface_hit(tree, (sx * 0.5, -0.069, 0.76), (-sx, 0, 0))
@@ -499,13 +545,40 @@ def build_knight():
     return parts
 
 
+def knight_base_profile():
+    p = plinth(0.37)
+    lower_body(p, 0.325, 0.276)
+    p.bez((0.272, 0.245), (0.25, 0.28), (0.236, 0.298), n=6)
+    p.to(0.241, 0.30, TRIM)
+    p.bead(0.010, 0.024, mat=TRIM)
+    p.to(0.232, 0.328)
+    p.to(0.228, 0.345)
+    p.to(0.236, 0.348, TRIM)
+    p.up(0.016, TRIM)
+    p.to(0.224, 0.368)
+    p.to(0.212, 0.374)
+    p.to(0.0, 0.374)
+    return p
+
+
+def build_knight():
+    p = knight_base_profile()
+    rad = p.radius_fn()
+    base = C.harden(C.lathe(p, "knight_body", SEGS), bevel=0.005)
+    head, eyes = knight_head()
+    parts = [base, head] + eyes
+    parts += C.gem_set(rad, 0.252, 0.02, 0.032, "knight_low", around(4))
+    parts += knight_bridle(head)
+    return parts
+
+
 # ---------------------------------------------------------------- pawn
 
 SKULL_SCALE = 1.2
 SKULL_TILT = D(-9)  # face tilted up a little so the top-down camera sees it
 
 
-def skull_local():
+def skull_local(target_tris=5000):
     """Skull in its own frame: z = 0 at the chin, front -y. Returns (skull, eyes)."""
     sk = [
         C.uv_sphere("s_cranium", (0, 0.025, 0.158), (0.150, 0.168, 0.138), segs=32, rings=20),
@@ -544,36 +617,49 @@ def skull_local():
         cut.append(C.box("s_tooth", (i * 0.024 + 0.012, hit.y, 0.039), (0.0055, 0.024, 0.052)))
     for c in cut:
         C.boolean(skull, c)
-    C.decimate(skull, 5000)
+    C.decimate(skull, target_tris)
     C.soften(skull, 70)
     return skull, eyes
 
 
-def build_pawn():
+def pawn_profile(dz=0.0):
+    """Pawn base up to the skull seat at 0.478 + dz (dz stretches the neck)."""
     p = plinth(0.36)
     lower_body(p, 0.316, 0.268)
     p.bez((0.264, 0.245), (0.232, 0.29), (0.192, 0.315), n=6)
     p.to(0.196, 0.320)
     p.bead(0.010, 0.024)
     p.to(0.175, 0.348)
-    p.bez((0.13, 0.37), (0.108, 0.40), (0.112, 0.418), n=5)
-    p.to(0.132, 0.422)
-    p.to(0.182, 0.434)
+    p.bez((0.13, 0.37 + dz * 0.4), (0.108, 0.40 + dz), (0.112, 0.418 + dz), n=5)
+    p.to(0.132, 0.422 + dz)
+    p.to(0.182, 0.434 + dz)
     p.bead(0.010, 0.024)
-    p.to(0.166, 0.462)
+    p.to(0.166, 0.462 + dz)
     p.up(0.010, TRIM)
-    p.to(0.132, 0.476)
-    p.to(0.0, 0.478)
+    p.to(0.132, 0.476 + dz)
+    p.to(0.0, 0.478 + dz)
+    return p
+
+
+def place_skull(objs, top, measure=None, scale=SKULL_SCALE, tilt=SKULL_TILT):
+    """Tilt and scale skull-frame objects like the pawn's skull, then lift them so `measure` (default: the
+    first object) tops out at `top`."""
+    m = Matrix.Rotation(tilt, 4, 'X') @ Matrix.Scale(scale, 4)
+    for o in objs:
+        o.data.transform(m)
+    lift = top - max(v.co.z for o in (measure or objs[:1]) for v in o.data.vertices)
+    for o in objs:
+        o.data.transform(Matrix.Translation((0, 0, lift)))
+    return lift
+
+
+def build_pawn():
+    p = pawn_profile()
     rad = p.radius_fn()
     base = C.harden(C.lathe(p, "pawn_body", SEGS), bevel=0.005)
 
     skull, eyes = skull_local()
-    m = Matrix.Rotation(SKULL_TILT, 4, 'X') @ Matrix.Scale(SKULL_SCALE, 4)
-    for o in [skull] + eyes:
-        o.data.transform(m)
-    lift = C.HEIGHTS["pawn"] - max(v.co.z for v in skull.data.vertices)
-    for o in [skull] + eyes:
-        o.data.transform(Matrix.Translation((0, 0, lift)))
+    place_skull([skull] + eyes, C.HEIGHTS["pawn"])
 
     parts = [base, skull] + eyes
     parts += C.gem_set(rad, 0.255, 0.018, 0.028, "pawn_low", around(4, D(45)))
@@ -585,12 +671,17 @@ BUILDERS = {"king": build_king, "queen": build_queen, "rook": build_rook, "bisho
             "knight": build_knight, "pawn": build_pawn}
 
 
+def builders():
+    import fairy
+    return {**BUILDERS, **fairy.BUILDERS}
+
+
 # ---------------------------------------------------------------- main
 
 def build_one(name, bake=True):
     t0 = time.time()
     C.reset_scene()
-    parts = BUILDERS[name]()
+    parts = builders()[name]()
     if "--parts" in C.script_args():
         groups = {}
         for o in parts:
@@ -604,7 +695,7 @@ def build_one(name, bake=True):
         C.bake_ao(ob)
     else:
         C.white_ao(ob)
-    anims.add_all(ob, C.HEIGHTS[name])
+    anims.add_all(ob, C.top_height(name))
     os.makedirs(C.BUILD, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(C.BUILD, name + ".blend"))
     C.export_glb(ob, os.path.join(C.MODELS, name + ".glb"))
@@ -612,9 +703,11 @@ def build_one(name, bake=True):
     stats = {
         "tris": C.tri_count(ob),
         "height": max(v.z for v in xs) - min(v.z for v in xs),
+        "body_height": C.body_height(xs),
         "min_z": min(v.z for v in xs),
         "width_x": max(v.x for v in xs) - min(v.x for v in xs),
         "width_y": max(v.y for v in xs) - min(v.y for v in xs),
+        "max_radius": max(math.hypot(v.x, v.y) for v in xs),
         "seconds": round(time.time() - t0, 1),
     }
     print("BUILT %s %s" % (name, json.dumps(stats)))
@@ -623,9 +716,12 @@ def build_one(name, bake=True):
 
 def main():
     args = C.script_args()
-    only = list(C.PIECES)
+    only = list(C.piece_set(args[args.index("--set") + 1] if "--set" in args else "all"))
     if "--only" in args:
         only = args[args.index("--only") + 1].split(",")
+    unknown = [n for n in only if n not in C.ALL_PIECES]
+    if unknown:
+        raise SystemExit("unknown piece ids: %s" % ",".join(unknown))
     bake = "--no-ao" not in args
     path = os.path.join(C.BUILD, "stats.json")
     stats = json.load(open(path)) if os.path.exists(path) else {}

@@ -67,16 +67,18 @@ def dist_to(poly, P):
     return np.linalg.norm(P[:, None, :] - proj, axis=2).min(axis=1)
 
 
-def inflate(outline, width_fn, name, spacing=0.01, r_edge=0.055, pillow=0.016, t_min=0.004, mat=C.BODY):
-    """outline: [(y, z)], width_fn(y, z) -> half width (numpy). Returns a closed mesh object."""
-    boundary = centripetal(outline, spacing * 0.8)
+def inflate(outline, width_fn, name, spacing=0.01, r_edge=0.055, pillow=0.016, t_min=0.004, mat=C.BODY,
+            edge_spacing=None):
+    """outline: [(y, z)], width_fn(y, z) -> half width (numpy). Returns a closed mesh object.
+    The outline is sampled every edge_spacing (default 0.8 * spacing), the interior every spacing."""
+    boundary = centripetal(outline, edge_spacing or spacing * 0.8)
     nb = len(boundary)
     lo = boundary.min(axis=0)
     hi = boundary.max(axis=0)
     gy, gz = np.meshgrid(np.arange(lo[0], hi[0], spacing), np.arange(lo[1], hi[1], spacing))
     grid = np.stack([gy.ravel(), gz.ravel()], axis=1)
     grid = grid[inside(boundary, grid)]
-    grid = grid[dist_to(boundary, grid) > spacing * 0.6]
+    grid = grid[dist_to(boundary, grid) > (spacing * 0.6 if edge_spacing is None else max(edge_spacing, spacing * 0.5))]
     pts = np.concatenate([boundary, grid])
     coords = [Vector((float(y), float(z))) for y, z in pts]
     out_v, _e, out_f, orig_v, _oe, _of = delaunay_2d_cdt(coords, [], [list(range(nb))], 1, 1e-7)
