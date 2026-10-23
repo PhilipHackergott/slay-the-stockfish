@@ -168,10 +168,10 @@ func _rebuild_levels() -> void:
 		var flow := _flow()
 		for opt in Run.upgrade_options(u):
 			var t: StringName = opt
-			flow.add_child(_piece_card(t, func():
+			flow.add_child(UiKit.piece_card(t, func():
 				Run.level_up(u, t)
 				Audio.play("level_up")
-				_rebuild_levels(), _command_delta(u, t)))
+				_rebuild_levels(), UiKit.command_note(u, t)))
 		var perk := Run.perk_option(u)
 		if perk != &"":
 			flow.add_child(_perk_card(perk, func():
@@ -182,48 +182,12 @@ func _rebuild_levels() -> void:
 		_levels.add_child(block)
 
 
-func _command_delta(u: Unit, t: StringName) -> String:
-	if u.is_benched() or Run.command_cap() <= 0:
-		return ""
-	var d := Content.piece(t).value - Run.command_cost(u) - (1 if u.has_perk(&"vanguard") else 0)
-	var over := Run.command_used() + d > Run.command_cap()
-	return "Command %+d%s" % [d, " · benches your cheapest piece" if over else ""]
-
-
 func _flow() -> HFlowContainer:
 	var flow := HFlowContainer.new()
 	flow.alignment = FlowContainer.ALIGNMENT_CENTER
 	flow.add_theme_constant_override("h_separation", 14)
 	flow.add_theme_constant_override("v_separation", 14)
 	return flow
-
-
-## A piece on offer: portrait, name, tier and value, how it moves (diagram and text), a note.
-func _piece_card(t: StringName, cb: Callable, note: String = "", width: int = 236) -> Control:
-	var def: PieceDef = Content.piece(t)
-	var parts := UiKit.card(width, 0, cb, UiKit.RARITY_COLOR.get(def.rarity, UiKit.EDGE) if def.rarity == &"legendary" else UiKit.EDGE)
-	var c: VBoxContainer = parts[1]
-	c.add_theme_constant_override("separation", 5)
-	c.alignment = BoxContainer.ALIGNMENT_BEGIN
-	c.add_child(UiKit.centered(UiKit.portrait(t, true, 84)))
-	var n := UiKit.heading(UiKit.piece_name(t), 20)
-	n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	n.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	c.add_child(n)
-	var v := UiKit.label("Tier %d · value %d" % [def.tier, def.value] if def.tier < 6 else "Legendary · value %d" % def.value,
-		16, UiKit.RARITY_COLOR.get(def.rarity, UiKit.MUTED))
-	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	c.add_child(v)
-	c.add_child(UiKit.centered(MoveDiagram.make(t, 13.0)))
-	var mv := UiKit.label(def.moves_text, 15, UiKit.MUTED, true)
-	mv.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	c.add_child(mv)
-	if note != "":
-		var nl := UiKit.label(note, 15, UiKit.GOLD, true)
-		nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		c.add_child(nl)
-	parts[0].tooltip_text = def.flavor
-	return parts[0]
 
 
 func _perk_card(perk: StringName, cb: Callable) -> Control:
@@ -253,7 +217,7 @@ func _build_recruits() -> void:
 	_recruit.add_child(flow)
 	for opt in _offer["pieces"]:
 		var t: StringName = opt
-		flow.add_child(_piece_card(t, func(): _take_recruit(t), _fit_note(t), 260))
+		flow.add_child(UiKit.piece_card(t, func(): _take_recruit(t), _fit_note(t), 260))
 	if int(_offer["train"]) > 0:
 		flow.add_child(_train_card(int(_offer["train"])))
 	var skip := UiKit.button("Skip  ·  +%d gold" % Content.config.skip_gold, func(): _take_recruit(&""), 20)
@@ -340,7 +304,7 @@ func _build_ascension() -> void:
 		var flow := _flow()
 		for t in Run.ascension_options(unit):
 			var legend: StringName = t
-			flow.add_child(_piece_card(legend, func(): _take_ascension(unit, legend)))
+			flow.add_child(UiKit.piece_card(legend, func(): _take_ascension(unit, legend)))
 		_ascend.add_child(flow)
 	_ascend.add_child(UiKit.centered(UiKit.button("Not now", func(): _take_ascension(null, &""), 20)))
 

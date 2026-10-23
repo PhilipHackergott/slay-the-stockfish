@@ -765,6 +765,64 @@ static func card(width: int, height: int, cb: Callable, edge: Color = EDGE) -> A
 	return [b, col]
 
 
+## A piece on offer: portrait, name, tier and value, how it moves (diagram and text), a note.
+static func piece_card(t: StringName, cb: Callable, note: String = "", width: int = 236) -> Control:
+	var def: PieceDef = Content.piece(t)
+	var parts := card(width, 0, cb, RARITY_COLOR.get(def.rarity, EDGE) if def.rarity == &"legendary" else EDGE)
+	var c: VBoxContainer = parts[1]
+	c.add_theme_constant_override("separation", 5)
+	c.alignment = BoxContainer.ALIGNMENT_BEGIN
+	c.add_child(centered(portrait(t, true, 84)))
+	var n := heading(piece_name(t), 20)
+	n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	n.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	c.add_child(n)
+	var v := label("Tier %d · value %d" % [def.tier, def.value] if def.tier < 6 else "Legendary · value %d" % def.value,
+		16, RARITY_COLOR.get(def.rarity, MUTED))
+	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	c.add_child(v)
+	c.add_child(centered(MoveDiagram.make(t, 13.0)))
+	var mv := label(def.moves_text, 15, MUTED, true)
+	mv.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	c.add_child(mv)
+	if note != "":
+		var nl := label(note, 15, GOLD, true)
+		nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		c.add_child(nl)
+	parts[0].tooltip_text = def.flavor
+	return parts[0]
+
+
+## What turning a unit into t does to Command ("" on the bench or without a cap).
+static func command_note(u: Unit, t: StringName) -> String:
+	if u.is_benched() or Run.command_cap() <= 0:
+		return ""
+	var d := Content.piece(t).value - Run.command_cost(u) - (1 if u.has_perk(&"vanguard") else 0)
+	var over := Run.command_used() + d > Run.command_cap()
+	return "Command %+d%s" % [d, " · benches your cheapest piece" if over else ""]
+
+
+## One of your units as a card: portrait, name, a detail line (level, XP, what the action does).
+## chosen draws a gold edge; fallen units show a dimmed portrait.
+static func unit_card(u: Unit, detail: String, cb: Callable, width: int = 190, chosen: bool = false) -> Button:
+	var parts := card(width, 0, cb, GOLD if chosen else EDGE)
+	var b: Button = parts[0]
+	var c: VBoxContainer = parts[1]
+	c.add_theme_constant_override("separation", 4)
+	c.add_child(centered(portrait(u.type, true, 76, 0.0 if u.is_healthy() else 0.6)))
+	var n := heading(unit_name(u), 18, GOLD if chosen else BONE)
+	n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	n.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	c.add_child(n)
+	var d := label(detail, 15, GOLD if chosen else MUTED, true)
+	d.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	c.add_child(d)
+	if chosen:
+		b.add_theme_stylebox_override("normal", b.get_theme_stylebox("pressed"))
+	b.tooltip_text = moves_text(u.type)
+	return b
+
+
 ## Keeps a non-container (a Button) at least as large as the child laid out inside it.
 static func fit_to_content(host: Control, content: Control, base: Vector2, pads: Vector2) -> void:
 	var fit := func():

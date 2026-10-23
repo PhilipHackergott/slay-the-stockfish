@@ -110,6 +110,15 @@ func test_campfire_fits() -> void:
 		await get_tree().process_frame
 		await get_tree().process_frame
 		_check(c, "campfire %s" % step)
+	var risers := Run.healthy_units().filter(func(u): return not Run.upgrade_options(u).is_empty())
+	c._temper_into(risers[0])
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_check(c, "campfire temper into")
+	c._pick_heir(Run.healthy_units()[1])
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_check(c, "campfire rite heir")
 
 
 func test_shop_fits() -> void:
