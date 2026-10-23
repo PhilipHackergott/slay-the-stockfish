@@ -654,6 +654,7 @@ func _finish(state: String, reason: String) -> void:
 	finished = true
 	clock_running = false
 	outcome = {"state": state, "reason": reason, "slain": slain.duplicate(), "xp": xp_log.duplicate(),
-		"plies": ply_count, "encounter": encounter.id if encounter else &"", "fought": fought.duplicate()}
+		"plies": ply_count, "encounter": encounter.id if encounter else &"", "fought": fought.duplicate(),
+		"clock_left_ms": player_ms}
 	message.emit(reason)
 	fight_finished.emit(outcome)

@@ -1029,6 +1029,11 @@ def gold(r):
     return verb(hp(lp(y, 9000), 400), "room", 0.3)
 
 
+def coin_tick(r):
+    N = n(0.35)
+    return verb(hp(lp(_coin(N, r, 0.0, 1.0), 9500), 600), "room", 0.18)
+
+
 def shop_buy(r):
     N = n(1.2)
     y = np.zeros(N)
@@ -1196,6 +1201,7 @@ SFX = {
     "promote": (promote, -1.0, False, 4.5),
     "level_up": (level_up, -1.0, False, 4.5),
     "gold": (gold, -4.0, False, 1.1),
+    "coin_tick": (coin_tick, -8.0, False, 0.6),
     "shop_buy": (shop_buy, -3.0, False, 1.3),
     "relic": (relic, -1.0, False, 6.0),
     "event_page": (event_page, -3.0, False, 0.9),
@@ -1207,7 +1213,7 @@ SFX = {
 }
 
 PUNCH_DB = {"ui_click": 3.0, "ui_deny": 3.0, "piece_select": 3.0, "piece_move": 4.0, "piece_leap": 3.0,
-            "piece_capture": 4.0, "piece_drop": 2.0, "map_step": 3.0, "gold": 2.0, "shop_buy": 2.0}
+            "piece_capture": 4.0, "piece_drop": 2.0, "map_step": 3.0, "gold": 2.0, "coin_tick": 2.0, "shop_buy": 2.0}
 
 # ----------------------------------------------------------------------------
 # music + ambience (stereo loops; everything wraps around the loop length)

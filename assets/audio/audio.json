@@ -30,6 +30,15 @@
       "peak_dbfs": -3.0,
       "lufs": -19.9
     },
+    "coin_tick": {
+      "path": "res://assets/audio/sfx/coin_tick.wav",
+      "category": "sfx",
+      "duration": 0.375,
+      "volume_db": -8.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -18.1
+    },
     "engine_think": {
       "path": "res://assets/audio/sfx/engine_think.wav",
       "category": "sfx",

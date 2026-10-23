@@ -1107,6 +1107,7 @@ func apply_fight(outcome: Dictionary, kind: StringName = &"fight") -> void:
 			bounty += 5
 	outcome["overflow_gold"] = overflow
 	outcome["bounty_gold"] = bounty
+	outcome["time_gold"] = time_gold(float(outcome.get("clock_left_ms", 0.0))) if won else 0
 	outcome["gold"] = 0
 	if won:
 		stats["fights_won"] = int(stats.get("fights_won", 0)) + 1
@@ -1117,8 +1118,13 @@ func apply_fight(outcome: Dictionary, kind: StringName = &"fight") -> void:
 		outcome["gold"] = maxi(0, int(round(roll_fight_gold(kind) * gold_mult)) + flat)
 		if gold_mult != 1.0:
 			notes.append("%s: %d%% gold." % [omen.display_name, int(round(gold_mult * 100.0))])
-	add_gold(int(outcome["gold"]) + overflow + bounty)
+	add_gold(int(outcome["gold"]) + overflow + bounty + int(outcome["time_gold"]))
 	autofill()
+
+
+## Gold for the clock left after a won map fight.
+func time_gold(clock_left_ms: float) -> int:
+	return clampi(floori(clock_left_ms / 1000.0 / maxf(1.0, cfg().time_gold_seconds)), 0, cfg().time_gold_max)
 
 
 ## A recruit offer for a node kind: one tier rolled from the act's table, then distinct pieces of

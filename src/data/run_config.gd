@@ -16,6 +16,9 @@ extends Resource
 @export var overflow_gold_per_xp: int = 2
 @export var clock_base_s: int = 300
 @export var clock_increment_s: int = 3
+## A won map fight turns the clock you have left into gold: one coin per this many seconds, capped.
+@export var time_gold_seconds: int = 20
+@export var time_gold_max: int = 20
 ## The engine resigns when its evaluation stays at or below -resign_cp for resign_moves moves.
 @export var resign_cp: int = 600
 @export var resign_moves: int = 3

@@ -100,14 +100,17 @@ func _gold_summary() -> Control:
 	var g := int(outcome.get("gold", 0))
 	var o := int(outcome.get("overflow_gold", 0))
 	var b := int(outcome.get("bounty_gold", 0))
-	h.add_child(UiKit.gold_label(g + o + b, 30))
+	var t := int(outcome.get("time_gold", 0))
+	h.add_child(UiKit.gold_label(g + o + b + t, 30))
 	var parts: Array = ["%d for the victory" % g]
+	if t > 0:
+		parts.append("%d from your clock" % t)
 	if o > 0:
 		parts.append("%d from XP your finished pieces could not use" % o)
 	if b > 0:
 		parts.append("%d in bounties" % b)
 	h.add_child(UiKit.label(" · ".join(parts), 20, UiKit.MUTED))
-	if g + o + b > 0:
+	if g + o + b + t > 0:
 		Audio.play("gold")
 	return h
 

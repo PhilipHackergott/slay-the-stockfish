@@ -10,6 +10,8 @@ const KIND_TEXT := {&"fight": "Fight", &"elite": "Elite", &"guardian": "Guardian
 var fight: FightController
 var board: BoardView
 var autoplay := false
+## Map fights turn the clock left into gold on a win (event fights have their own stakes).
+var pays_clock := false
 
 var selected := -1
 var targets: Dictionary = {}  # sq -> Array of uci
@@ -41,6 +43,7 @@ var _overlay: Control
 var _resign_armed := false
 var _think_t := 0.0
 var _thinking := false
+var _drain_ms := -1.0
 
 
 func setup(p_fight: FightController, p_board: BoardView) -> FightHud:
@@ -217,11 +220,11 @@ func _build() -> void:
 func _process(delta: float) -> void:
 	if fight == null:
 		return
-	var ms := maxf(fight.player_ms, 0.0)
+	var ms := _drain_ms if _drain_ms >= 0.0 else maxf(fight.player_ms, 0.0)
 	var s := int(ceil(ms / 1000.0))
 	_clock.text = "%d:%02d" % [s / 60, s % 60]
 	var low := s <= 30
-	_clock.add_theme_color_override("font_color", UiKit.BLOOD if low else UiKit.BONE)
+	_clock.add_theme_color_override("font_color", UiKit.GOLD if _drain_ms >= 0.0 else (UiKit.BLOOD if low else UiKit.BONE))
 	_clock_bar.value = ms
 	_clock_bar.max_value = maxf(_clock_max, ms)
 	Audio.loop("clock_low", low and fight.clock_running and not fight.finished, -6.0)
@@ -632,7 +635,70 @@ func _on_finished(outcome: Dictionary) -> void:
 	await get_tree().create_timer(1.0 if not autoplay else 0.2).timeout
 	if not is_inside_tree():
 		return
+	var coins := Run.time_gold(float(outcome.get("clock_left_ms", 0.0))) if pays_clock and outcome.get("state") == "win" else 0
+	if coins > 0:
+		await _cash_clock(coins, float(outcome["clock_left_ms"]))
+		if not is_inside_tree():
+			return
 	_show_result(outcome)
+
+
+## The clock pays out: one coin per converted chunk of time flies from the clock into a purse.
+func _cash_clock(coins: int, left_ms: float) -> void:
+	Audio.loop("clock_low", false)
+	var per_ms := float(Content.config.time_gold_seconds) * 1000.0
+	_drain_ms = left_ms
+	var purse := UiKit.gold_label(0, 34)
+	purse.modulate.a = 0.0
+	purse.z_index = 6
+	add_child(purse)
+	var count: Label = purse.get_child(1)
+	count.text = "+0"
+	purse.reset_size()
+	purse.position = Vector2(_clock_panel.position.x + (_clock_panel.size.x - purse.size.x) * 0.5, _clock_panel.position.y - purse.size.y - 18)
+	purse.pivot_offset = purse.size * 0.5
+	create_tween().tween_property(purse, "modulate:a", 1.0, 0.25)
+	var from := _clock.global_position - global_position + _clock.size * 0.5
+	var to := purse.position + Vector2(22, purse.size.y * 0.5)
+	var step := clampf(1.8 / coins, 0.07, 0.16)
+	var landed := [0]
+	for i in coins:
+		var c := UiKit.coin(44)
+		c.z_index = 7
+		c.pivot_offset = Vector2(22, 22)
+		add_child(c)
+		var start := from + Vector2(sin(i * 2.4) * 40.0, cos(i * 3.1) * 10.0) - Vector2(22, 22)
+		var end := to - Vector2(22, 22)
+		var lift := Vector2(sin(i * 1.7) * 60.0, -100.0 - cos(i * 2.2) * 30.0)
+		c.position = start
+		c.scale = Vector2(0.4, 0.4)
+		var tw := c.create_tween().set_parallel()
+		tw.tween_method(func(k: float): c.position = start.lerp(end, k) + lift * 4.0 * k * (1.0 - k), 0.0, 1.0, 0.45) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		tw.tween_property(c, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.chain().tween_callback(func():
+			c.queue_free()
+			landed[0] += 1
+			count.text = "+%d" % landed[0]
+			Audio.play("coin_tick", -3.0, 1.0 + 0.025 * landed[0])
+			purse.scale = Vector2(1.18, 1.18)
+			purse.create_tween().tween_property(purse, "scale", Vector2.ONE, 0.12))
+		create_tween().tween_property(self, "_drain_ms", maxf(0.0, left_ms - per_ms * (i + 1)), step)
+		await get_tree().create_timer(step).timeout
+		if not is_inside_tree():
+			return
+	await get_tree().create_timer(0.5).timeout
+	if not is_inside_tree():
+		return
+	Audio.play("gold")
+	count.add_theme_color_override("font_color", Color(1.0, 0.93, 0.62))
+	var flash := purse.create_tween()
+	flash.tween_property(purse, "scale", Vector2(1.3, 1.3), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	flash.tween_property(purse, "scale", Vector2.ONE, 0.25)
+	flash.tween_interval(0.5)
+	flash.tween_property(purse, "modulate:a", 0.0, 0.3)
+	flash.tween_callback(purse.queue_free)
+	await get_tree().create_timer(0.9).timeout
 
 
 func _show_result(outcome: Dictionary) -> void:
@@ -650,6 +716,15 @@ func _show_result(outcome: Dictionary) -> void:
 	var info := UiKit.label("%d plies played" % int(outcome.get("plies", 0)), 18, UiKit.MUTED)
 	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	m.body.add_child(info)
+	var left_ms := float(outcome.get("clock_left_ms", 0.0))
+	var coins := Run.time_gold(left_ms) if pays_clock and state == "win" else 0
+	if coins > 0:
+		var s := int(left_ms / 1000.0)
+		var row := UiKit.hbox(8)
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.add_child(UiKit.label("%d:%02d left on your clock" % [s / 60, s % 60], 19, UiKit.MUTED))
+		row.add_child(UiKit.gold_label(coins, 22))
+		m.body.add_child(row)
 	var lost: Array = outcome.get("slain", [])
 	if not lost.is_empty():
 		var names: Array = []

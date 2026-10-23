@@ -294,6 +294,17 @@ are a one-file edit. Mirrored to Notion: Project Slay the Stockfish → Build de
 - Obsidian rim light raised (0.32 to 0.6, wider falloff) so the engine's pieces separate from the
   dark squares at the far side. Model silhouettes are unchanged; new silhouettes are art work.
 
+## Clock gold
+
+- A won map fight turns the clock left into gold: 1 per 20 s, at most 20 (`time_gold_seconds`,
+  `time_gold_max` in the run config). A full 5:00 clock is 15 gold, about a tier-1 fight's base.
+- Event fights (problems, skirmishes, the Pit) pay nothing for the clock; they have their own stakes.
+- Not scaled by omens or gold relics, so the incentive reads the same in every fight.
+- Presentation: coins fly from the clock into a purse while the converted seconds drain (gold
+  digits), one `coin_tick` per coin rising in pitch, then the `gold` sound; the Victory modal and
+  the reward screen list it.
+- Autoplay keeps an almost full clock, so autoplay gold totals now overstate a human run.
+
 ## Known gaps in v0.1
 
 - An army with more than 19 distinct fairy piece types cannot fight (letter budget).

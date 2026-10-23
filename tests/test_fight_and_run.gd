@@ -149,3 +149,18 @@ func test_formation_places_every_unit_once() -> void:
 		var u := Run.unit(f[sq])
 		if u.type == &"pawn":
 			assert_true(Fen.rank_of(sq) in [1, 2], "pawns on ranks 2-3")
+
+
+func _gold_after_win(clock_left_ms: float, state: String = "win") -> int:
+	Run.new_run(5)
+	var before := Run.gold
+	Run.apply_fight({"state": state, "slain": [], "xp": [], "clock_left_ms": clock_left_ms}, &"fight")
+	return Run.gold - before
+
+
+func test_the_clock_left_after_a_win_pays_gold() -> void:
+	var per: int = Content.config.time_gold_seconds
+	var base := _gold_after_win(0.0)
+	assert_eq(_gold_after_win(per * 7 * 1000.0 + 500.0) - base, 7, "one coin per %d s left" % per)
+	assert_eq(_gold_after_win(3600.0 * 1000.0) - base, Content.config.time_gold_max, "capped")
+	assert_eq(_gold_after_win(per * 7 * 1000.0, "draw"), 0, "a draw pays nothing, clock included")

@@ -5,7 +5,7 @@ extends Node
 ## boss|roamer|unknown|reward|campfire|event|shop|treasure|codex|settings|formation|pause|act|end, --act=N (0-based),
 ## --omen=id, --arena=id, --encounter=id (on the node the screen enters), --event=id (the event screen shows this one),
 ## --relics=id,id, --units=type,type, --kind=elite|guardian (reward screen), --gold=N, --autoplay (plays a whole run unattended), --shot=path.png
-## [--shot-delay=s], --click=sq,sq, --hover=sq (mouse over a square in a fight), --quit-after-shot, --quit-on-end, --isolated (separate profile and save files).
+## [--shot-delay=s], --click=sq,sq, --hover=sq (mouse over a square in a fight), --win-after=s (the fight is won after s seconds), --quit-after-shot, --quit-on-end, --isolated (separate profile and save files).
 
 var world: World
 var ui_root: Control
@@ -373,10 +373,14 @@ func _start_fight(node: Dictionary) -> void:
 	fight.presenter = world.board_view
 	var hud := FightHud.new().setup(fight, world.board_view)
 	hud.autoplay = autoplay
+	hud.pays_clock = not node.has("event")
 	hud.continue_pressed.connect(_after_fight.bind(node))
 	_set_screen(hud)
 	await get_tree().create_timer(1.2).timeout
 	fight.begin()
+	if args.has("win-after"):
+		await get_tree().create_timer(float(args["win-after"])).timeout
+		fight._finish("win", "checkmate: the engine's king falls")
 	if args.has("click"):
 		_scripted_clicks(String(args["click"]).split(",", false))
 	if args.has("hover"):
