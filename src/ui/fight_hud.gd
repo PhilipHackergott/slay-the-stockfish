@@ -21,6 +21,7 @@ var drop_letter := ""
 var _clock: Label
 var _clock_panel: PanelContainer
 var _think: Label
+var _bells: Label
 var _eval: Label
 var _turn: Label
 var _log: VBoxContainer
@@ -93,6 +94,10 @@ func _build() -> void:
 	ec.add_child(UiKit.label("Fairy-Stockfish · skill %d · %d ms per move" % [fight.engine_skill(), fight.engine_movetime()], 16, UiKit.DIM, true))
 	for line in fight.banner_lines():
 		ec.add_child(UiKit.label(line, 17, UiKit.GOLD, true))
+	_bells = UiKit.heading("", 20, UiKit.GOLD)
+	_bells.visible = not Fen.checks_left(fight.fen).is_empty()
+	ec.add_child(_bells)
+	_refresh_bells()
 	_think = UiKit.heading("", 20, UiKit.EMBER)
 	ec.add_child(_think)
 	_eval = UiKit.label("", 18, UiKit.MUTED, true)
@@ -260,6 +265,14 @@ func _on_moved(ev: Dictionary) -> void:
 	if ev.get("check", false):
 		text += " · check"
 	_add_log(text, UiKit.SOUL if ev["side"] == "w" else UiKit.EMBER)
+	_refresh_bells()
+
+
+## Tolling Bells: the checks each side still needs to win.
+func _refresh_bells() -> void:
+	var left := Fen.checks_left(fight.fen)
+	if not left.is_empty():
+		_bells.text = "Bells · checks to win: you %d, the engine %d" % [int(left["w"]), int(left["b"])]
 
 
 func _on_xp(unit_id: int, amount: int, _captured: String) -> void:
@@ -474,7 +487,7 @@ func _edit_click(sq: int) -> void:
 		if mode == "move":
 			var marks := {}
 			for t in 24:
-				if not fight.board.has(t):
+				if not fight.board.has(t) and not fight.walls.has(t):
 					marks[t] = false
 			board.show_selection(sq, marks)
 		return

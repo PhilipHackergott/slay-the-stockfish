@@ -96,7 +96,10 @@ func test_scripted_run_crosses_three_acts_to_the_boss() -> void:
 					Run.level_up(u, Run.upgrade_options(u)[0])
 				var offer := Run.reward_offer(node["type"])
 				var rewards: Array = offer["pieces"]
-				assert_eq(rewards.size() + (1 if int(offer["train"]) > 0 else 0), Content.config.reward_choices)
+				var cards: int = Content.config.reward_choices
+				for r in Run.relic_defs():
+					cards += r.extra_reward_choice
+				assert_eq(rewards.size() + (1 if int(offer["train"]) > 0 else 0), cards)
 				Run.add_unit(rewards[0])
 				assert_true(Run.command_used() <= Run.command_cap(), "the deployed army fits its Command")
 				if node["type"] != &"fight":

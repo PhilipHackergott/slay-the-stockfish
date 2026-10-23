@@ -34,6 +34,12 @@ extends Resource
 @export var train_xp: int = 4
 ## Gold per won fight by node kind: {"fight": [16, 24], "elite": [40, 55], "guardian": [70, 90]}.
 @export var gold: Dictionary = {}
+## Arenas (data/arenas): fight and elite nodes from arena_from_row on carry one with these odds, at
+## most arena_max per map. "?" nodes, guardians and the boss never do.
+@export var arena_from_row: int = 3
+@export var arena_max: int = 0
+@export var arena_fight_chance: float = 0.0
+@export var arena_elite_chance: float = 0.0
 
 
 func is_final_act() -> bool:

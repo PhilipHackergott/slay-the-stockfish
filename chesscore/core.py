@@ -227,15 +227,16 @@ class ChessCore:
             stm_wins = value > 0
             return "win" if stm_wins == (stm == "w") else "loss"
 
+        # A variant win (flag region, n-check) leaves no legal moves either; it must not read as mate.
+        ended, value = sf.is_immediate_game_end(self.variant, fen, moves)
+        if ended:
+            return {"state": from_player(value), "reason": "rule"}
         legal = sf.legal_moves(self.variant, fen, moves)
         if not legal:
             value = sf.game_result(self.variant, fen, moves)
             in_check = bool(sf.gives_check(self.variant, fen, moves))
             reason = "checkmate" if in_check and value != 0 else ("stalemate" if value == 0 else "no moves")
             return {"state": from_player(value), "reason": reason}
-        ended, value = sf.is_immediate_game_end(self.variant, fen, moves)
-        if ended:
-            return {"state": from_player(value), "reason": "rule"}
         ended, value = sf.is_optional_game_end(self.variant, fen, moves)
         if ended:
             return {"state": "draw" if value == 0 else from_player(value), "reason": "repetition or 50 moves"}

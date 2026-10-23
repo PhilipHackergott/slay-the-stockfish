@@ -268,6 +268,22 @@ are a one-file edit. Mirrored to Notion: Project Slay the Stockfish → Build de
   in `chesscore/licenses/` and `RUNTIME.txt`.
 - Build: `tools/package/package.sh v0.1` → `dist/slay-the-stockfish/v0.1/` (zips + SHA256SUMS).
 
+## Arenas (v0.3 slice)
+
+- **An arena is an overlay on a fight or elite node**, rolled with the map like an omen
+  (`data/arenas/*.tres`, `ArenaDef`): variant lines, rubble walls (FEN `*`), an n-check count, a
+  marked zone. The encounter is drawn as usual; arena-specific encounter lists come later.
+- **Placement per act** (`ActDef.arena_*`): act 1 at most one, from row 3, fights only; act 2 up to
+  three, half the elites; act 3 up to four, every elite (elites roll first). Never on "?" nodes,
+  guardians or the boss.
+- Built: **Summit Altar** (a king on d4/e4/d5/e5 wins, either side), **Collapsed Nave** (rubble on
+  c4/f4/c5/f5), **Tolling Bells** (third check wins). Arenas are symmetric; one-sided rules stay relics.
+- Walls live in `FightController.walls`, never in `board`, so nothing treats a wall as a piece.
+- Region lines from several sources merge into one line (`VariantGen`), so Sanctuary Banner and
+  the Summit Altar both count.
+- Variant wins are checked before "no legal moves" in the core, so they never read as mate.
+- Props are procedural stand-ins (stone blocks, gold zone glow) until Blender props exist.
+
 ## Known gaps in v0.1
 
 - An army with more than 19 distinct fairy piece types cannot fight (letter budget).

@@ -121,6 +121,15 @@ def test_rule_relic_promotion_on_seventh(core):
     assert "a6a7q" in legal and "a6a7" not in legal
 
 
+def test_variant_wins_report_rule_not_mate(core):
+    load(core, "t_summit", extra="flagPieceWhite = w\nflagPieceBlack = k\nflagRegionWhite = d4 e4 d5 e5\n"
+         "flagRegionBlack = d4 e4 d5 e5\n")
+    assert core.result("4k3/8/8/8/8/4W3/8/8 w - - 0 1", ["e3e4"]) == {"state": "win", "reason": "rule"}
+    load(core, "t_bells", extra="checkCounting = true\n")
+    assert core.result("4k3/8/8/8/8/8/8/R3W3 w - - 1+3 0 1", ["a1a8"]) == {"state": "win", "reason": "rule"}
+    assert core.result("4k3/8/8/8/8/8/8/R3W3 w - - 3+3 0 1", ["a1a8"])["state"] == "ongoing"
+
+
 @pytest.mark.skipif(not ENGINE_PATH.exists(), reason="engine not built")
 def test_engine_moves_in_generated_custom_variant(core):
     extra = "customPiece2 = a:fsmWfceFifmnD\npromotionPawnTypesWhite = a\npieceDrops = true\ncapturesToHand = false\n"

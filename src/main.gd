@@ -3,7 +3,7 @@ extends Node
 ## shop, guardian) -> next act ... -> boss -> end. The run is saved whenever the map shows.
 ## Command line (after `--`): --seed=N, --difficulty=N, --screen=title|relic|map|fight|elite|guardian|
 ## boss|roamer|unknown|reward|campfire|event|shop|treasure|codex|settings|formation|pause|act|end, --act=N (0-based),
-## --omen=id (on the node the screen enters), --event=id (the event screen shows this one),
+## --omen=id, --arena=id (on the node the screen enters), --event=id (the event screen shows this one),
 ## --relics=id,id, --units=type,type, --kind=elite|guardian (reward screen), --gold=N, --autoplay (plays a whole run unattended), --shot=path.png
 ## [--shot-delay=s], --quit-after-shot, --quit-on-end, --isolated (separate profile and save files).
 
@@ -97,6 +97,8 @@ func _jump(where: String) -> void:
 			var id := _first_node_of(StringName(where))
 			if args.has("omen"):
 				Run.map.node(id)["omen"] = StringName(args["omen"])
+			if args.has("arena"):
+				Run.map.node(id)["arena"] = StringName(args["arena"])
 			_enter(id)
 		"roamer":
 			if Run.roamer_node() < 0:
@@ -355,6 +357,7 @@ func _start_fight(node: Dictionary) -> void:
 		_show_map()
 		return
 	world.board_view.setup_position(fight.board, fight.unit_map, true)
+	world.board_view.set_arena(fight.walls, fight.arena.zone if fight.arena != null else PackedStringArray())
 	fight.presenter = world.board_view
 	var hud := FightHud.new().setup(fight, world.board_view)
 	hud.autoplay = autoplay
@@ -398,8 +401,8 @@ func _after_fight(outcome: Dictionary, node: Dictionary) -> void:
 	Run.apply_fight(outcome, kind)
 	var army: Array = Run.deployed_units().map(func(u): return String(u.type))
 	var bench: Array = Run.benched_units().map(func(u): return String(u.type))
-	print("STS FIGHT act=%d row=%d kind=%s enc=%s omen=%s result=%s (%s) plies=%d gold=%d command=%d/%d army=%s bench=%s relics=%s" % [
-		Run.act_index + 1, int(node["row"]), kind, node["encounter"], node.get("omen", ""), outcome.get("state"), outcome.get("reason"),
+	print("STS FIGHT act=%d row=%d kind=%s enc=%s omen=%s arena=%s result=%s (%s) plies=%d gold=%d command=%d/%d army=%s bench=%s relics=%s" % [
+		Run.act_index + 1, int(node["row"]), kind, node["encounter"], node.get("omen", ""), node.get("arena", ""), outcome.get("state"), outcome.get("reason"),
 		int(outcome.get("plies", 0)), Run.gold, Run.command_used(), Run.command_cap(), ",".join(army), ",".join(bench),
 		",".join(Run.relics)])
 	world.board_view.interactive = false

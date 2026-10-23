@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ArenaDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/arena_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"tolling_bells"
+display_name = "Tolling Bells"
+description = "Every check tolls a bell. The third check wins, for either side."
+icon = "res://assets/ui/icons/icon_arena_bells_256.png"
+ini_lines = PackedStringArray("checkCounting = true")
+checks = 3
+win_text = "the third bell tolls for the engine's king"
+loss_text = "the third bell tolls for your king"

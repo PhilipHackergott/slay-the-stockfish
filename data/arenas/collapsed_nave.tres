@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ArenaDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/arena_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"collapsed_nave"
+display_name = "Collapsed Nave"
+description = "The roof came down: rubble blocks c4, f4, c5 and f5. Nothing stands on it or passes through it."
+icon = "res://assets/ui/icons/icon_arena_nave_256.png"
+walls = PackedStringArray("c4", "f4", "c5", "f5")

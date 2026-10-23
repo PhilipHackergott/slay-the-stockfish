@@ -119,6 +119,7 @@ func _build_act_map() -> void:
 	for n in map.nodes:
 		if n["type"] == &"fight" or n["type"] == &"elite":
 			_roll_omen(n)
+	_roll_arenas(act)
 	_spawn_roamer()
 
 
@@ -172,6 +173,30 @@ func _roll_omen(n: Dictionary) -> void:
 	var ids: Array = Content.omens.keys()
 	ids.sort()
 	n["omen"] = ids[rng.randi_range(0, ids.size() - 1)]
+
+
+func _roll_arenas(act: ActDef) -> void:
+	if act == null or act.arena_max <= 0 or Content.arenas.is_empty():
+		return
+	var ids: Array = Content.arenas.keys()
+	ids.sort()
+	var placed := 0
+	# Elites first, so an act that promises arena elites keeps that promise under arena_max.
+	for kind in [&"elite", &"fight"]:
+		var chance := act.arena_elite_chance if kind == &"elite" else act.arena_fight_chance
+		for n in map.nodes:
+			if placed >= act.arena_max or n["type"] != kind or int(n["row"]) < act.arena_from_row:
+				continue
+			if chance > 0.0 and rng.randf() < chance:
+				n["arena"] = ids[rng.randi_range(0, ids.size() - 1)]
+				placed += 1
+
+
+## The arena of the node you stand on, or null.
+func current_arena() -> ArenaDef:
+	if map == null or current_node < 0:
+		return null
+	return Content.arena(StringName(map.node(current_node).get("arena", &"")))
 
 
 ## The omen over the node you stand on, or null.
@@ -660,6 +685,9 @@ func fight_mods(kind: StringName, enc: EncounterDef) -> Dictionary:
 	if kind == &"guardian" and flags.has("roamer_joined"):
 		var re := roamer_encounter()
 		banner.append("%s has joined the guardian: more enemy pieces." % (re.display_name if re != null else "The roaming elite"))
+	var arena := current_arena() if kind == &"fight" or kind == &"elite" else null
+	if arena != null:
+		m["arena"] = arena.id
 	if omen != null:
 		m["xp_mult"] = float(m["xp_mult"]) * omen.xp_mult
 		m["omen_skill"] = omen.engine_skill_delta

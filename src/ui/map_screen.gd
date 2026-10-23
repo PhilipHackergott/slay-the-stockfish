@@ -191,6 +191,10 @@ func _node_button(n: Dictionary) -> Control:
 	if omen != null and not visited:
 		tip += "\nOmen · %s: %s" % [omen.display_name, omen.description]
 		_badge(b, omen.icon, size, Vector2(0.62, -0.08), UiKit.SOUL)
+	var arena := Content.arena(StringName(n.get("arena", &"")))
+	if arena != null and not visited:
+		tip += "\nArena · %s: %s" % [arena.display_name, arena.description]
+		_badge(b, arena.icon, size, Vector2(0.62, 0.62), UiKit.GOLD)
 	var re := Run.roamer_encounter()
 	if Run.roamer_node() == id and re != null:
 		tip += "\nThe roaming elite stands here: %s. Step here to fight it for a rare relic. It climbs one row every %d nodes you enter; if it reaches the guardian, it fights beside it." % [
@@ -213,7 +217,7 @@ func _node_button(n: Dictionary) -> Control:
 	return b
 
 
-## A small ringed icon on a node's corner (omen, roaming elite); at is a share of the node size.
+## A small ringed icon on a node's corner (omen, arena, roaming elite); at is a share of the node size.
 func _badge(b: Control, path: String, size: int, at: Vector2, ring: Color, share: float = 0.42) -> void:
 	var s := int(size * share)
 	var disc := Panel.new()

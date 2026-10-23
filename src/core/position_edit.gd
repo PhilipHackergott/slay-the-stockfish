@@ -60,7 +60,7 @@ static func move_fen(fen: String, from: int, to: int, promo_ranks: PackedInt32Ar
 		return {"ok": false, "reason": "move one of your own pieces"}
 	if p == VariantGen.PLAYER_KING.to_upper():
 		return {"ok": false, "reason": "the king will not be moved by strings"}
-	if board.has(to):
+	if board.has(to) or st["walls"].has(to):
 		return {"ok": false, "reason": "pick an empty square"}
 	if Fen.rank_of(to) > max_rank:
 		return {"ok": false, "reason": "only within your half (ranks 1-%d)" % (max_rank + 1)}

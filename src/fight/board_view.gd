@@ -28,6 +28,7 @@ var _persistent: Array = []  # [sq, color, kind] that survive clear_marks (last 
 var _board_root: Node3D
 var _pieces_root: Node3D
 var _fx_root: Node3D
+var _arena_root: Node3D
 
 
 func _ready() -> void:
@@ -40,6 +41,9 @@ func _ready() -> void:
 	_fx_root = Node3D.new()
 	_fx_root.name = "Fx"
 	add_child(_fx_root)
+	_arena_root = Node3D.new()
+	_arena_root.name = "Arena"
+	add_child(_arena_root)
 	_build_board()
 	var mat := ShaderMaterial.new()
 	mat.shader = HIGHLIGHT
@@ -93,12 +97,55 @@ func _build_board() -> void:
 	_board_root.add_child(altar)
 
 
+# --- arena --------------------------------------------------------------------------------------
+
+## The fight's arena props: rubble on wall squares, a gold glow on zone squares (the summit).
+## clear() removes them.
+func set_arena(walls: Array, zone: PackedStringArray) -> void:
+	for sq in walls:
+		_arena_root.add_child(_rubble(int(sq)))
+	var quad := PlaneMesh.new()
+	quad.size = Vector2(0.98, 0.98)
+	var mat := ShaderMaterial.new()
+	mat.shader = HIGHLIGHT
+	quad.material = mat
+	for s in zone:
+		var m := MeshInstance3D.new()
+		m.mesh = quad
+		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		m.position = sq_pos(Fen.sq(s)) + Vector3(0, 0.008, 0)
+		m.set_instance_shader_parameter(&"tint", LAST_COLOR)
+		m.set_instance_shader_parameter(&"kind", 2.0)
+		_arena_root.add_child(m)
+
+
+## A heap of fallen stone filling one square. Shapes vary by square, the same every fight.
+func _rubble(sq: int) -> Node3D:
+	var heap := Node3D.new()
+	heap.position = sq_pos(sq)
+	for i in 4:
+		var k := float(sq * 7 + i * 13)
+		var block := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		var s := 0.34 + 0.12 * absf(sin(k))
+		box.size = Vector3(s * 1.3, s * (0.55 + 0.3 * absf(cos(k))), s)
+		block.mesh = box
+		var at := Vector2(0.2 * sin(k * 1.7), 0.2 * cos(k * 2.3)) if i > 0 else Vector2.ZERO
+		block.position = Vector3(at.x, box.size.y * 0.5 + (0.18 if i == 3 else 0.0), at.y)
+		block.rotation = Vector3(0.25 * sin(k), k, 0.2 * cos(k))
+		block.set_surface_override_material(0, Mats.world("stone_dark"))
+		heap.add_child(block)
+	return heap
+
+
 # --- pieces -------------------------------------------------------------------------------------
 
 func clear() -> void:
 	for p in pieces.values():
 		p.queue_free()
 	pieces.clear()
+	for c in _arena_root.get_children():
+		c.queue_free()
 	_persistent.clear()
 	clear_marks()
 

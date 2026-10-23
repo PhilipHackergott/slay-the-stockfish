@@ -22,3 +22,7 @@ enemy_ratio = {"elite": 1.0, "fight": 0.8}
 reward_tiers = {"elite": [4, 5], "fight": [3, 4]}
 shop_tiers = PackedInt32Array(3, 4, 5)
 train_xp = 8
+arena_from_row = 0
+arena_max = 4
+arena_fight_chance = 0.3
+arena_elite_chance = 1.0

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ArenaDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/arena_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"summit_altar"
+display_name = "Summit Altar"
+description = "A king that stands on the altar (d4, e4, d5, e5) wins. Either king."
+icon = "res://assets/ui/icons/icon_arena_summit_256.png"
+ini_lines = PackedStringArray("flagPieceWhite = w", "flagPieceBlack = k", "flagRegionWhite = d4 e4 d5 e5", "flagRegionBlack = d4 e4 d5 e5")
+zone = PackedStringArray("d4", "e4", "d5", "e5")
+win_text = "your king takes the altar"
+loss_text = "the engine's king takes the altar"

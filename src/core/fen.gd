@@ -1,7 +1,8 @@
 class_name Fen
 extends RefCounted
 ## FEN helpers. Squares are indices 0..63: file + 8 * rank (a1 = 0, h8 = 63).
-## Pockets use Fairy-Stockfish notation, `board[B]`, upper case = white.
+## Pockets use Fairy-Stockfish notation, `board[B]`, upper case = white. Walls ("*") are kept apart
+## from the pieces in "walls"; an n-check count ("3+3", checks each side still needs) in "checks".
 
 const FILES := "abcdefgh"
 
@@ -35,6 +36,7 @@ static func parse(fen: String) -> Dictionary:
 		pocket = placement.substr(lb + 1, placement.find("]") - lb - 1)
 		placement = placement.substr(0, lb)
 	var board := {}
+	var walls: Array = []
 	var rows := placement.split("/")
 	for r in rows.size():
 		var rank := 7 - r
@@ -45,11 +47,20 @@ static func parse(fen: String) -> Dictionary:
 				file += int(c)
 			elif c == "~" or c == "+":
 				continue
+			elif c == "*":
+				walls.append(file + 8 * rank)
+				file += 1
 			else:
 				board[file + 8 * rank] = c
 				file += 1
+	var checks := ""
+	if parts.size() > 4 and parts[4].contains("+"):
+		checks = parts[4]
+		parts.remove_at(4)
 	return {
 		"board": board,
+		"walls": walls,
+		"checks": checks,
 		"pocket": pocket,
 		"side": parts[1] if parts.size() > 1 else "w",
 		"castling": parts[2] if parts.size() > 2 else "-",
@@ -61,12 +72,13 @@ static func parse(fen: String) -> Dictionary:
 
 static func serialize(state: Dictionary) -> String:
 	var board: Dictionary = state.get("board", {})
+	var walls: Array = state.get("walls", [])
 	var rows := PackedStringArray()
 	for r in range(7, -1, -1):
 		var row := ""
 		var empty := 0
 		for f in 8:
-			var letter: String = board.get(f + 8 * r, "")
+			var letter: String = "*" if walls.has(f + 8 * r) else board.get(f + 8 * r, "")
 			if letter == "":
 				empty += 1
 				continue
@@ -81,8 +93,21 @@ static func serialize(state: Dictionary) -> String:
 	var pocket: String = state.get("pocket", "")
 	if pocket != "" or state.get("has_pocket", false):
 		placement += "[%s]" % pocket
+	var ep: String = state.get("ep", "-")
+	var checks: String = state.get("checks", "")
+	if checks != "":
+		ep += " " + checks
 	return "%s %s %s %s %d %d" % [placement, state.get("side", "w"), state.get("castling", "-"),
-		state.get("ep", "-"), int(state.get("halfmove", 0)), int(state.get("fullmove", 1))]
+		ep, int(state.get("halfmove", 0)), int(state.get("fullmove", 1))]
+
+
+## Checks each side still needs ({"w": n, "b": n}), or {} without an n-check count.
+static func checks_left(fen: String) -> Dictionary:
+	var c: String = parse(fen)["checks"]
+	if c == "":
+		return {}
+	var p := c.split("+")
+	return {"w": int(p[0]), "b": int(p[1])}
 
 
 ## Fairy-Stockfish writes "[]" once a pocket exists, even when it is empty.

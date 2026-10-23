@@ -60,4 +60,22 @@ static func build(variant_name: String, king_betza: String, custom: Array, relic
 		lines.append_array(PackedStringArray([
 			"pieceDrops = true", "capturesToHand = false", "dropRegionWhite = *1 *2 *3 *4"]))
 	lines.append_array(relic_lines)
-	return {"ini": "\n".join(lines) + "\n", "letters": letters}
+	return {"ini": "\n".join(_merge_regions(lines)) + "\n", "letters": letters}
+
+
+## The engine keeps only the last line of a key, so region lines from several sources (a relic and
+## an arena) become one line with all their squares.
+static func _merge_regions(lines: PackedStringArray) -> PackedStringArray:
+	var out := PackedStringArray()
+	var at := {}
+	for line in lines:
+		var kv := line.split("=", true, 1)
+		var key := kv[0].strip_edges()
+		if kv.size() == 2 and key.contains("Region"):
+			if at.has(key):
+				var i: int = at[key]
+				out[i] = "%s %s" % [out[i], kv[1].strip_edges()]
+				continue
+			at[key] = out.size()
+		out.append(line)
+	return out

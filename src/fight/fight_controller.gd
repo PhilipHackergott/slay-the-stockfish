@@ -33,6 +33,9 @@ var base_fen := ""
 var moves := PackedStringArray()
 var fen := ""
 var board: Dictionary = {}
+## Rubble squares (FEN "*") of the arena; no piece stands there.
+var walls: Array = []
+var arena: ArenaDef
 var pocket := ""
 var unit_map := UnitMap.new()
 var temp_units: Dictionary = {}
@@ -123,6 +126,9 @@ func setup(p_encounter: EncounterDef, units: Array, relics: Array, p_cfg: RunCon
 			&"clock":
 				clock_bonus += r.clock_bonus_s
 				inc_bonus += r.increment_bonus_s
+	arena = Content.arena(StringName(mods.get("arena", &"")))
+	if arena != null:
+		relic_lines.append_array(arena.ini_lines)
 	var royal_def: PieceDef = Content.piece(&"king")
 	for u in units:
 		var d: PieceDef = Content.piece(u.type)
@@ -166,10 +172,16 @@ func setup(p_encounter: EncounterDef, units: Array, relics: Array, p_cfg: RunCon
 		_place_temp_at(Fen.sq(String(sq_name)), StringName(encounter.player_layout[sq_name]))
 	for sq_name in encounter.layout:
 		board[Fen.sq(String(sq_name))] = _letter_for(StringName(encounter.layout[sq_name]), false)
+	walls = []
+	if arena != null:
+		for s in arena.walls:
+			if not board.has(Fen.sq(s)):
+				walls.append(Fen.sq(s))
+		banner.append("Arena · %s: %s" % [arena.display_name, arena.description])
 	var added: Array = []
 	for e in mods.get("reinforcements", []):
 		var i := Fen.sq(String(e[0]))
-		if not board.has(i):
+		if not board.has(i) and not walls.has(i):
 			board[i] = _letter_for(StringName(e[1]), false)
 			added.append(i)
 	if not added.is_empty():
@@ -182,8 +194,9 @@ func setup(p_encounter: EncounterDef, units: Array, relics: Array, p_cfg: RunCon
 		banner.append("Your relics: the engine plays %d skill levels %s." % [absi(rs), "weaker" if rs < 0 else "stronger"])
 	for line in mods.get("banner", []):
 		banner.append(String(line))
-	var st := {"board": board, "pocket": pocket, "has_pocket": has_pocket, "side": "b" if engine_first else "w", "castling": "-",
-		"ep": "-", "halfmove": 0, "fullmove": 1}
+	var st := {"board": board, "walls": walls, "pocket": pocket, "has_pocket": has_pocket, "side": "b" if engine_first else "w",
+		"castling": "-", "ep": "-", "halfmove": 0, "fullmove": 1,
+		"checks": "%d+%d" % [arena.checks, arena.checks] if arena != null and arena.checks > 0 else ""}
 	# Reinforcements never check your king or box theirs into a mate in one: the last ones step back.
 	while true:
 		base_fen = Fen.serialize(st)
@@ -616,12 +629,23 @@ func _check_end() -> bool:
 		reason = "checkmate: the engine's king falls"
 	elif state == "loss" and reason == "checkmate":
 		reason = "checkmate: your king falls"
-	elif reason == "rule" and state == "win":
-		reason = "your king reaches the sanctuary"
+	elif reason == "rule":
+		reason = _rule_reason(state)
 	elif reason == "no moves":
 		reason = "stalemate: the trapped side loses"
 	_finish(state, reason)
 	return true
+
+
+## A variant win: the arena's checks or zone, else the Sanctuary Banner.
+func _rule_reason(state: String) -> String:
+	if arena != null:
+		var left := Fen.checks_left(fen)
+		var royal := VariantGen.PLAYER_KING.to_upper() if state == "win" else "k"
+		var on_zone := Array(arena.zone).any(func(s): return board.get(Fen.sq(s), "") == royal)
+		if on_zone or (not left.is_empty() and int(left["w" if state == "win" else "b"]) == 0):
+			return arena.win_text if state == "win" else arena.loss_text
+	return "your king reaches the sanctuary" if state == "win" else "the engine wins by rule"
 
 
 func _finish(state: String, reason: String) -> void:
