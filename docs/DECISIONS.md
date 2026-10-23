@@ -60,6 +60,10 @@ events. Mirrored to Notion: Build decisions → v0.2 decision log.
   no XP), Drill (+3 XP to every deployed piece), Study (see the guardian, +60 s against it), Rite
   of Ash (burn one piece; another gains its XP plus its value), Kindle (a relic's numbers ×1.5,
   drawbacks unchanged), Cleanse (burn a curse, shown only when cursed).
+- **Campfire screens are card pickers** (after the v0.2 playtest: the upgrade menu looked unfinished).
+  The actions are one row of equal cards. Temper and Rite take two steps (the piece, then its new
+  form or its heir), each with Back, and every grid sizes its cards to the largest. The recruit
+  card (`UiKit.piece_card`) and unit card (`UiKit.unit_card`) are shared with the reward screen.
 - **Event effects scale with tiers** (transform one tier up, gain a piece of a tier), not rarity.
 
 ## d: Randomness and events
