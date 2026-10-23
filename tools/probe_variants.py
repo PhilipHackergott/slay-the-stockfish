@@ -68,5 +68,15 @@ check("Coronation Rows", "e5c6+" in legal(v, "4k3/8/8/4N3/8/8/8/4W3 w - - 0 1"),
 v = variant("p_twin", "extinctionPieceTypes = wk\nking = -")
 check("Twin-souled", not ends(v, "3k4/8/8/8/8/8/8/R3W3 b - - 0 1", []), "one of two kings left is not a loss")
 
+v = variant("p_ascent", "flagPieceWhite = w\nflagPieceBlack = k\nflagRegionWhite = *8\nflagRegionBlack = *1")
+check("The Ascent", ends(v, "k7/4W3/8/8/8/8/8/8 w - - 0 1", ["e7e8"]), "a king on the far rank ends the game")
+
+v = variant("p_mercy", "stalemateValue = loss")
+r = sf.game_result(v, "k7/2W5/1Q6/8/8/8/8/8 b - - 0 1", [])
+check("Mercy's End", r < 0, f"stalemated side scores {r}")
+
+v = variant("p_shallow", "promotionRegionWhite = *6 *7 *8\npromotionRegionBlack = *3 *2 *1")
+check("Shallow Crypt", "e5e6q" in legal(v, "4k3/8/8/4P3/8/8/8/4W3 w - - 0 1"), "pawns promote on rank 6")
+
 v = variant("p_atomic", "blastOnCapture = true")
 check("Powder Crypt", len(legal(v, "4k3/8/8/3pn3/4P3/8/8/4W3 w - - 0 1")) > 0, "atomic captures with the pseudo-royal king")

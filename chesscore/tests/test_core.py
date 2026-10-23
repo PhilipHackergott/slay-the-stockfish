@@ -12,7 +12,7 @@ import pytest
 HERE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(HERE))
 
-from core import ChessCore, ENGINE_PATH  # noqa: E402
+from core import ChessCore, CoreError, ENGINE_PATH  # noqa: E402
 
 BASE = """[{name}:chess]
 king = k
@@ -128,6 +128,24 @@ def test_variant_wins_report_rule_not_mate(core):
     load(core, "t_bells", extra="checkCounting = true\n")
     assert core.result("4k3/8/8/8/8/8/8/R3W3 w - - 1+3 0 1", ["a1a8"]) == {"state": "win", "reason": "rule"}
     assert core.result("4k3/8/8/8/8/8/8/R3W3 w - - 3+3 0 1", ["a1a8"])["state"] == "ongoing"
+
+
+@pytest.mark.skipif(not ENGINE_PATH.exists(), reason="engine not built")
+def test_engine_rejecting_a_variant_is_an_error_and_the_crow_variant_loads(core):
+    fen = "4k3/8/8/8/8/8/4P3/4W3 w - - 0 1"
+    load(core, "t_duck_king", extra="wallingRule = duck\n")
+    with pytest.raises(CoreError, match="rejected"):
+        core.engine_move(fen, [], movetime_ms=100, skill=20)
+    load(core, "t_crow", extra="wallingRule = duck\nking = -\ncommoner = k\nextinctionPieceTypes = kw\n")
+    res = core.engine_move(fen, [], movetime_ms=100, skill=20)
+    assert "," in res["move"] and res["move"] in core.legal(fen, [])
+    mate = "7k/8/5W1Q/8/8/8/8/8 w - - 0 1"
+    brute = [m for m in core.legal(mate, []) if core.result(mate, [m])["state"] == "win"]
+    assert "h6g7,g7a1" in brute and "f6f7,f7a1" in brute  # a side left without a move loses
+    assert sorted(core.mates_in_one(mate)) == sorted(brute)
+    t0 = time.monotonic()
+    assert core.mates_in_one("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQWBNR w - - 0 1") == []
+    assert time.monotonic() - t0 < 1.5
 
 
 @pytest.mark.skipif(not ENGINE_PATH.exists(), reason="engine not built")

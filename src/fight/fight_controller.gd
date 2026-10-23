@@ -36,6 +36,9 @@ var board: Dictionary = {}
 ## Rubble squares (FEN "*") of the arena; no piece stands there.
 var walls: Array = []
 var arena: ArenaDef
+## Gorgon Cloister: wall squares that are statues, {sq: letter it was}; units turned to stone.
+var statues: Dictionary = {}
+var petrified: Array = []
 var pocket := ""
 var unit_map := UnitMap.new()
 var temp_units: Dictionary = {}
@@ -129,6 +132,9 @@ func setup(p_encounter: EncounterDef, units: Array, relics: Array, p_cfg: RunCon
 	arena = Content.arena(StringName(mods.get("arena", &"")))
 	if arena != null:
 		relic_lines.append_array(arena.ini_lines)
+		for rank in arena.promotion_ranks:
+			if not promo_ranks.has(rank):
+				promo_ranks.append(rank)
 	var royal_def: PieceDef = Content.piece(&"king")
 	for u in units:
 		var d: PieceDef = Content.piece(u.type)
@@ -173,6 +179,8 @@ func setup(p_encounter: EncounterDef, units: Array, relics: Array, p_cfg: RunCon
 	for sq_name in encounter.layout:
 		board[Fen.sq(String(sq_name))] = _letter_for(StringName(encounter.layout[sq_name]), false)
 	walls = []
+	statues = {}
+	petrified = []
 	if arena != null:
 		for s in arena.walls:
 			if not board.has(Fen.sq(s)):
@@ -575,6 +583,11 @@ func _play(uci: String, side: String) -> Dictionary:
 	board = st["board"]
 	pocket = st["pocket"]
 	ply_count += 1
+	var gone: Array = walls.filter(func(w): return not st["walls"].has(w))
+	for w in gone:
+		walls.erase(w)
+	ev["gone_walls"] = gone
+	ev["new_walls"] = _take_new_walls(st["walls"], ev)
 	ev["capture"] = res.get("capture", false)
 	ev["check"] = res.get("check", false)
 	ev["fen"] = fen
@@ -596,6 +609,27 @@ func _play(uci: String, side: String) -> Dictionary:
 	if presenter != null and presenter.has_method("present_move"):
 		await presenter.present_move(ev)
 	return ev
+
+
+## Walls a move left (Burning Stakes: the square it came from; Gorgon Cloister: the capturer, now
+## stone; The Crow: where the crow lands). A petrified unit leaves the board for this fight but is
+## not slain.
+func _take_new_walls(now: Array, ev: Dictionary) -> Array:
+	var fresh: Array = []
+	for w in now:
+		if walls.has(w):
+			continue
+		walls.append(w)
+		fresh.append(w)
+		if w == int(ev["to"]) and String(ev["mover"]) != "":
+			statues[w] = String(ev["mover"])
+			if unit_map.by_square.has(w):
+				var uid := unit_map.unit_at(w)
+				unit_map.by_square.erase(w)
+				petrified.append(uid)
+				var def: PieceDef = Content.piece_by_letter(String(ev["mover"]).to_lower(), true)
+				message.emit("Your %s turns to stone until the fight ends" % (def.display_name.to_lower() if def != null else "piece"))
+	return fresh
 
 
 ## A drop: a lifted run unit comes back, otherwise a relic's pocket piece joins for this fight.
@@ -640,6 +674,8 @@ func _check_end() -> bool:
 ## A variant win: the arena's checks or zone, else the Sanctuary Banner.
 func _rule_reason(state: String) -> String:
 	if arena != null:
+		if state == "loss" and arena.loss_text != "":
+			return arena.loss_text
 		var left := Fen.checks_left(fen)
 		var royal := VariantGen.PLAYER_KING.to_upper() if state == "win" else "k"
 		var on_zone := Array(arena.zone).any(func(s): return board.get(Fen.sq(s), "") == royal)

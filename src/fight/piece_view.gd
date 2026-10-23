@@ -91,6 +91,18 @@ func _process(_dt: float) -> void:
 		_place_plate()
 
 
+## Gorgon Cloister: the piece turns to stone where it stands and stays as a statue (a wall).
+func petrify() -> void:
+	set_nameplate("off")
+	set_glow(0.0)
+	if _anim != null:
+		_anim.pause()
+	var stone := Mats.world("stone")
+	for mi in _meshes:
+		for i in mi.get_surface_override_material_count():
+			mi.set_surface_override_material(i, stone)
+
+
 ## The model family (pawn, knight, ...) used for stand-ins and facing.
 func family() -> StringName:
 	return def.base if def != null and def.base != &"" else type

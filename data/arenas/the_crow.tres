@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ArenaDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/arena_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"the_crow"
+display_name = "The Crow"
+description = "After every move, the side that moved sets the crow on a new empty square. Nothing stands on it or passes through it, and it can block a check. A side left without a move loses."
+icon = "res://assets/ui/icons/icon_arena_crow_256.png"
+ini_lines = PackedStringArray("wallingRule = duck", "king = -", "commoner = k", "extinctionPieceTypes = kw")
+wall_prop = &"crow"
+wall_name = "The Crow"
+wall_text = "It blocks this square until someone moves it. After every move, the side that moved sets it on a new empty square."

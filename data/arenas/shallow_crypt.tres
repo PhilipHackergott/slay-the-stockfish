@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ArenaDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/arena_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"shallow_crypt"
+display_name = "Shallow Crypt"
+description = "The graves are shallow: pawns promote on reaching rank 6 (the engine's on rank 3)."
+icon = "res://assets/ui/icons/icon_arena_shallow_256.png"
+ini_lines = PackedStringArray("promotionRegionWhite = *6 *7 *8", "promotionRegionBlack = *3 *2 *1")
+promotion_ranks = PackedInt32Array(5, 6)

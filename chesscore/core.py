@@ -60,7 +60,7 @@ class Engine:
         if not path.exists():
             raise CoreError(f"engine binary missing: {path} (run chesscore/build_engine.sh)")
         self.proc = subprocess.Popen(
-            [str(path)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            [str(path)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, bufsize=1, creationflags=subprocess.CREATE_NO_WINDOW if WINDOWS else 0,
         )
         self.lock = threading.Lock()
@@ -92,7 +92,10 @@ class Engine:
         self._send(f"setoption name UCI_Variant value {name}")
         self._send("ucinewgame")
         self._send("isready")
-        self._wait_for("readyok", 10.0)
+        rejected = [line for line in self._wait_for("readyok", 10.0) if "rejected" in line]
+        if rejected:
+            # The engine would silently fall back to plain chess while the rules library plays the variant.
+            raise CoreError(rejected[0])
 
     def set_skill(self, skill: int) -> None:
         if skill != self.skill:
@@ -187,7 +190,22 @@ class ChessCore:
     def mates_in_one(self, fen: str) -> list[str]:
         """Moves of the side to move that win on the spot (mate or a variant win)."""
         mover_wins = "win" if side_to_move(fen) == "w" else "loss"
-        return [m for m in self.legal(fen, []) if self.result(fen, [m])["state"] == mover_wins]
+        legal = self.legal(fen, [])
+        if not any("," in m for m in legal):
+            return [m for m in legal if self.result(fen, [m])["state"] == mover_wins]
+        # Walling moves come ~30 per piece move and each pyffish call costs ms: try one wall square
+        # per piece move and all of them only where it ends the game or checks. A mate that only a
+        # different wall square makes (by blocking the last flight) is missed; this guards setups only.
+        groups: dict[str, list[str]] = {}
+        for m in legal:
+            groups.setdefault(m.split(",")[0], []).append(m)
+        wins = []
+        for group in groups.values():
+            first = self.result(fen, [group[0]])["state"]
+            if first == "ongoing" and not sf.gives_check(self.variant, fen, [group[0]]):
+                continue
+            wins += [m for m in group if self.result(fen, [m])["state"] == mover_wins]
+        return wins
 
     def mate_in_two(self, fen: str) -> list[str]:
         """Key moves of the side to move that checkmate next move against every reply (nothing may win

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ArenaDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/arena_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"burning_stakes"
+display_name = "Burning Stakes"
+description = "Every move sets the square it left on fire: a stake burns there for the rest of the fight. The board shrinks with every move."
+icon = "res://assets/ui/icons/icon_arena_stakes_256.png"
+ini_lines = PackedStringArray("wallingRule = past")
+wall_prop = &"stake"
+wall_name = "Burning stake"
+wall_text = "A piece left this square and it caught fire. Nothing stands on it or passes through it."

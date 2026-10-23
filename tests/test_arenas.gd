@@ -123,3 +123,93 @@ func test_the_node_arena_reaches_the_fight() -> void:
 	var enc := Content.encounter(Run.map.node(id)["encounter"])
 	assert_eq(Run.fight_mods(&"fight", enc).get("arena"), &"tolling_bells")
 	assert_false(Run.fight_mods(&"guardian", enc).has("arena"), "guardians and the boss stay plain")
+
+
+func test_every_arena_loads_into_a_fight_with_its_icon() -> void:
+	assert_eq(Content.arenas.size(), 10)
+	for id in Content.arenas:
+		fight = FightController.new()
+		add_child_autofree(fight)
+		assert_true(await _setup(id), "%s sets up" % id)
+		await fight.begin()
+		assert_false(fight.legal.is_empty(), "%s has legal moves" % id)
+		assert_true(ResourceLoader.exists(Content.arena(id).icon), "%s icon" % id)
+
+
+func test_the_hunger_forces_the_capture() -> void:
+	assert_true(await _setup(&"the_hunger"))
+	await _position("4k3/8/8/3p4/4P3/8/8/4W3 w - - 0 1")
+	assert_eq(Array(fight.legal), ["e4d5"])
+
+
+func test_the_ascent_a_king_on_the_far_rank_wins_both_ways() -> void:
+	assert_true(await _setup(&"the_ascent"))
+	await _position("k7/4W3/8/8/8/8/8/8 w - - 0 1")
+	assert_true(await fight.try_player_move("e7e8"))
+	assert_eq(fight.outcome.get("reason"), Content.arena(&"the_ascent").win_text)
+	fight = FightController.new()
+	add_child_autofree(fight)
+	assert_true(await _setup(&"the_ascent"))
+	fight.mods["omen_skill"] = 40
+	fight._rebase("8/8/8/8/8/8/4k3/W7 b - - 0 1")
+	await fight._engine_turn()
+	assert_eq(fight.outcome.get("state"), "loss")
+	assert_eq(fight.outcome.get("reason"), Content.arena(&"the_ascent").loss_text)
+
+
+func test_shallow_crypt_pawns_promote_on_rank_6() -> void:
+	assert_true(await _setup(&"shallow_crypt"))
+	assert_true(fight.promo_ranks.has(5))
+	await _position("4k3/8/8/4P3/8/8/8/4W3 w - - 0 1")
+	assert_true(fight.legal.has("e5e6q"))
+	assert_false(fight.legal.has("e5e6"))
+
+
+func test_narrow_passage_walls_both_flanks() -> void:
+	assert_true(await _setup(&"narrow_passage"))
+	assert_eq(fight.walls.size(), 8)
+	assert_true(fight.walls.has(Fen.sq("a3")) and fight.walls.has(Fen.sq("h6")))
+
+
+func test_burning_stakes_leave_a_wall_where_a_piece_was() -> void:
+	assert_true(await _setup(&"burning_stakes"))
+	await _position("4k3/8/8/8/8/8/4P3/4W3 w - - 0 1")
+	fight.walls = []
+	assert_true(fight.legal.has("e2e3,e3e2"))
+	assert_true(await fight.try_player_move("e2e3,e3e2"))
+	assert_true(fight.walls.has(Fen.sq("e2")), "the square the pawn left burns")
+	assert_eq(fight.walls.size(), 2, "the engine's reply burns a square too")
+	assert_true(fight.statues.is_empty())
+
+
+func test_gorgon_cloister_a_capturing_rook_turns_to_stone_but_is_not_slain() -> void:
+	assert_true(await _setup(&"gorgon_cloister"))
+	var rook := Run.add_unit(&"rook")
+	await _position("4k3/8/8/3p4/8/8/8/3RW3 w - - 0 1")
+	fight.walls = []
+	fight.unit_map.by_square = {Fen.sq("d1"): rook.id, Fen.sq("e1"): Run.units[0].id}
+	assert_true(await fight.try_player_move("d1d5"))
+	var d5 := Fen.sq("d5")
+	assert_true(fight.walls.has(d5))
+	assert_eq(fight.statues.get(d5), "R")
+	assert_true(fight.petrified.has(rook.id))
+	assert_false(fight.slain.has(rook.id), "a statue wakes after the fight")
+	assert_eq(fight.unit_map.unit_at(d5), -1)
+	assert_true(fight.xp_log.any(func(e): return int(e["unit"]) == rook.id), "the capture still pays XP")
+
+
+func test_the_crow_moves_after_every_move() -> void:
+	assert_true(await _setup(&"the_crow"))
+	await _position("4k3/8/8/8/8/8/4P3/4W3 w - - 0 1")
+	fight.walls = []
+	var mv := ""
+	for m in fight.legal:
+		if String(m).begins_with("e2e3,") and String(m).ends_with("a6"):
+			mv = m
+	assert_ne(mv, "", "moves are move plus crow square")
+	assert_true(await fight.try_player_move(mv))
+	assert_eq(fight.walls.size(), 1, "one crow, moved by the engine")
+	assert_ne(fight.walls[0], Fen.sq("a6"), "the engine moved it on")
+	var ev := fight.unit_map.apply_move("e3e4,e4h5", fight.board, "w")
+	assert_eq(ev["promotion"], "", "the crow part is not a promotion")
+	assert_eq(ev["to"], Fen.sq("e4"))

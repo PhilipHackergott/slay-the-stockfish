@@ -15,6 +15,8 @@ var pays_clock := false
 
 var selected := -1
 var targets: Dictionary = {}  # sq -> Array of uci
+## The Crow: the chosen move's options while the player picks the crow's square.
+var _crow_opts: Array = []
 ## "" or the active relic edit: "swap" (Soul Exchange), "move" (Puppeteer's String), "lift" (Soul Lantern).
 var edit_mode := ""
 var edit_first := -1
@@ -274,7 +276,10 @@ func _on_thinking(on: bool) -> void:
 
 func _on_moved(ev: Dictionary) -> void:
 	var who := "You" if ev["side"] == "w" else "Engine"
-	var text := "%s: %s" % [who, String(ev["uci"])]
+	var parts := String(ev["uci"]).split(",")
+	var text := "%s: %s" % [who, parts[0]]
+	if parts.size() > 1 and parts[1].right(2) != parts[0].left(2):
+		text += " · crow to %s" % parts[1].right(2)
 	if ev.get("pass", false):
 		text = "%s: hold breath (pass)" % who
 	var captured := String(ev.get("captured", ""))
@@ -331,8 +336,27 @@ func _on_square(sq: int) -> void:
 		if fight.legal.has(uci):
 			_do_move(uci)
 		return
+	if not _crow_opts.is_empty():
+		var picked: Array = _crow_opts.filter(func(m): return Fen.sq(String(m).right(2)) == sq)
+		if picked.is_empty():
+			return
+		_crow_opts = []
+		if picked.size() > 1:
+			_ask_promotion(picked)
+		else:
+			_do_move(picked[0])
+		return
 	if selected >= 0 and targets.has(sq):
 		var opts: Array = targets[sq]
+		var crow_marks := {}
+		for m in opts:
+			if String(m).contains(","):
+				crow_marks[Fen.sq(String(m).right(2))] = false
+		if crow_marks.size() > 1:
+			_crow_opts = opts
+			board.show_selection(sq, crow_marks)
+			_add_log("Place the crow on an empty square.", UiKit.GOLD)
+			return
 		if opts.size() > 1:
 			_ask_promotion(opts)
 		else:
@@ -364,6 +388,7 @@ func _cancel() -> void:
 	selected = -1
 	targets.clear()
 	drop_letter = ""
+	_crow_opts = []
 	if edit_mode != "":
 		edit_mode = ""
 		edit_first = -1
@@ -570,8 +595,19 @@ func _on_hover(sq: int) -> void:
 		_tip_body.remove_child(c)
 		c.queue_free()
 	if sq >= 0 and fight.walls.has(sq):
-		_tip_body.add_child(UiKit.heading("Rubble", 20))
-		var l := UiKit.label("Nothing stands on it or passes through it.", 16, UiKit.MUTED, true)
+		var title := "Rubble"
+		var text := "Nothing stands on it or passes through it."
+		if fight.statues.has(sq):
+			var was := String(fight.statues[sq])
+			var d: PieceDef = Content.piece_by_letter(was.to_lower(), was == was.to_upper())
+			title = "Statue"
+			text = "%s %s, turned to stone by its capture. Nothing passes it." % [
+				"Your" if was == was.to_upper() else "The engine's", UiKit.piece_name(d.id if d != null else &"pawn").to_lower()]
+		elif fight.arena != null and not fight.arena.walls.has(Fen.sq_name(sq)):
+			title = fight.arena.wall_name
+			text = fight.arena.wall_text
+		_tip_body.add_child(UiKit.heading(title, 20))
+		var l := UiKit.label(text, 16, UiKit.MUTED, true)
 		l.custom_minimum_size = Vector2(260, 0)
 		_tip_body.add_child(l)
 		_tip.visible = true

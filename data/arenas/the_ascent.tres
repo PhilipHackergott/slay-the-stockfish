@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ArenaDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/arena_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"the_ascent"
+display_name = "The Ascent"
+description = "A king that reaches the far rank wins: yours on rank 8, the engine's on rank 1."
+icon = "res://assets/ui/icons/icon_arena_ascent_256.png"
+ini_lines = PackedStringArray("flagPieceWhite = w", "flagPieceBlack = k", "flagRegionWhite = *8", "flagRegionBlack = *1")
+zone = PackedStringArray("a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8")
+win_text = "your king completes the ascent"
+loss_text = "the engine's king descends to your rank"

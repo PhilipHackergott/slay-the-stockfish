@@ -18,3 +18,10 @@ extends Resource
 ## Result lines when the arena's rule ends the fight.
 @export var win_text: String
 @export var loss_text: String
+## Extra promotion ranks (0-based, white's view; the engine's are mirrored), as in the ini lines.
+@export var promotion_ranks: PackedInt32Array
+## What stands on the walls this arena leaves during the fight: rubble, stake or crow.
+@export var wall_prop: StringName = &"rubble"
+## How the wall squares this arena leaves during the fight are called and explained (hover).
+@export var wall_name: String = "Rubble"
+@export var wall_text: String = "Nothing stands on it or passes through it."

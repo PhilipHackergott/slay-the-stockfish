@@ -283,6 +283,20 @@ are a one-file edit. Mirrored to Notion: Project Slay the Stockfish → Build de
   the Summit Altar both count.
 - Variant wins are checked before "no legal moves" in the core, so they never read as mate.
 - Props are procedural stand-ins (stone blocks, gold zone glow) until Blender props exist.
+- Seven more for review (10 in all): **The Hunger** (`mustCapture`), **The Ascent** (a king on the
+  far rank wins), **Shallow Crypt** (pawns promote on the 6th / 3rd), **Narrow Passage** (rubble
+  a3-a6, h3-h6), **Burning Stakes** (`wallingRule = past`: every move burns the square left),
+  **Gorgon Cloister** (`petrifyOnCaptureTypes = rbnq`: the capturer becomes a wall), **The Crow**
+  (`wallingRule = duck`). "Mercy's End" (stalemate loses) was cut: the Mercy Denied relic is that rule.
+- Walls can change every move: the controller diffs the FEN walls after each move. A capturer turned
+  to stone leaves the unit map but is not slain (`petrified`); its statue keeps its look.
+- The pinned engine refuses duck walling with a king, so The Crow sets `king = -`, `commoner = k`,
+  `extinctionPieceTypes = kw` (both kings pseudo-royal; check and mate still work, a side with no
+  move loses). The core now raises when the engine rejects a variant; before, the engine fell back
+  to plain chess silently while the rules library played the variant.
+- Walling moves are `from to,to wall` (about 30 per piece move); `mates_in_one` tries one wall
+  square per piece move and all of them only where it checks or ends the game (setup guard, 7 s to
+  under 1 s). The player clicks the piece, the target, then the crow's square.
 
 ## Piece readability
 
@@ -304,6 +318,15 @@ are a one-file edit. Mirrored to Notion: Project Slay the Stockfish → Build de
   digits), one `coin_tick` per coin rising in pitch, then the `gold` sound; the Victory modal and
   the reward screen list it.
 - Autoplay keeps an almost full clock, so autoplay gold totals now overstate a human run.
+
+## Scarce gold
+
+- Gold is scarce by default so the clock is worth racing: base fight income cut to about 0.6x
+  (act 1 fights 8-13, elites 21-30, guardian 36-48; acts 2/3 scale up), starting gold 25, skip 6,
+  treasure 9-18. Prices cut to about 0.85x (pieces 8 + 7 per value, legendary +20, restore 38,
+  reroll 12 +8, surgeon 50, relics 42/72/110/170). Event costs and rewards are unchanged.
+- Gold relics follow the base: Pilgrim's Coin +5 per won fight, Debt of Bone -9.
+- Seed-7 autoplay earns 529 gold over the run (852 before); a human run with less clock left earns less.
 
 ## Known gaps in v0.1
 

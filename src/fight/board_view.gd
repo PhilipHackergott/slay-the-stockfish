@@ -34,6 +34,9 @@ var _board_root: Node3D
 var _pieces_root: Node3D
 var _fx_root: Node3D
 var _arena_root: Node3D
+## Props standing on wall squares {sq: Node3D}, and what a new wall gets: rubble, stake or crow.
+var _wall_props: Dictionary = {}
+var wall_prop: StringName = &"rubble"
 
 
 func _ready() -> void:
@@ -106,9 +109,12 @@ func _build_board() -> void:
 
 ## The fight's arena props: rubble on wall squares, a gold glow on zone squares (the summit).
 ## clear() removes them.
-func set_arena(walls: Array, zone: PackedStringArray) -> void:
+func set_arena(walls: Array, zone: PackedStringArray, prop: StringName = &"rubble") -> void:
+	wall_prop = prop
 	for sq in walls:
-		_arena_root.add_child(_rubble(int(sq)))
+		var r := _rubble(int(sq))
+		_arena_root.add_child(r)
+		_wall_props[int(sq)] = r
 	var quad := PlaneMesh.new()
 	quad.size = Vector2(0.98, 0.98)
 	var mat := ShaderMaterial.new()
@@ -143,6 +149,154 @@ func _rubble(sq: int) -> Node3D:
 	return heap
 
 
+## Burning Stakes: a charred post in a ring of embers on the square a piece left.
+func _stake(sq: int) -> Node3D:
+	var root := Node3D.new()
+	root.position = sq_pos(sq)
+	var post := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.045
+	cyl.bottom_radius = 0.07
+	cyl.height = 0.75
+	post.mesh = cyl
+	post.position.y = 0.375
+	post.rotation.z = 0.08 * sin(sq * 1.3)
+	post.set_surface_override_material(0, Mats.world("wood_dead"))
+	root.add_child(post)
+	var embers := MeshInstance3D.new()
+	var disc := CylinderMesh.new()
+	disc.top_radius = 0.36
+	disc.bottom_radius = 0.4
+	disc.height = 0.03
+	embers.mesh = disc
+	embers.position.y = 0.015
+	embers.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	embers.set_surface_override_material(0, _ember_mat())
+	root.add_child(embers)
+	return root
+
+
+static var _ember: StandardMaterial3D
+
+
+static func _ember_mat() -> StandardMaterial3D:
+	if _ember == null:
+		_ember = StandardMaterial3D.new()
+		_ember.albedo_color = Color(0.12, 0.05, 0.03)
+		_ember.emission_enabled = true
+		_ember.emission = Color(1.0, 0.36, 0.08)
+		_ember.emission_energy_multiplier = 2.2
+		_ember.roughness = 0.9
+	return _ember
+
+
+## The Crow: a black bird standing on its square (a stand-in until a Blender crow exists).
+func _crow(sq: int) -> Node3D:
+	var root := Node3D.new()
+	root.position = sq_pos(sq)
+	var mat := Mats.world("crow")
+	var parts := [
+		[Vector3(0.0, 0.34, 0.0), Vector3(0.22, 0.2, 0.34), &"body"],
+		[Vector3(0.0, 0.5, 0.16), Vector3(0.14, 0.14, 0.14), &"head"],
+		[Vector3(0.0, 0.3, -0.24), Vector3(0.16, 0.05, 0.22), &"tail"],
+	]
+	for p in parts:
+		var mi := MeshInstance3D.new()
+		var s := SphereMesh.new()
+		s.radius = 0.5
+		s.height = 1.0
+		mi.mesh = s
+		mi.position = p[0]
+		mi.scale = p[1]
+		mi.set_surface_override_material(0, mat)
+		root.add_child(mi)
+	var beak := MeshInstance3D.new()
+	var cone := CylinderMesh.new()
+	cone.top_radius = 0.0
+	cone.bottom_radius = 0.035
+	cone.height = 0.14
+	beak.mesh = cone
+	beak.position = Vector3(0.0, 0.49, 0.28)
+	beak.rotation.x = PI * 0.5
+	beak.set_surface_override_material(0, Mats.world("iron"))
+	root.add_child(beak)
+	for side in [-1.0, 1.0]:
+		var leg := MeshInstance3D.new()
+		var c := CylinderMesh.new()
+		c.top_radius = 0.012
+		c.bottom_radius = 0.012
+		c.height = 0.26
+		leg.mesh = c
+		leg.position = Vector3(0.05 * side, 0.13, 0.0)
+		leg.set_surface_override_material(0, Mats.world("iron"))
+		root.add_child(leg)
+		var eye := MeshInstance3D.new()
+		var e := SphereMesh.new()
+		e.radius = 0.02
+		e.height = 0.04
+		eye.mesh = e
+		eye.position = Vector3(0.055 * side, 0.53, 0.21)
+		eye.set_surface_override_material(0, _ember_mat())
+		root.add_child(eye)
+	var ring := MeshInstance3D.new()
+	var disc := CylinderMesh.new()
+	disc.top_radius = 0.3
+	disc.bottom_radius = 0.33
+	disc.height = 0.02
+	ring.mesh = disc
+	ring.position.y = 0.01
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	ring.set_surface_override_material(0, _ember_mat())
+	root.add_child(ring)
+	root.scale = Vector3.ONE * 1.3
+	return root
+
+
+## Walls a move added or removed: the crow hops to its new square, a capturer turns to stone,
+## anything else gets the arena's prop.
+func _update_walls(ev: Dictionary) -> void:
+	var gone: Array = ev.get("gone_walls", [])
+	var fresh: Array = ev.get("new_walls", [])
+	if gone.size() == 1 and fresh.size() == 1 and _wall_props.has(int(gone[0])) and not pieces.has(int(fresh[0])):
+		var prop: Node3D = _wall_props[int(gone[0])]
+		_wall_props.erase(int(gone[0]))
+		_wall_props[int(fresh[0])] = prop
+		_hop(prop, sq_pos(int(fresh[0])))
+		return
+	for w in gone:
+		if _wall_props.has(int(w)):
+			_wall_props[int(w)].queue_free()
+			_wall_props.erase(int(w))
+	for w in fresh:
+		var sq := int(w)
+		var p: PieceView = pieces.get(sq)
+		if p != null:
+			pieces.erase(sq)
+			p.reparent(_arena_root)
+			p.petrify()
+			_wall_props[sq] = p
+			Audio.play("piece_drop", -2.0, 0.6)
+			Fx.burst(_fx_root, sq_pos(sq) + Vector3(0, 0.3, 0), Color(0.7, 0.7, 0.68), "land")
+			continue
+		var prop: Node3D = _stake(sq) if wall_prop == &"stake" else (_crow(sq) if wall_prop == &"crow" else _rubble(sq))
+		_arena_root.add_child(prop)
+		_wall_props[sq] = prop
+		prop.scale = Vector3.ONE * 0.01
+		var full := 1.3 if wall_prop == &"crow" else 1.0
+		prop.create_tween().tween_property(prop, "scale", Vector3.ONE * full, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		if wall_prop == &"stake":
+			Fx.burst(_fx_root, sq_pos(sq) + Vector3(0, 0.1, 0), Color(1.0, 0.45, 0.12), "land")
+
+
+func _hop(prop: Node3D, to: Vector3) -> void:
+	var from := prop.position
+	prop.rotation.y = atan2(to.x - from.x, to.z - from.z)
+	Audio.play("piece_leap", -4.0, 1.35)
+	prop.create_tween().tween_method(func(k: float):
+		prop.position = from.lerp(to, k) + Vector3(0, 1.2 * 4.0 * k * (1.0 - k), 0), 0.0, 1.0, 0.45) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
 # --- pieces -------------------------------------------------------------------------------------
 
 func clear() -> void:
@@ -151,6 +305,7 @@ func clear() -> void:
 	pieces.clear()
 	for c in _arena_root.get_children():
 		c.queue_free()
+	_wall_props.clear()
 	_persistent.clear()
 	clear_marks()
 
@@ -269,6 +424,7 @@ func present_move(ev: Dictionary) -> void:
 
 
 func _after_move(ev: Dictionary) -> void:
+	_update_walls(ev)
 	if ev.has("fen"):
 		sync(Fen.parse(String(ev["fen"]))["board"])
 	_persistent.clear()

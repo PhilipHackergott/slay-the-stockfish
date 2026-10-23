@@ -34,10 +34,12 @@ func swap(a: int, b: int) -> void:
 
 ## Applies one UCI move given the board before it ({square: letter}) and the side that moves.
 ## Returns the move event used for XP, losses and presentation.
-## pawn_letters: lower-case letters that capture en passant.
-func apply_move(uci: String, board: Dictionary, side: String, pawn_letters: String = "p") -> Dictionary:
+## pawn_letters: lower-case letters that capture en passant. A walling move ("a2a3,a3a2") counts by
+## its first part; the wall it leaves comes from the next FEN.
+func apply_move(full_uci: String, board: Dictionary, side: String, pawn_letters: String = "p") -> Dictionary:
+	var uci := full_uci.get_slice(",", 0)
 	var ev := {
-		"uci": uci, "side": side, "drop": "", "from": -1, "to": -1, "captured_sq": -1,
+		"uci": full_uci, "side": side, "drop": "", "from": -1, "to": -1, "captured_sq": -1,
 		"captured": "", "promotion": "", "mover": "", "mover_unit": -1, "captured_unit": -1,
 	}
 	if uci.contains("@"):

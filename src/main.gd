@@ -5,7 +5,8 @@ extends Node
 ## boss|roamer|unknown|reward|campfire|event|shop|treasure|codex|settings|formation|pause|act|end, --act=N (0-based),
 ## --omen=id, --arena=id, --encounter=id (on the node the screen enters), --event=id (the event screen shows this one),
 ## --relics=id,id, --units=type,type, --kind=elite|guardian (reward screen), --gold=N, --autoplay (plays a whole run unattended), --shot=path.png
-## [--shot-delay=s], --click=sq,sq, --hover=sq (mouse over a square in a fight), --win-after=s (the fight is won after s seconds), --quit-after-shot, --quit-on-end, --isolated (separate profile and save files).
+## [--shot-delay=s], --click=sq,sq, --hover=sq (mouse over a square in a fight), --win-after=s (the fight is won after s seconds), --quit-after-shot, --quit-on-end, --isolated (separate profile and save files;
+## these dev runs are muted unless --sound is given).
 
 var world: World
 var ui_root: Control
@@ -25,6 +26,7 @@ func _ready() -> void:
 		Profile.path = "user://profile_isolated.json"
 		Profile.load_profile()
 		Run.save_path = "user://run_isolated.json"
+		AudioServer.set_bus_mute(0, not args.has("sound"))
 	Engine.time_scale = float(args.get("speed", "1"))
 	world = World.new()
 	world.name = "World"
@@ -369,7 +371,8 @@ func _start_fight(node: Dictionary) -> void:
 	world.board_view.names = String(Profile.setting("piece_names", "fairy"))
 	world.board_view.hover_enabled = true
 	world.board_view.setup_position(fight.board, fight.unit_map, true)
-	world.board_view.set_arena(fight.walls, fight.arena.zone if fight.arena != null else PackedStringArray())
+	world.board_view.set_arena(fight.walls, fight.arena.zone if fight.arena != null else PackedStringArray(),
+		fight.arena.wall_prop if fight.arena != null else &"rubble")
 	fight.presenter = world.board_view
 	var hud := FightHud.new().setup(fight, world.board_view)
 	hud.autoplay = autoplay

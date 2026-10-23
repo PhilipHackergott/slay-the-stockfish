@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ArenaDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/arena_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"narrow_passage"
+display_name = "Narrow Passage"
+description = "Both flanks caved in: rubble fills a3 to a6 and h3 to h6. The fight happens in the middle six files."
+icon = "res://assets/ui/icons/icon_arena_narrow_256.png"
+walls = PackedStringArray("a3", "a4", "a5", "a6", "h3", "h4", "h5", "h6")

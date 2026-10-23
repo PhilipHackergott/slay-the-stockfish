@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ArenaDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/arena_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"the_hunger"
+display_name = "The Hunger"
+description = "Captures are compulsory: whenever a side can take, it must. Offer a piece and the other side has to bite."
+icon = "res://assets/ui/icons/icon_arena_hunger_256.png"
+ini_lines = PackedStringArray("mustCapture = true")
