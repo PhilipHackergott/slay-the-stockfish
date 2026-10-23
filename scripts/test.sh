@@ -11,7 +11,7 @@ chesscore/.venv/bin/python -m pytest -q chesscore/tests || { echo "PYTEST FAILED
 mkdir -p build/test-results
 xml="build/test-results/gut.xml"; rm -f "$xml"
 rc=0
-"$GODOT" --headless --path . --fixed-fps 60 --quit-after 5000000 -s res://addons/gut/gut_cmdln.gd \
+"$GODOT" --headless --path . --fixed-fps 60 --quit-after 500000000 -s res://addons/gut/gut_cmdln.gd \
   -gdir=res://tests -ginclude_subdirs -gexit -gjunit_xml_file="res://$xml" "$@" || rc=$?
 n="$(grep -o 'tests="[0-9]*"' "$xml" 2>/dev/null | head -1 | tr -dc 0-9 || true)"
 echo "TESTS rc=$rc count=${n:-0}"

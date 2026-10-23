@@ -312,6 +312,51 @@ func train(u: Unit, amount: int) -> void:
 	changed.emit()
 
 
+## Campfire Drill: XP to every deployed piece.
+func drill() -> int:
+	var n := 0
+	for u in deployed_units():
+		u.xp += cfg().camp_drill_xp
+		n += 1
+	changed.emit()
+	return n
+
+
+## Campfire Study: the act's guardian fight gives you extra clock time.
+func study() -> void:
+	flags["study"] = act_index
+	changed.emit()
+
+
+func studied() -> bool:
+	return int(flags.get("study", -1)) == act_index
+
+
+## Campfire Rite of Ash: burn one piece; the heir gains its XP plus its value. Returns the XP.
+func rite(burned: Unit, heir: Unit) -> int:
+	if burned == heir or Content.piece(burned.type).is_royal() or not heir.is_healthy():
+		return 0
+	var gain := burned.xp + Content.piece(burned.type).value
+	remove_unit(burned)
+	heir.xp += gain
+	changed.emit()
+	return gain
+
+
+func kindle_options() -> Array:
+	return relics.filter(func(id):
+		var r := Content.relic(id)
+		return r != null and r.kindle_text != "" and r.tier != &"curse" and not kindled.has(id))
+
+
+func kindle(id: StringName) -> void:
+	if kindle_options().has(id):
+		kindled.append(id)
+		enforce_command()
+		autofill()
+		changed.emit()
+
+
 # --- command ----------------------------------------------------------------------------------
 
 ## The act's Command plus relics and the king line; 0 = no cap.
@@ -483,6 +528,8 @@ func fight_mods(kind: StringName, enc: EncounterDef) -> Dictionary:
 		m["movetime_mult"] = float(m["movetime_mult"]) * think
 	m["engine_first"] = first
 	m["start_pieces"] = extra
+	if kind == &"guardian" and studied():
+		m["clock_delta_s"] = int(m["clock_delta_s"]) + cfg().camp_study_clock_s
 	return m
 
 

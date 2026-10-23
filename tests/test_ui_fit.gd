@@ -64,6 +64,10 @@ func _walk(c: Control, scrolled: bool, bad: Array) -> void:
 		var sr := Rect2(Vector2.ZERO, SCREEN).grow(TOLERANCE)
 		if r.size.x > 0.5 and r.size.y > 0.5 and (not pr.encloses(r) or not sr.encloses(r)):
 			bad.append("%s %s in %s %s (%s)" % [c.get_class(), r, p.get_class(), p.get_global_rect(), _text(c)])
+	# A wrapping label squeezed to a sliver stacks its letters (a box sized by its own content).
+	if c is Label and (c as Label).autowrap_mode != TextServer.AUTOWRAP_OFF and (c as Label).text.length() > 8 \
+			and c.size.x < 60.0:
+		bad.append("collapsed Label %s (%s)" % [c.get_global_rect(), _text(c)])
 	for ch in c.get_children():
 		if ch is Control:
 			_walk(ch, scrolled or c is ScrollContainer, bad)
@@ -96,9 +100,16 @@ func test_reward_fits() -> void:
 
 func test_campfire_fits() -> void:
 	_worst_case()
+	for u in Run.units.slice(1, 4):
+		u.state = &"slain"
 	var c := CampfireScreen.new()
 	await _show(c)
 	_check(c, "campfire")
+	for step in ["mend", "temper", "rite", "kindle", "cleanse"]:
+		c.open_step(step)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		_check(c, "campfire %s" % step)
 
 
 func test_shop_fits() -> void:

@@ -112,9 +112,5 @@ func test_no_encounter_allows_mate_in_one() -> void:
 				board[square] = def.letter if def.letter != "" else String(letters[t])
 			var fen := _fen(board)
 			assert_true((await ChessCore.validate(fen)).get("valid", false), "%s position is valid (%s)" % [id, fen])
-			var mates := PackedStringArray()
-			for move in await ChessCore.legal(fen, PackedStringArray()):
-				var res: Dictionary = await ChessCore.result(fen, PackedStringArray([move]))
-				if res.get("state", "") == "win":
-					mates.append(move)
+			var mates: PackedStringArray = await ChessCore.mates_in_one(fen)
 			assert_eq(mates.size(), 0, "%s mated in one by %s (%s)" % [id, mates, fen])

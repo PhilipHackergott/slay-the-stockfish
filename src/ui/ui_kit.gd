@@ -776,8 +776,9 @@ static func fit_to_content(host: Control, content: Control, base: Vector2, pads:
 
 
 ## A wide choice button with a title and an optional effect line underneath; both wrap.
+## width: its minimum width outside a stretching container (flows), 0 = the parent decides.
 static func option_button(title_text: String, detail: String, cb: Callable, detail_color: Color = MUTED,
-		enabled: bool = true) -> Button:
+		enabled: bool = true, width: int = 0) -> Button:
 	var b := Button.new()
 	b.disabled = not enabled
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -811,7 +812,9 @@ static func option_button(title_text: String, detail: String, cb: Callable, deta
 	if detail != "":
 		col.add_child(label(detail, 17, detail_color if enabled else DIM, true))
 	b.add_child(col)
-	fit_to_content(b, col, Vector2(0, 0), pad)
+	if width > 0:
+		b.size_flags_horizontal = Control.SIZE_FILL
+	fit_to_content(b, col, Vector2(width, 0), pad)
 	return b
 
 

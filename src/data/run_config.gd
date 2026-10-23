@@ -61,5 +61,9 @@ extends Resource
 @export var relic_prices: Dictionary = {"common": 50, "uncommon": 85, "rare": 130, "boss": 200}
 ## A won fight without losses may offer a relic (chance per node kind; elites offer one more card).
 @export var flawless_relic_chance: Dictionary = {"fight": 0.35, "elite": 1.0}
+## Campfire: how many fallen Mend raises, Drill XP, Study's extra seconds in the guardian fight.
+@export var camp_mend_count: int = 2
+@export var camp_drill_xp: int = 3
+@export var camp_study_clock_s: int = 60
 @export var treasure_relic_choices: int = 2
 @export var treasure_gold: PackedInt32Array = PackedInt32Array([15, 30])

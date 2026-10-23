@@ -104,7 +104,10 @@ func _jump(where: String) -> void:
 			_show_reward(o, kind)
 		"campfire":
 			Run.units[2].state = &"slain"
-			_set_screen(_campfire())
+			var c := _campfire()
+			_set_screen(c)
+			if args.has("camp"):
+				c.open_step.call_deferred(String(args["camp"]))
 		"event":
 			_show_event()
 		"codex":

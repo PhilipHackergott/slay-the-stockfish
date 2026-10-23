@@ -105,6 +105,35 @@ func test_kindling_raises_numbers_but_not_drawbacks() -> void:
 	assert_eq(Run.command_cap(), Run.current_act().command + 3)
 
 
+func test_campfire_actions() -> void:
+	var a := Run.add_unit(&"knight")
+	var b := Run.add_unit(&"rook")
+	a.xp = 5
+	var gain := Run.rite(a, b)
+	assert_eq(gain, 5 + 3, "its XP plus its value")
+	assert_null(Run.unit(a.id), "the burned piece is gone")
+	assert_eq(Run.rite(Run.king_unit(), b), 0, "the king never burns")
+	var xp_before: Array = Run.deployed_units().map(func(u): return u.xp)
+	Run.drill()
+	for i in Run.deployed_units().size():
+		assert_eq(Run.deployed_units()[i].xp, xp_before[i] + Content.config.camp_drill_xp)
+	Run.add_relic(&"pilgrims_coin")
+	Run.add_relic(&"creeping_rot")
+	assert_true(Run.kindle_options().has(&"pilgrims_coin"))
+	assert_false(Run.kindle_options().has(&"creeping_rot"), "curses never kindle")
+	Run.kindle(&"pilgrims_coin")
+	assert_false(Run.kindle_options().has(&"pilgrims_coin"))
+	assert_eq(Run.curses(), [&"creeping_rot"])
+	Run.remove_relic(&"creeping_rot")
+	assert_eq(Run.curses(), [])
+	var clock := int(Run.fight_mods(&"guardian", null)["clock_delta_s"])
+	Run.study()
+	assert_eq(int(Run.fight_mods(&"guardian", null)["clock_delta_s"]), clock + Content.config.camp_study_clock_s)
+	assert_eq(int(Run.fight_mods(&"fight", null)["clock_delta_s"]), clock, "Study is for the guardian only")
+	Run.advance_act()
+	assert_false(Run.studied(), "a new act, a new guardian")
+
+
 func test_bell_and_crown_in_a_real_fight() -> void:
 	Run.add_relic(&"chapel_bell")
 	Run.add_relic(&"choir_crown")

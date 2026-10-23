@@ -153,16 +153,14 @@ func _surgeon() -> Control:
 			"Tier %d · value %d · %d gold" % [def.tier, def.value, price], func():
 				if Run.surgeon_promote(su, target):
 					Audio.play("level_up")
-					_rebuild(), UiKit.GOLD, Run.gold >= price)
-		ob.custom_minimum_size.x = 280
+					_rebuild(), UiKit.GOLD, Run.gold >= price, 280)
 		opts.add_child(ob)
 	var dismiss := UiKit.option_button("Let %s go" % UiKit.unit_name(su), "+%d gold · gone for the run" % Content.config.dismiss_gold,
 		func():
 			Run.dismiss(su)
 			_surgeon_sel = -1
 			Audio.play("gold")
-			_rebuild(), UiKit.BLOOD)
-	dismiss.custom_minimum_size.x = 240
+			_rebuild(), UiKit.BLOOD, true, 240)
 	opts.add_child(dismiss)
 	return col
 

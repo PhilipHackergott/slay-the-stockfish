@@ -295,9 +295,7 @@ func _choose_train(xp: int) -> void:
 			Run.train(unit, xp)
 			Audio.play("level_up")
 			_finish_recruit("%s trains hard: +%d XP." % [UiKit.unit_name(unit), xp], unit.type)
-			_rebuild_levels())
-		b.size_flags_horizontal = Control.SIZE_FILL
-		b.custom_minimum_size = Vector2(260, 0)
+			_rebuild_levels(), UiKit.MUTED, true, 260)
 		flow.add_child(b)
 
 
