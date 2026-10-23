@@ -47,6 +47,8 @@ Stockfish" → Build decisions (private to Philip). Kit and lessons from Felsenb
   pair it with `--shot-delay=12`.
 - Headless runs frames uncapped: use `--quit-after-boot`/`--quit-on-end`, not small `--quit-after` values.
 - Never grep for `ERROR` to judge a run; the engine prints leak lines at exit.
+- Release: `tools/package/package.sh vX.Y`, upload the zips to a (draft) release tagged `slay-the-stockfish/vX.Y`,
+  then `gh workflow run windows-smoke -f tag=slay-the-stockfish/vX.Y` on a clean Windows runner.
 
 ## Working style
 - Small commits. Record every new design or build decision in Notion → Build decisions.
