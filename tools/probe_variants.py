@@ -37,7 +37,7 @@ v = variant("p_hill", "flagPieceWhite = w\nflagPieceBlack = k\nflagRegionWhite =
 check("Summit Altar", ends(v, "4k3/8/8/8/8/4W3/8/8 w - - 0 1", ["e3e4"]), "king on e4 ends the game")
 
 v = variant("p_walls", "")
-check("Collapsed Nave", len(legal(v, "4k3/8/8/3**3/8/8/8/R3W3 w - - 0 1")) < len(legal(v, "4k3/8/8/8/8/8/8/R3W3 w - - 0 1")),
+check("Collapsed Nave", len(legal(v, "4k3/8/8/3**3/8/8/8/3RW3 w - - 0 1")) < len(legal(v, "4k3/8/8/8/8/8/8/3RW3 w - - 0 1")),
       "* squares in the FEN block moves")
 
 v = variant("p_check", "checkCounting = true")
