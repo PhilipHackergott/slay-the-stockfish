@@ -1,0 +1,21 @@
+{
+  "judge": "Gemini 4 Argon (Cursor subagent), against sts_keyart.png and each sheet's brief, 23 Oct 2026",
+  "pass_1": {
+    "sts_stage_types": 8.0, "sts_stage_types_2": 7.5, "sts_stage_summit_altar": 8.0, "sts_bosses": 8.8,
+    "sts_fusions": 7.5, "sts_relics_a": 7.5, "sts_relics_b": 7.2, "sts_events": 8.0
+  },
+  "pass_2_redos": {
+    "sts_stage_types_2": {"winner": "new", "score": 8.6},
+    "sts_fusions": {"winner": "new", "score": 9.2},
+    "sts_relics_a": {"winner": "new", "score": 8.8, "note": "icon 11 replaced by relics/relic_stitchers_needle.png"}
+  },
+  "single_icons": {
+    "relics/relic_ossuary_rite": 8.7, "relics/relic_sand_of_the_hanged": 9.4, "relics/curse_gnawing_doubt": 9.5,
+    "relics/curse_weight_of_crowns": 9.5, "relics/relic_stitchers_needle": 9.2
+  },
+  "open": [
+    "sts_relics_b icons 3 and 4 use the iron frame instead of the gilded boss frame",
+    "sts_stage_types panels 1, 2 and 4: the dais, rubble and crow read weakly (8.0, kept; the Summit Altar hero covers panel 1)",
+    "sts_events: Turncoat knight is humanoid, the bridge has no gap, the Ghost Game has no empty chair (8.0, kept)"
+  ]
+}
