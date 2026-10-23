@@ -1,3 +1,108 @@
+# Decision log: v0.2 (playtest fixes)
+
+Built from the v0.1 playtest: text overflowed with no scrolling, upgrade trees felt wonky, rewards
+were "always pick the highest value", too few relics. Chosen core fix: a Command cap plus
+value-banded offers. Slices: a readable, b choices, c reliquary and campfire, d randomness and
+events. Mirrored to Notion: Build decisions → v0.2 decision log.
+
+## a: Readable
+
+- **Cards grow to their text** (`UiKit.fit_to_content`); option buttons take a fixed width when
+  they sit in a row (`option_button(..., width)`), so labels never collapse to a sliver.
+- **Modals fit the viewport and scroll** past it (`UiModal`); the HUD left column, relic icon grid
+  and event options wrap instead of overflowing.
+- **Overflow test** (`tests/test_ui_fit.gd`) walks every screen at 1920×1080 and fails on clipped or
+  collapsed labels.
+- **Unlocks apply from the next run**, so a run never changes its own pools mid-way.
+
+## b: Choices (tiers, Command, rewards)
+
+- **Tier ladder 1–5 plus legends** (`piece_def.tier`). Every promotion goes exactly one tier up,
+  at most three options (`Run.upgrade_options`). Replaces v0.1's "all children shown".
+  Value step per promotion: +1–2 at tiers 1–2, +2–4 at tiers 3–4.
+- **XP thresholds** 3 / 9 / 18 / 30 / 45 / 65.
+- **Perks instead of a promotion**: Veteran (+50 % XP), Bulwark (gets up after a won fight),
+  Vanguard (−1 Command), Bounty (5 gold per capture). One perk per level-up, fixed per unit and
+  level (no reroll fishing), two at most, none for royals (`max_perks`).
+- **Legends only by Ascension**: a guardian lets one tier-5 piece become a legend. They are no
+  longer reward cards.
+- **Command cap**: deployed pieces cost their value, the king is free; the rest waits on the bench.
+  Cap 15 / 24 / 34 per act (`act*.tres → command`). Bench states: auto (filled by the game) or held
+  (you benched it). A promotion over the cap benches the cheapest piece.
+- **The boss is uncapped** (`final_uncapped`): the final fight takes every healthy piece, and gets
+  no reinforcements.
+- **Enemies scale with your Command**: material target = Command × ratio (fight 0.8, elite 1.0,
+  guardian 1.15). Missing material arrives as reinforcements that never check your king, never
+  allow a mate in one, and never take their own king's flight squares.
+- **Value-banded offers**: each reward rolls one tier for its node kind (act 1 fight 1–2, elite 2–3,
+  guardian 3; +1 per act), then distinct pieces of that tier. Measured: an offer whose best card
+  beats the next by 2+ value went from ~40 % (v0.1) to 0–2.5 %.
+- **Train slot**: 25 % of offers swap one card for XP to a piece (4 / 6 / 8 per act). Skipping
+  pays 10 gold.
+- **Shop**: tiered stock, rerolls (15 gold, +10 each), Bone Surgeon (promote one tier for 60 gold,
+  dismiss for 10).
+- **Move diagrams** come from Betza (`src/core/betza.gd`) on cards, shop and codex.
+- **Core op `mates_in_one`** backs the reinforcement and encounter safety checks.
+
+## c: Reliquary and campfire
+
+- **Relic tiers**: common, uncommon, rare, boss (guardian only), curse (never offered). Odds per
+  source in `run_config.relic_odds` (e.g. elite 60 % uncommon / 40 % rare). Shop prices by tier
+  50 / 85 / 130 / 200.
+- **19 new relics, 3 curses** with data-driven effects (`relic_def.gd`). Relics never weaken the
+  final boss (skill and thinking-time relics skip it).
+- **More relic chances**: a sealed reliquary (treasure) once per act (gold + 1 of 2 relics); a
+  flawless fight offers a relic 35 % of the time; a flawless elite shows one more card. Measured:
+  guaranteed relic picks on a random path per act went from ~1.4 to 2.3–2.6 (acts 1–2).
+- **Relic shards were dropped** (a reward-slot currency toward a relic): treasure nodes and
+  flawless relics add relic chances without a second currency.
+- **Campfire: one action per visit**. Mend (raise up to 2 fallen, XP kept), Temper (one tier up,
+  no XP), Drill (+3 XP to every deployed piece), Study (see the guardian, +60 s against it), Rite
+  of Ash (burn one piece; another gains its XP plus its value), Kindle (a relic's numbers ×1.5,
+  drawbacks unchanged), Cleanse (burn a curse, shown only when cursed).
+- **Event effects scale with tiers** (transform one tier up, gain a piece of a tier), not rarity.
+
+## d: Randomness and events
+
+- **"?" nodes** roll on entry: event 65, fight 15, treasure 10, shop 10. Every "?" that is not a
+  fight adds 10 to the fight weight (pity), carried across acts (`flags.unknown_streak`).
+- **Omens** on 25 % of fight and elite nodes, rolled with the map and shown as badges: Blood Moon
+  (×2 XP), Fog (engine −4 skill), Iron Rain (+2 enemy pawns, ×1.5 gold), Eclipse (no increment),
+  Requiem (the slain rise after a win). Never on guardians or the boss. `data/omens/`.
+- **The roaming elite** starts on row 3 with an unused elite of the act's tier, steps along a
+  random edge every 2 nodes you enter, and fights you if you enter its node (rare-relic odds).
+  If it reaches the guardian, it joins: the guardian's material target rises by 0.15 × Command.
+  No roamer in the final act.
+- **18 events, 6 per act** (`event_def.acts`); the act's pool first, then unused ones from other
+  acts, then repeats.
+- **Problems (mate in two)**: 9 positions, 3 per tier, generated by `tools/gen_puzzles.py` and
+  verified by the core op `mate_in_two` (exactly one key, at least 3 replies, no capturing key, a
+  quiet key from tier 2). Your own pieces and relics stay out; move 2 must mate or the problem
+  stands. A win pays a relic (rare-leaning odds), a loss costs gold, never the run. Each problem
+  is seen once per run.
+- **The Pit (skirmish)**: your king and the three greenest deployed pieces against a small army.
+  Nothing stays dead, captured XP is kept, it does not count as a won fight.
+- **The Tailor's stitch**: one non-pawn, non-royal piece gains a step (W, F) or a knight's leap (N)
+  for 30 / 55 gold. Built as a lazy synthetic piece `<base>__<atom>` (Betza = base + atom, value
+  +2 / +3, the base's look and upgrades), never in the codex or shop. One stitch per piece, kept
+  at its level, lost on promotion. Only atoms that add squares are offered.
+- **Pacts carry curses**: Bone Notary (gold or a relic, for Debt of Bone), Sunken Pact (a tier-up
+  for Creeping Rot, or a rare-leaning relic for Cracked Hourglass), the Throne's Offer (two
+  tier-ups for Creeping Rot, or 150 gold for Debt of Bone). Cleanse removes them.
+- **The Oracle** gives +90 s against the boss; the Ferryman restores every fallen piece for gold
+  or trades a pawn for +3 XP all round.
+- **No fight is won on the first move**: if your formation could mate at once (an army without
+  pawns can, against the boss's untouched start), the engine moves first. If the engine could then
+  mate at once too, you keep the first move.
+
+## v0.1 decisions replaced
+
+- "All children shown at level-up" → at most three, one tier up.
+- "Rarity tiers per act and node kind" for rewards → one rolled tier per offer; legends via
+  Ascension only.
+- "Shop: 3 pieces, 2 relics" → tiered stock with rerolls and the Bone Surgeon; relic prices by tier.
+- XP thresholds 3 / 8 / 15 / 24 / 35 → 3 / 9 / 18 / 30 / 45 / 65.
+
 # Decision log: v0.1 (post-MVP ticket)
 
 Every assumption made while building the rest of the handover ticket without asking. Each line
