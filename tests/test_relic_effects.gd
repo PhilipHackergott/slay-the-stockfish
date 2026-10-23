@@ -46,13 +46,13 @@ func test_gold_relics() -> void:
 	var before := Run.gold
 	Run.apply_fight(o, &"fight")
 	var act := Run.current_act()
-	assert_between(int(o["gold"]), int(act.gold["fight"][0]) + 8, int(act.gold["fight"][1]) + 8)
+	assert_between(int(o["gold"]), int(act.gold["fight"][0]) + 5, int(act.gold["fight"][1]) + 5)
 	assert_eq(Run.gold, before + int(o["gold"]))
 	Run.remove_relic(&"pilgrims_coin")
 	Run.add_relic(&"debt_of_bone")
 	var o2 := {"state": "win", "slain": [], "xp": [], "fought": []}
 	Run.apply_fight(o2, &"fight")
-	assert_true(int(o2["gold"]) >= 0 and int(o2["gold"]) <= int(act.gold["fight"][1]) - 15 + 1)
+	assert_true(int(o2["gold"]) >= 0 and int(o2["gold"]) <= int(act.gold["fight"][1]) - 9 + 1)
 	var p := Run.piece_price(&"rook")
 	Run.add_relic(&"merchants_ledger")
 	assert_eq(Run.piece_price(&"rook"), int(round(p * 0.8)))
@@ -105,7 +105,7 @@ func test_command_engine_and_reward_relics() -> void:
 
 func test_kindling_raises_numbers_but_not_drawbacks() -> void:
 	var coin: RelicDef = Content.relic(&"pilgrims_coin").kindled()
-	assert_eq(coin.gold_flat, 12)
+	assert_eq(coin.gold_flat, 8)
 	var censer: RelicDef = Content.relic(&"abbots_censer").kindled()
 	assert_almost_eq(censer.xp_mult, 2.5, 0.001)
 	assert_eq(censer.clock_bonus_s, -60)

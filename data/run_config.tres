@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 starting_army = Array[StringName]([&"king", &"pawn", &"pawn", &"pawn", &"pawn", &"knight", &"bishop"])
-starting_gold = 30
+starting_gold = 25
 xp_thresholds = PackedInt32Array(3, 9, 18, 30, 45, 65)
 overflow_gold_per_xp = 2
 clock_base_s = 300

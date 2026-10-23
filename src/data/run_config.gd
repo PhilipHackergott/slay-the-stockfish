@@ -11,7 +11,7 @@ extends Resource
 ## Chance that one recruit slot is a Train slot instead (XP for a piece you already have).
 @export var train_chance: float = 0.25
 ## Gold for skipping the recruit.
-@export var skip_gold: int = 10
+@export var skip_gold: int = 6
 ## A unit that cannot rise any further (final form or top level) turns each XP point into this much gold.
 @export var overflow_gold_per_xp: int = 2
 @export var clock_base_s: int = 300
@@ -45,15 +45,15 @@ extends Resource
 ## Shop: how many pieces and relics are on offer, and the prices before difficulty.
 @export var shop_pieces: int = 3
 @export var shop_relics: int = 2
-@export var piece_price_base: int = 10
-@export var piece_price_per_value: int = 8
-@export var legendary_markup: int = 25
-@export var restore_price: int = 45
+@export var piece_price_base: int = 8
+@export var piece_price_per_value: int = 7
+@export var legendary_markup: int = 20
+@export var restore_price: int = 38
 ## Rerolling the shop's wares: the first reroll costs this, each further one reroll_step more.
-@export var reroll_price: int = 15
-@export var reroll_step: int = 10
+@export var reroll_price: int = 12
+@export var reroll_step: int = 8
 ## The Bone Surgeon: promote a piece one tier for gold, or dismiss one for a little gold.
-@export var surgeon_price: int = 60
+@export var surgeon_price: int = 50
 @export var dismiss_gold: int = 10
 ## Relic tier weights per source (start, elite, guardian, treasure, shop, flawless, event).
 @export var relic_odds: Dictionary = {
@@ -62,7 +62,7 @@ extends Resource
 	"flawless": {"common": 70, "uncommon": 30}, "event": {"common": 60, "uncommon": 40},
 	"roamer": {"rare": 90, "uncommon": 10}}
 ## Shop price of a relic by tier (a relic's own price, if set, wins).
-@export var relic_prices: Dictionary = {"common": 50, "uncommon": 85, "rare": 130, "boss": 200}
+@export var relic_prices: Dictionary = {"common": 42, "uncommon": 72, "rare": 110, "boss": 170}
 ## A won fight without losses may offer a relic (chance per node kind; elites offer one more card).
 @export var flawless_relic_chance: Dictionary = {"fight": 0.35, "elite": 1.0}
 ## Campfire: how many fallen Mend raises, Drill XP, Study's extra seconds in the guardian fight.
@@ -80,4 +80,4 @@ extends Resource
 @export var roamer_every: int = 2
 @export var roamer_guardian_ratio: float = 0.15
 @export var treasure_relic_choices: int = 2
-@export var treasure_gold: PackedInt32Array = PackedInt32Array([15, 30])
+@export var treasure_gold: PackedInt32Array = PackedInt32Array([9, 18])
