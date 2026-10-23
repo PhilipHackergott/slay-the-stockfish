@@ -347,7 +347,7 @@ func _relic_ids_for_kind() -> Array:
 		&"guardian":
 			return Run.relic_choices(Run.relic_card_count(c.guardian_relic_choices), "guardian")
 		&"elite", &"roamer":
-			return Run.relic_choices(Run.relic_card_count(c.elite_relic_choices + (1 if _flawless() else 0)), "elite")
+			return Run.relic_choices(Run.relic_card_count(c.elite_relic_choices + (1 if _flawless() else 0)), String(kind))
 	return Run.relic_choices(Run.relic_card_count(2), "flawless")
 
 

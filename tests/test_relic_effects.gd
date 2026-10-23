@@ -29,6 +29,17 @@ func test_offers_follow_their_tiers_and_never_hold_curses() -> void:
 	assert_eq(Run.relic_price(&"tattered_standard"), Content.config.relic_prices["common"])
 
 
+func test_the_roamer_offers_its_own_odds() -> void:
+	var o := {"state": "win", "slain": [], "xp": [], "encounter": &"bishop_of_ash", "gold": 40}
+	var rares := 0
+	for i in 20:
+		var r: RewardScreen = RewardScreen.new().setup(o, &"roamer")
+		var ids: Array = r._relic_ids_for_kind()
+		rares += ids.filter(func(id): return Content.relic(id).tier == &"rare").size()
+		r.free()
+	assert_gt(rares, 28, "about 9 in 10 roamer cards are rare")
+
+
 func test_gold_relics() -> void:
 	Run.add_relic(&"pilgrims_coin")
 	var o := {"state": "win", "slain": [], "xp": [], "fought": []}
