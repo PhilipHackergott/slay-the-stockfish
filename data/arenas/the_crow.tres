@@ -12,3 +12,4 @@ ini_lines = PackedStringArray("wallingRule = duck", "king = -", "commoner = k", 
 wall_prop = &"crow"
 wall_name = "The Crow"
 wall_text = "It blocks this square until someone moves it. After every move, the side that moved sets it on a new empty square."
+unlock = &"guardian_2"

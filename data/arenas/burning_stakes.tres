@@ -12,3 +12,4 @@ ini_lines = PackedStringArray("wallingRule = past")
 wall_prop = &"stake"
 wall_name = "Burning stake"
 wall_text = "A piece left this square and it caught fire. Nothing stands on it or passes through it."
+unlock = &"guardian_2"

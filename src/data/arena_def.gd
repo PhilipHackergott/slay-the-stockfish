@@ -25,3 +25,5 @@ extends Resource
 ## How the wall squares this arena leaves during the fight are called and explained (hover).
 @export var wall_name: String = "Rubble"
 @export var wall_text: String = "Nothing stands on it or passes through it."
+## Profile unlock key ("" = always rolled). Guardians use their arena regardless.
+@export var unlock: StringName

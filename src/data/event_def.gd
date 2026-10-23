@@ -17,3 +17,5 @@ extends Resource
 ## Acts (1-based) whose ? nodes draw this event; empty = any act.
 @export var acts: PackedInt32Array = PackedInt32Array()
 @export var icon: String = "res://assets/ui/icons/icon_event_256.png"
+## Profile unlock key ("" = always in the pool).
+@export var unlock: StringName

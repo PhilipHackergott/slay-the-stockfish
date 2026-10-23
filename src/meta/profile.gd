@@ -127,6 +127,12 @@ func unlock_text(key: String) -> String:
 	for r in Content.relics.values():
 		if String(r.unlock) == key:
 			names.append(r.display_name)
+	for a in Content.arenas.values():
+		if String(a.unlock) == key:
+			names.append("arena %s" % a.display_name)
+	for e in Content.events.values():
+		if String(e.unlock) == key:
+			names.append("event %s" % e.title)
 	var what: String = ", ".join(names) if not names.is_empty() else "nothing new"
 	return "%s: %s" % [UNLOCKS.get(StringName(key), key), what]
 

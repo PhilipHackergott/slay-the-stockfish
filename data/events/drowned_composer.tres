@@ -10,3 +10,4 @@ text = "Under the water a board lies on the altar, its pieces fixed in place by 
 options = Array[Dictionary]([{"label": "Attempt the problem", "fight": "puzzle", "tier": 2, "detail": "Mate in two against the engine at full strength, with its pieces, not yours. Solve it: a relic, most likely a rare one. Fail: lose 25 gold.", "win": {"effect": "gain_relic", "source": "roamer", "result": "The water goes still. The reliquary floats up into your hands."}, "lose": {"effect": "lose_gold", "amount": 25, "result": "The voice gurgles something smug. Coins slip out of your purse and sink."}}, {"label": "Wade past", "effect": "nothing", "result": "The pieces under the water shift when you look away."}])
 acts = PackedInt32Array(2)
 icon = "res://assets/ui/icons/icon_event_puzzle_256.png"
+unlock = &"runs_1"

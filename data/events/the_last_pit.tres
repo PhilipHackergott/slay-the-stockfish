@@ -10,3 +10,4 @@ text = "Even here, at the engine's door, someone has dug a fighting pit. The eng
 options = Array[Dictionary]([{"label": "Go down into the pit", "fight": "skirmish", "encounter": "pit_wardens", "units": 3, "detail": "Your king and your three greenest pieces fight a small engine army. No piece of yours stays dead, and they keep the XP they take. Win: 55 gold.", "win": {"effect": "gold", "amount": 55, "result": "The crowd above throws coins and bones. You keep the coins."}, "lose": {"effect": "nothing", "result": "You are hauled out by your collars. Nobody died, which the crowd finds disappointing."}}, {"label": "Walk around it", "effect": "nothing", "result": "The engine's pieces watch you pass. One of them takes notes."}])
 acts = PackedInt32Array(3)
 icon = "res://assets/ui/icons/icon_event_pit_256.png"
+unlock = &"guardian_2"

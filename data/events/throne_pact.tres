@@ -9,3 +9,4 @@ title = "The Throne's Offer"
 text = "The engine speaks through a grille in the wall, very politely. It offers terms. It always offers terms, it says, to players it expects to beat."
 options = Array[Dictionary]([{"label": "Accept its blessing", "effect": "transform_up", "amount": 2, "curse": "creeping_rot", "detail": "Two random pieces below tier 5 each become a random piece one tier higher.", "result": "The grille hums. Two of your pieces stand taller and feel colder."}, {"label": "Accept its coin", "effect": "gold", "amount": 150, "detail": "Gain 150 gold.", "curse": "debt_of_bone", "result": "Coins pour out of the grille, warm from the machine."}, {"label": "Refuse its terms", "effect": "nothing", "result": "\"As you like,\" it says. \"It changes nothing.\""}])
 acts = PackedInt32Array(3)
+unlock = &"guardian_2"

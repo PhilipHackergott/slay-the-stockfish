@@ -9,3 +9,4 @@ display_name = "The Hunger"
 description = "Captures are compulsory: whenever a side can take, it must. Offer a piece and the other side has to bite."
 icon = "res://assets/ui/icons/icon_arena_hunger_256.png"
 ini_lines = PackedStringArray("mustCapture = true")
+unlock = &"guardian_1"

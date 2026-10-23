@@ -12,3 +12,4 @@ ini_lines = PackedStringArray("flagPieceWhite = w", "flagPieceBlack = k", "flagR
 zone = PackedStringArray("a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8")
 win_text = "your king completes the ascent"
 loss_text = "the engine's king descends to your rank"
+unlock = &"runs_1"

@@ -226,3 +226,30 @@ func test_the_crow_moves_after_every_move() -> void:
 	var ev := fight.unit_map.apply_move("e3e4,e4h5", fight.board, "w")
 	assert_eq(ev["promotion"], "", "the crow part is not a promotion")
 	assert_eq(ev["to"], Fen.sq("e4"))
+
+
+func test_locked_arenas_and_events_stay_out_until_unlocked() -> void:
+	var locked_arenas: Array = Content.arenas.keys().filter(func(id): return Content.arena(id).unlock != &"")
+	var locked_events: Array = Content.events.keys().filter(func(id): return Content.events[id].unlock != &"")
+	assert_gt(locked_arenas.size(), 0)
+	assert_gt(locked_events.size(), 0)
+	for unlocked in [false, true]:
+		var arenas := {}
+		var events := {}
+		for s in 30:
+			Run.new_run(500 + s)
+			Run.unlocks = Profile.UNLOCKS.keys().map(func(k): return String(k)) if unlocked else []
+			for a in 3:
+				Run.act_index = a
+				Run._build_act_map()
+				for n in Run.map.nodes.filter(func(n): return n["type"] != &"guardian"):
+					if n["arena"] != &"":
+						arenas[n["arena"]] = true
+				for i in 6:
+					var e := Run.pick_event()
+					if e != null:
+						events[e.id] = true
+		var seen_locked: bool = locked_arenas.any(func(id): return arenas.has(id))
+		assert_eq(seen_locked, unlocked, "locked arenas appear only once unlocked")
+		assert_eq(locked_events.any(func(id): return events.has(id)), unlocked, "locked events too")
+	assert_string_contains(Profile.unlock_text("guardian_2"), "arena The Crow")
