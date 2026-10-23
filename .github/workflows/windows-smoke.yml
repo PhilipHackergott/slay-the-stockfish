@@ -1,0 +1,87 @@
+# Smoke test of the packaged Windows build (tools/package/package.sh) on a clean Windows runner:
+# the bundled python + server.py on their own, then the exported game booting headless with only the bundled runtime.
+# The zip comes from a (draft) release asset, so the build under test is exactly the file that ships.
+name: windows-smoke
+
+# Run it from the Actions tab or with: gh workflow run windows-smoke -f tag=slay-the-stockfish/vX.Y
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag (draft is fine) with the asset slay-the-stockfish-<version>-windows.zip
+        default: slay-the-stockfish/v0.2
+
+permissions:
+  contents: write # draft releases are only visible with write access
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download and unzip the build
+        run: |
+          $env:ZIP = "slay-the-stockfish-$($env:TAG -replace '^slay-the-stockfish/', '')-windows.zip"
+          $url = gh api "repos/$env:GITHUB_REPOSITORY/releases" --paginate `
+            --jq '.[] | select(.tag_name == env.TAG) | .assets[] | select(.name == env.ZIP) | .url' | Select-Object -First 1
+          if (-not $url) { throw "no asset $env:ZIP in a release tagged $env:TAG" }
+          Invoke-WebRequest -Uri $url -Headers @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = "application/octet-stream" } `
+            -OutFile "$env:RUNNER_TEMP\build.zip"
+          Expand-Archive "$env:RUNNER_TEMP\build.zip" -DestinationPath "$env:RUNNER_TEMP\game"
+          Get-ChildItem "$env:RUNNER_TEMP\game\Slay the Stockfish" | Format-Table Name, Length
+          Get-Content "$env:RUNNER_TEMP\game\Slay the Stockfish\chesscore\RUNTIME.txt"
+
+      - name: Bundled MSVC DLLs are Microsoft-signed
+        run: |
+          Get-ChildItem "$env:RUNNER_TEMP\game\Slay the Stockfish\chesscore\python\*.dll" | ForEach-Object {
+            $sig = Get-AuthenticodeSignature $_.FullName
+            "{0,-22} {1,-6} {2}" -f $_.Name, $sig.Status, $sig.SignerCertificate.Subject
+          }
+
+      - name: Bundled python + server.py (ping, broken variant, legal, engine move, msvcp140 from the bundle)
+        run: |
+          $env:PATH = "C:\Windows\System32;C:\Windows"
+          $core = "$env:RUNNER_TEMP\game\Slay the Stockfish\chesscore"
+          & "$core\python\python.exe" -E -s -B tools/package/smoke_core.py $core
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Exported game boots headless with the bundled core
+        run: |
+          $env:PATH = "C:\Windows\System32;C:\Windows"
+          Remove-Item Env:STS_PYTHON, Env:STS_CHESSCORE, Env:STS_ENGINE -ErrorAction SilentlyContinue
+          $exe = "$env:RUNNER_TEMP\game\Slay the Stockfish\Slay the Stockfish.exe"
+          $p = Start-Process -FilePath $exe -ArgumentList '--headless', '--', '--quit-after-boot' `
+            -WorkingDirectory $env:RUNNER_TEMP -NoNewWindow -PassThru `
+            -RedirectStandardOutput "$env:RUNNER_TEMP\boot.out" -RedirectStandardError "$env:RUNNER_TEMP\boot.err"
+          if (-not $p.WaitForExit(180000)) { Stop-Process -Id $p.Id -Force; throw "boot timed out" }
+          Get-Content "$env:RUNNER_TEMP\boot.out", "$env:RUNNER_TEMP\boot.err"
+          "exit code: $($p.ExitCode)"
+          if (-not (Select-String -Path "$env:RUNNER_TEMP\boot.out" -Pattern 'STS BOOT OK core=ok' -Quiet)) { throw "no 'STS BOOT OK core=ok'" }
+
+      - name: Sidecar command line and no orphans after the game is killed
+        run: |
+          $env:PATH = "C:\Windows\System32;C:\Windows"
+          $exe = "$env:RUNNER_TEMP\game\Slay the Stockfish\Slay the Stockfish.exe"
+          $p = Start-Process -FilePath $exe -ArgumentList '--headless' -WorkingDirectory $env:RUNNER_TEMP -NoNewWindow -PassThru `
+            -RedirectStandardOutput "$env:RUNNER_TEMP\run.out" -RedirectStandardError "$env:RUNNER_TEMP\run.err"
+          $kids = @()
+          for ($i = 0; $i -lt 60 -and $kids.Count -eq 0; $i++) {
+            Start-Sleep -Milliseconds 500
+            $kids = @(Get-CimInstance Win32_Process -Filter "ParentProcessId=$($p.Id) AND Name='python.exe'")
+          }
+          $kids | ForEach-Object { "child: $($_.CommandLine)" }
+          if ($kids.Count -eq 0) { throw "the game started no chess core" }
+          if ($kids[0].ExecutablePath -notlike "$env:RUNNER_TEMP\game\*") { throw "core python is not the bundled one: $($kids[0].ExecutablePath)" }
+          Stop-Process -Id $p.Id -Force
+          Start-Sleep -Seconds 5
+          $left = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -like "$env:RUNNER_TEMP\game\*" })
+          $left | ForEach-Object { "still running: $($_.CommandLine)" }
+          if ($left.Count -gt 0) { throw "orphaned processes after killing the game" }
