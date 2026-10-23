@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="AffixDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/affix_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"relentless"
+display_name = "Relentless"
+description = "Your clock gains nothing per move."
+no_increment = true

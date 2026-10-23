@@ -520,7 +520,7 @@ func engine_skill() -> int:
 		s += int(mods.get("skill_bonus", 0))
 	if encounter.kind == &"elite":
 		s += int(mods.get("elite_skill_bonus", 0))
-	s += int(mods.get("relic_skill", 0)) + int(mods.get("omen_skill", 0))
+	s += int(mods.get("relic_skill", 0)) + int(mods.get("omen_skill", 0)) + int(mods.get("affix_skill", 0))
 	return clampi(s, -20, 20)
 
 

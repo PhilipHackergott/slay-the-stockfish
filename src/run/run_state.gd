@@ -119,6 +119,8 @@ func _build_act_map() -> void:
 	for n in map.nodes:
 		if n["type"] == &"fight" or n["type"] == &"elite":
 			_roll_omen(n)
+		if n["type"] == &"elite":
+			_roll_affixes(n, act)
 		elif n["type"] == &"guardian":
 			var g := Content.encounter(n["encounter"])
 			if g != null and Content.arena(g.arena) != null:
@@ -177,6 +179,29 @@ func _roll_omen(n: Dictionary) -> void:
 	var ids: Array = Content.omens.keys()
 	ids.sort()
 	n["omen"] = ids[rng.randi_range(0, ids.size() - 1)]
+
+
+func _roll_affixes(n: Dictionary, act: ActDef) -> void:
+	if act == null or act.affix_max <= 0:
+		return
+	var pool: Array = Array(act.affix_pool).filter(func(a): return Content.affix(StringName(a)) != null)
+	pool.sort()
+	var picked: Array = []
+	for i in mini(rng.randi_range(act.affix_min, act.affix_max), pool.size()):
+		picked.append(StringName(pool.pop_at(rng.randi_range(0, pool.size() - 1))))
+	n["affixes"] = picked
+
+
+## The affixes of the elite you stand on.
+func current_affixes() -> Array:
+	if map == null or current_node < 0:
+		return []
+	var out: Array = []
+	for a in map.node(current_node).get("affixes", []):
+		var d := Content.affix(StringName(a))
+		if d != null:
+			out.append(d)
+	return out
 
 
 func _roll_arenas(act: ActDef) -> void:
@@ -610,8 +635,8 @@ func enemy_target(kind: StringName) -> float:
 
 ## Reinforcements that join an encounter, in order: [[square, piece id], ...]. extra_pawns come on
 ## top of the material target (Iron Rain).
-func reinforcements(enc: EncounterDef, kind: StringName, extra_pawns: int = 0) -> Array:
-	var target := enemy_target(kind)
+func reinforcements(enc: EncounterDef, kind: StringName, extra_pawns: int = 0, ratio_mult: float = 1.0) -> Array:
+	var target := enemy_target(kind) * ratio_mult
 	var have := layout_material(enc.layout)
 	var out: Array = []
 	var order: Array = []
@@ -653,9 +678,15 @@ func reinforcements(enc: EncounterDef, kind: StringName, extra_pawns: int = 0) -
 func fight_mods(kind: StringName, enc: EncounterDef) -> Dictionary:
 	var m := difficulty_mods()
 	var omen := current_omen() if kind != &"guardian" and kind != &"boss" else null
+	var affixes: Array = current_affixes() if kind == &"elite" else []
 	var banner: Array = []
 	m["node_kind"] = kind
-	m["reinforcements"] = reinforcements(enc, kind, omen.extra_pawns if omen != null else 0) if enc != null else []
+	var pawns := omen.extra_pawns if omen != null else 0
+	var ratio := 1.0
+	for af in affixes:
+		pawns += af.extra_pawns
+		ratio *= af.enemy_ratio_mult
+	m["reinforcements"] = reinforcements(enc, kind, pawns, ratio) if enc != null else []
 	var xp_mult := 1.0
 	var skill := 0
 	var think := 1.0
@@ -679,6 +710,9 @@ func fight_mods(kind: StringName, enc: EncounterDef) -> Dictionary:
 		banner.append("Ambush: the unknown path was a fight.")
 	if kind == &"roamer":
 		banner.append("You caught the roaming elite. Beat it for a rare relic.")
+	if flags.has("second_chance"):
+		banner.append("%s shatters: the fight begins again." % String(flags["second_chance"]))
+		flags.erase("second_chance")
 	if enc != null and enc.move_limit > 0:
 		banner.append("Mate in %d: your relics stay out of it, and move %d must checkmate." % [enc.move_limit, enc.move_limit])
 	if kind == &"skirmish":
@@ -697,6 +731,13 @@ func fight_mods(kind: StringName, enc: EncounterDef) -> Dictionary:
 		m["omen_skill"] = omen.engine_skill_delta
 		m["no_increment"] = omen.no_increment
 		banner.append("Omen · %s: %s" % [omen.display_name, omen.description])
+	for af in affixes:
+		m["affix_skill"] = int(m.get("affix_skill", 0)) + af.engine_skill_delta
+		m["movetime_mult"] = float(m["movetime_mult"]) * af.movetime_mult
+		m["clock_delta_s"] = int(m["clock_delta_s"]) + af.clock_delta_s
+		m["no_increment"] = bool(m.get("no_increment", false)) or af.no_increment
+		m["engine_first"] = bool(m["engine_first"]) or af.engine_first
+		banner.append("Elite · %s: %s" % [af.display_name, af.description])
 	m["banner"] = banner
 	return m
 
@@ -768,6 +809,17 @@ func remove_relic(id: StringName) -> void:
 	kindled.erase(id)
 	enforce_command()
 	changed.emit()
+
+
+## A fight that would end the run: a second-chance relic shatters and the fight starts over.
+func take_second_chance() -> bool:
+	for id in relics:
+		var r := Content.relic(id)
+		if r != null and r.second_chance:
+			remove_relic(id)
+			flags["second_chance"] = r.display_name
+			return true
+	return false
 
 
 ## The relics in effect (kindled ones with their stronger numbers).

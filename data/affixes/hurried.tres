@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="AffixDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/affix_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hurried"
+display_name = "Hurried"
+description = "Your clock starts 60 s shorter."
+clock_delta_s = -60

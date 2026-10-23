@@ -34,6 +34,8 @@ extends Resource
 @export var start_pieces: PackedStringArray
 ## The first of your pieces slain in a won fight gets back up.
 @export var save_first_slain: bool = false
+## A fight that would end the run is fought again from the start instead; the relic is used up.
+@export var second_chance: bool = false
 ## XP: per capture by pieces of a model family (xp_family "" = every piece), a multiplier on capture
 ## XP, to every piece that fought after a won fight, and to the survivors whenever one falls.
 @export var xp_family: StringName

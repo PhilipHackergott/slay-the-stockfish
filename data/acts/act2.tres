@@ -26,3 +26,6 @@ arena_from_row = 0
 arena_max = 3
 arena_fight_chance = 0.3
 arena_elite_chance = 0.5
+affix_min = 1
+affix_max = 2
+affix_pool = PackedStringArray("reinforced", "deep_thought", "vigilant", "hurried", "brutal", "legion")

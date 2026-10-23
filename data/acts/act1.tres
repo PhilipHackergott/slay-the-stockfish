@@ -25,3 +25,6 @@ train_xp = 4
 arena_from_row = 3
 arena_max = 1
 arena_fight_chance = 0.35
+affix_min = 1
+affix_max = 1
+affix_pool = PackedStringArray("reinforced", "deep_thought", "vigilant", "hurried")

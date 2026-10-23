@@ -25,7 +25,7 @@ static func generate(rows_spec: PackedStringArray, rng: RandomNumberGenerator, p
 			var n := {
 				"id": m.nodes.size(), "row": r, "x": (i + 1.0) / (types.size() + 1.0),
 				"type": StringName(String(types[i]).strip_edges()), "encounter": &"", "edges": [], "omen": &"",
-				"arena": &"", "unknown": false,
+				"arena": &"", "affixes": [], "unknown": false,
 			}
 			n["encounter"] = pick_encounter.call(n["type"], r)
 			m.nodes.append(n)
@@ -61,7 +61,8 @@ func to_dict() -> Dictionary:
 	for n in nodes:
 		out.append({"id": n["id"], "row": n["row"], "x": n["x"], "type": String(n["type"]),
 			"encounter": String(n["encounter"]), "edges": n["edges"].duplicate(), "omen": String(n.get("omen", "")),
-			"arena": String(n.get("arena", "")), "unknown": bool(n.get("unknown", false))})
+			"arena": String(n.get("arena", "")),
+			"affixes": Array(n.get("affixes", [])).map(func(a): return String(a)), "unknown": bool(n.get("unknown", false))})
 	return {"rows": rows, "nodes": out}
 
 
@@ -72,6 +73,7 @@ static func from_dict(d: Dictionary) -> RunMap:
 		m.nodes.append({"id": int(n["id"]), "row": int(n["row"]), "x": float(n["x"]), "type": StringName(n["type"]),
 			"encounter": StringName(n["encounter"]), "edges": Array(n["edges"]).map(func(e): return int(e)),
 			"omen": StringName(n.get("omen", "")), "arena": StringName(n.get("arena", "")),
+			"affixes": Array(n.get("affixes", [])).map(func(a): return StringName(a)),
 			"unknown": bool(n.get("unknown", false))})
 	return m
 

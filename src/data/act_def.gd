@@ -40,6 +40,10 @@ extends Resource
 @export var arena_max: int = 0
 @export var arena_fight_chance: float = 0.0
 @export var arena_elite_chance: float = 0.0
+## Elite affixes (data/affixes): each elite rolls between affix_min and affix_max of them from affix_pool.
+@export var affix_min: int = 0
+@export var affix_max: int = 0
+@export var affix_pool: PackedStringArray
 
 
 func is_final_act() -> bool:

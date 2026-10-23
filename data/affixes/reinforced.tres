@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="AffixDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/affix_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"reinforced"
+display_name = "Reinforced"
+description = "The elite fields 2 more pawns."
+extra_pawns = 2

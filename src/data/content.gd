@@ -10,6 +10,7 @@ var acts: Dictionary = {}
 var perks: Dictionary = {}
 var omens: Dictionary = {}
 var arenas: Dictionary = {}
+var affixes: Dictionary = {}
 var difficulties: Array = []
 var config: RunConfig
 
@@ -32,6 +33,7 @@ func reload() -> void:
 	perks = _load_dir("res://data/perks")
 	omens = _load_dir("res://data/omens")
 	arenas = _load_dir("res://data/arenas")
+	affixes = _load_dir("res://data/affixes")
 	difficulties = _load_dir("res://data/difficulty").values()
 	difficulties.sort_custom(func(a, b): return a.level < b.level)
 	config = load("res://data/run_config.tres") as RunConfig
@@ -158,6 +160,10 @@ func omen(id: StringName) -> OmenDef:
 
 func arena(id: StringName) -> ArenaDef:
 	return arenas.get(id)
+
+
+func affix(id: StringName) -> AffixDef:
+	return affixes.get(id)
 
 
 func difficulty(level: int) -> DifficultyDef:

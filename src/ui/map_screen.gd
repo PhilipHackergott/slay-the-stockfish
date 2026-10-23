@@ -195,6 +195,16 @@ func _node_button(n: Dictionary) -> Control:
 	if arena != null and not visited:
 		tip += "\nArena · %s: %s" % [arena.display_name, arena.description]
 		_badge(b, arena.icon, size, Vector2(0.62, 0.62), UiKit.GOLD)
+	var affixes: Array = Array(n.get("affixes", [])).map(func(a): return Content.affix(StringName(a))).filter(func(a): return a != null)
+	if not affixes.is_empty() and not visited:
+		for af in affixes:
+			tip += "\nElite · %s: %s" % [af.display_name, af.description]
+		_badge(b, "res://assets/ui/icons/icon_affix_256.png", size, Vector2(-0.08, 0.62), UiKit.BLOOD)
+		if affixes.size() > 1:
+			var count := UiKit.label("×%d" % affixes.size(), int(size * 0.2), UiKit.BLOOD)
+			count.position = Vector2(size * 0.24, size * 0.74)
+			count.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			b.add_child(count)
 	var re := Run.roamer_encounter()
 	if Run.roamer_node() == id and re != null:
 		tip += "\nThe roaming elite stands here: %s. Step here to fight it for a rare relic. It climbs one row every %d nodes you enter; if it reaches the guardian, it fights beside it." % [
