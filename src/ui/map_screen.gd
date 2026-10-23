@@ -72,21 +72,32 @@ func _ready() -> void:
 func _side_panel() -> Control:
 	var p := UiKit.panel(UiKit.EDGE, Color(0.035, 0.03, 0.05, 0.88), 16)
 	p.custom_minimum_size = Vector2(340, 0)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	p.add_child(scroll)
 	var col := UiKit.vbox(10)
-	p.add_child(col)
-	col.add_child(UiKit.heading("Relics", 28))
-	if Run.relics.is_empty():
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(col)
+	col.add_child(UiKit.heading("Relics  (%d)" % Run.relics.size(), 28))
+	var defs := Run.relic_defs()
+	if defs.is_empty():
 		col.add_child(UiKit.label("None yet.", 18, UiKit.MUTED))
-	for r in Run.relic_defs():
-		var h := UiKit.hbox(10)
-		h.add_child(UiKit.icon(r.icon, 64))
-		var c := UiKit.vbox(0)
-		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		c.add_child(UiKit.heading(r.display_name, 18))
-		c.add_child(UiKit.label(r.description, 15, UiKit.MUTED, true))
-		h.add_child(c)
-		col.add_child(h)
-	col.add_child(UiKit.spacer(16))
+	var grid := GridContainer.new()
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 6)
+	grid.add_theme_constant_override("v_separation", 6)
+	col.add_child(grid)
+	var detail := UiKit.vbox(2)
+	detail.custom_minimum_size = Vector2(0, 120)
+	col.add_child(detail)
+	for r in defs:
+		var rd: RelicDef = r
+		var sl := UiKit.slot(UiKit.icon(rd.icon, 50))
+		sl.mouse_entered.connect(func(): _show_relic(detail, rd))
+		grid.add_child(sl)
+	if not defs.is_empty():
+		_show_relic(detail, defs[0])
+	col.add_child(UiKit.spacer(10))
 	col.add_child(UiKit.heading("The Run", 28))
 	var s: Dictionary = Run.stats
 	col.add_child(UiKit.label("Seed %d · gold %d" % [Run.seed_value, Run.gold], 18, UiKit.MUTED))
@@ -96,6 +107,12 @@ func _side_panel() -> Control:
 	col.add_child(UiKit.spacer(16))
 	col.add_child(UiKit.label("Captured pieces stay dead until a campfire or the merchant restores them. XP is gained by capturing; level-ups happen after fights. Each act ends with a guardian engine.", 16, UiKit.MUTED, true))
 	return p
+
+
+func _show_relic(box: VBoxContainer, r: RelicDef) -> void:
+	for c in box.get_children():
+		c.queue_free()
+	box.add_child(UiKit.relic_info(r, 0, 16))
 
 
 func _layout_nodes() -> void:

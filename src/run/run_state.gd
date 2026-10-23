@@ -29,10 +29,16 @@ var used_events: Array = []
 var formation_prefs: Dictionary = {}
 ## Shop stock per node id, so it survives leaving and continuing: {node_id: {pieces, relics}}.
 var shops: Dictionary = {}
+## The profile's unlock keys when the run began: what a run unlocks applies from the next run on.
+var unlocks: Array = []
 
 
 func cfg() -> RunConfig:
 	return Content.config
+
+
+func is_unlocked(key: StringName) -> bool:
+	return key == &"" or unlocks.has(String(key))
 
 
 func new_run(p_seed: int, p_difficulty: int = 0) -> void:
@@ -48,6 +54,7 @@ func new_run(p_seed: int, p_difficulty: int = 0) -> void:
 	current_node = -1
 	next_unit_id = 1
 	act_index = 0
+	unlocks = Array(Profile.data.get("unlocks", [])).map(func(k): return String(k))
 	stats = {"fights_won": 0, "units_lost": 0, "captures": 0, "nodes": 0, "gold_earned": 0}
 	var mods := difficulty_mods()
 	gold = int(round(cfg().starting_gold * float(mods["gold_mult"])))
@@ -289,7 +296,7 @@ func relic_defs() -> Array:
 ## Relics not yet owned and unlocked in the profile, drawn without repeats.
 func relic_choices(n: int) -> Array:
 	var pool: Array = Content.relics.keys().filter(func(id):
-		return not relics.has(id) and Profile.is_unlocked(Content.relic(id).unlock))
+		return not relics.has(id) and is_unlocked(Content.relic(id).unlock))
 	pool.sort()
 	var out: Array = []
 	while not pool.is_empty() and out.size() < n:
@@ -451,7 +458,7 @@ func _draw_pieces(rarity_weights: Dictionary, n: int, exclude: Array = []) -> Ar
 		tries += 1
 		var rarity := StringName(_weighted(rarity_weights))
 		var pool: Array = Content.pieces_of_rarity(rarity).filter(func(p):
-			return Profile.is_unlocked(p.unlock) and not out.has(p.id) and not exclude.has(p.id))
+			return is_unlocked(p.unlock) and not out.has(p.id) and not exclude.has(p.id))
 		if pool.is_empty():
 			pool = Content.pieces_of_rarity(&"common").filter(func(p): return not out.has(p.id) and not exclude.has(p.id))
 		if pool.is_empty():
@@ -638,7 +645,7 @@ func to_save() -> Dictionary:
 		"gold": gold, "act_index": act_index, "map": map.to_dict() if map != null else {},
 		"current_node": current_node, "visited": visited.duplicate(), "next_unit_id": next_unit_id,
 		"stats": stats.duplicate(), "used_events": used_events.map(func(e): return String(e)),
-		"formation_prefs": prefs, "shops": shop_out,
+		"formation_prefs": prefs, "shops": shop_out, "unlocks": unlocks.duplicate(),
 	}
 
 
@@ -661,6 +668,7 @@ func from_save(d: Dictionary) -> bool:
 	for k in stats:
 		stats[k] = int(stats[k])
 	used_events = Array(d.get("used_events", [])).map(func(x): return StringName(x))
+	unlocks = Array(d.get("unlocks", [])).map(func(x): return String(x))
 	formation_prefs.clear()
 	var prefs: Dictionary = d.get("formation_prefs", {})
 	for k in prefs:

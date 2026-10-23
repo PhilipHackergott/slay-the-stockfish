@@ -4,6 +4,9 @@ extends Control
 
 signal continue_pressed(outcome: Dictionary)
 
+const KIND_TEXT := {&"fight": "Fight", &"elite": "Elite", &"guardian": "Guardian", &"boss": "Boss",
+	&"roamer": "Roaming elite", &"skirmish": "Skirmish", &"puzzle": "Problem"}
+
 var fight: FightController
 var board: BoardView
 var autoplay := false
@@ -70,37 +73,53 @@ func _exit_tree() -> void:
 
 func _build() -> void:
 	var enc := fight.encounter
-	# Top left: the enemy.
+	# Top left: the enemy, with the pocket tray under it.
+	var left := UiKit.vbox(14)
+	left.position = Vector2(28, 24)
+	left.custom_minimum_size = Vector2(420, 0)
+	left.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(left)
 	var enemy := UiKit.panel(UiKit.EMBER if enc.kind != &"fight" else UiKit.EDGE, Color(0.04, 0.03, 0.05, 0.86), 16)
-	enemy.position = Vector2(28, 24)
-	enemy.custom_minimum_size = Vector2(420, 0)
-	add_child(enemy)
+	left.add_child(enemy)
 	var ec := UiKit.vbox(4)
 	enemy.add_child(ec)
-	var kind_text: String = {&"fight": "Fight", &"elite": "Elite", &"guardian": "Guardian", &"boss": "Boss"}.get(enc.kind, "Fight")
+	var kind_text: String = KIND_TEXT.get(enc.kind, "Fight")
 	ec.add_child(UiKit.caption(kind_text + " · tier %d" % enc.tier, 16, UiKit.EMBER))
-	ec.add_child(UiKit.heading(enc.display_name, 30))
+	var name_l := UiKit.heading(enc.display_name, 30)
+	name_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ec.add_child(name_l)
 	if enc.flavor != "":
 		ec.add_child(UiKit.label(enc.flavor, 17, UiKit.MUTED, true))
-	ec.add_child(UiKit.label("Fairy-Stockfish · skill %d · %d ms per move" % [fight.engine_skill(), fight.engine_movetime()], 16, UiKit.DIM))
+	ec.add_child(UiKit.label("Fairy-Stockfish · skill %d · %d ms per move" % [fight.engine_skill(), fight.engine_movetime()], 16, UiKit.DIM, true))
+	for line in fight.banner_lines():
+		ec.add_child(UiKit.label(line, 17, UiKit.GOLD, true))
 	_think = UiKit.heading("", 20, UiKit.EMBER)
 	ec.add_child(_think)
-	_eval = UiKit.label("", 18, UiKit.MUTED)
+	_eval = UiKit.label("", 18, UiKit.MUTED, true)
 	ec.add_child(_eval)
-	# Top right: relics.
-	var relics := UiKit.hbox(8)
-	relics.anchor_left = 1.0
-	relics.anchor_right = 1.0
-	relics.offset_right = -28
-	relics.offset_top = 24
-	relics.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	relics.alignment = BoxContainer.ALIGNMENT_END
+	_pocket_box = UiKit.hbox(8)
+	_pocket_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	left.add_child(_pocket_box)
+	# Top right: relics (wrapping), and the hover info under them.
+	var right := UiKit.vbox(12)
+	right.anchor_left = 1.0
+	right.anchor_right = 1.0
+	right.offset_left = -560
+	right.offset_right = -28
+	right.offset_top = 24
+	right.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(right)
+	var relics := HFlowContainer.new()
+	relics.alignment = FlowContainer.ALIGNMENT_END
+	relics.add_theme_constant_override("h_separation", 6)
+	relics.add_theme_constant_override("v_separation", 6)
 	relics.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(relics)
+	right.add_child(relics)
 	for r in fight.relic_defs:
-		var ic := UiKit.icon(r.icon, 60)
-		var sl := UiKit.slot(ic)
-		sl.tooltip_text = "%s\n%s" % [r.display_name, r.description]
+		var rd: RelicDef = r
+		var sl := UiKit.slot(UiKit.icon(rd.icon, 48))
+		sl.mouse_entered.connect(func(): _show_relic_info(rd))
+		sl.mouse_exited.connect(func(): _info.visible = false)
 		relics.add_child(sl)
 	# Bottom right: clock and actions.
 	_clock_panel = UiKit.panel(UiKit.SOUL, Color(0.03, 0.03, 0.05, 0.9), 14)
@@ -158,20 +177,13 @@ func _build() -> void:
 	_log = UiKit.vbox(2)
 	log_panel.add_child(_log)
 	_add_log("The engine awaits. You play white.", UiKit.MUTED)
-	# Left middle: pocket tray.
-	_pocket_box = UiKit.hbox(8)
-	_pocket_box.position = Vector2(28, 430)
-	_pocket_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_pocket_box)
 	# Hover info.
 	_info = UiKit.panel(UiKit.EDGE, Color(0.03, 0.025, 0.045, 0.92), 12)
-	_info.anchor_left = 1.0
-	_info.anchor_right = 1.0
-	_info.offset_left = -400
-	_info.offset_right = -28
-	_info.offset_top = 120
+	_info.size_flags_horizontal = Control.SIZE_SHRINK_END
+	_info.custom_minimum_size = Vector2(380, 0)
 	_info.visible = false
-	add_child(_info)
+	_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	right.add_child(_info)
 	_info_body = UiKit.vbox(4)
 	_info.add_child(_info_body)
 	# Controls hint.
@@ -552,6 +564,18 @@ func _on_hover(sq: int) -> void:
 		col.add_child(UiKit.label("Worth %d XP if captured" % (def.value if def != null else 0), 17, UiKit.GOLD))
 	col.add_child(UiKit.label(UiKit.moves_text(t), 16, UiKit.DIM, true))
 	col.custom_minimum_size = Vector2(250, 0)
+	_info_body.add_child(h)
+	_info.visible = true
+
+
+func _show_relic_info(r: RelicDef) -> void:
+	for c in _info_body.get_children():
+		c.queue_free()
+	var h := UiKit.hbox(12)
+	h.add_child(UiKit.icon(r.icon, 72))
+	var col := UiKit.relic_info(r, 250)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h.add_child(col)
 	_info_body.add_child(h)
 	_info.visible = true
 

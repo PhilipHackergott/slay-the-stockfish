@@ -649,6 +649,8 @@ static func portrait(type: StringName, white: bool, size: int, dim: float = 0.0)
 	var ring := kit_tex("medallion_player" if white else "medallion_engine")
 	var root := Control.new()
 	root.custom_minimum_size = Vector2(size, size)
+	root.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	root.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.modulate = Color(1, 1, 1, 1.0 - dim * 0.6)
 	var hole := 0.47
@@ -720,9 +722,11 @@ static func moves_text(type: StringName) -> String:
 
 
 ## A big clickable card (Button with a content column inside): bone frame, soul glow on hover.
+## width/height are minimums: the card grows with its content (buttons ignore their children's size).
 static func card(width: int, height: int, cb: Callable, edge: Color = EDGE) -> Array:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(width, height)
+	b.size_flags_vertical = Control.SIZE_FILL
 	var pad := [18.0, 18.0, 18.0, 18.0]
 	if frame("card") != null:
 		for st in ["normal", "hover", "pressed", "disabled"]:
@@ -746,12 +750,75 @@ static func card(width: int, height: int, cb: Callable, edge: Color = EDGE) -> A
 	col.offset_right = -pad[2]
 	col.offset_bottom = -pad[3]
 	b.add_child(col)
-	b.pivot_offset = Vector2(width, height) * 0.5
+	fit_to_content(b, col, Vector2(width, height), Vector2(pad[0] + pad[2], pad[1] + pad[3]))
 	b.mouse_entered.connect(func():
 		if not b.disabled:
 			b.create_tween().tween_property(b, "scale", Vector2(1.03, 1.03), 0.12))
 	b.mouse_exited.connect(func(): b.create_tween().tween_property(b, "scale", Vector2.ONE, 0.12))
 	return [b, col]
+
+
+## Keeps a non-container (a Button) at least as large as the child laid out inside it.
+static func fit_to_content(host: Control, content: Control, base: Vector2, pads: Vector2) -> void:
+	var fit := func():
+		var need := content.get_combined_minimum_size() + pads
+		var want := Vector2(maxf(base.x, need.x), maxf(base.y, need.y))
+		if not host.custom_minimum_size.is_equal_approx(want):
+			host.custom_minimum_size = want
+	content.minimum_size_changed.connect(fit)
+	host.resized.connect(func(): host.pivot_offset = host.size * 0.5)
+	fit.call()
+
+
+## A wide choice button with a title and an optional effect line underneath; both wrap.
+static func option_button(title_text: String, detail: String, cb: Callable, detail_color: Color = MUTED,
+		enabled: bool = true) -> Button:
+	var b := Button.new()
+	b.disabled = not enabled
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if enabled else Control.CURSOR_ARROW
+	b.pressed.connect(cb)
+	_wire_sfx(b)
+	var nb: StyleBox = frame("slot")
+	if nb != null:
+		b.add_theme_stylebox_override("normal", nb)
+		b.add_theme_stylebox_override("hover", frame("slot_hover"))
+		b.add_theme_stylebox_override("pressed", frame("slot_selected"))
+		b.add_theme_stylebox_override("hover_pressed", frame("slot_selected"))
+		var dis: StyleBoxTexture = frame("slot")
+		dis.modulate_color = Color(0.6, 0.58, 0.6)
+		b.add_theme_stylebox_override("disabled", dis)
+	else:
+		nb = theme().get_stylebox("normal", "Button")
+	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	var pad := Vector2(nb.get_margin(SIDE_LEFT) + nb.get_margin(SIDE_RIGHT), nb.get_margin(SIDE_TOP) + nb.get_margin(SIDE_BOTTOM))
+	pad += Vector2(40, 14)
+	var col := vbox(2)
+	full(col)
+	col.offset_left = pad.x * 0.5
+	col.offset_right = -pad.x * 0.5
+	col.offset_top = pad.y * 0.5
+	col.offset_bottom = -pad.y * 0.5
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	var t := heading(title_text, 20, BONE if enabled else DIM)
+	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(t)
+	if detail != "":
+		col.add_child(label(detail, 17, detail_color if enabled else DIM, true))
+	b.add_child(col)
+	fit_to_content(b, col, Vector2(0, 0), pad)
+	return b
+
+
+## A relic's name, kind and description as one block (hover panels, codex).
+static func relic_info(r: RelicDef, width: int = 0, desc_size: int = 16) -> VBoxContainer:
+	var c := vbox(2)
+	if width > 0:
+		c.custom_minimum_size = Vector2(width, 0)
+	c.add_child(heading(r.display_name, 20))
+	c.add_child(caption(String(KIND_LABEL.get(r.kind, r.kind)), 13, KIND_COLOR.get(r.kind, MUTED)))
+	c.add_child(label(r.description, desc_size, MUTED, true))
+	return c
 
 
 ## An iron slot frame for small items (relics in the HUD, shop wares).

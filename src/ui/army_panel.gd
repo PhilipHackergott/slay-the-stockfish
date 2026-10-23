@@ -51,7 +51,10 @@ static func row(u: Unit, compact: bool = false) -> Control:
 	h.add_child(col)
 	var top := UiKit.hbox(8)
 	col.add_child(top)
-	top.add_child(UiKit.heading(UiKit.unit_name(u), 19, UiKit.DIM if slain else UiKit.BONE))
+	var name_l := UiKit.heading(UiKit.unit_name(u), 19, UiKit.DIM if slain else UiKit.BONE)
+	name_l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(name_l)
 	var lv := UiKit.label("Lv %d" % u.level, 18, UiKit.GOLD if not slain else UiKit.DIM)
 	top.add_child(lv)
 	if slain:
@@ -61,15 +64,17 @@ static func row(u: Unit, compact: bool = false) -> Control:
 	col.add_child(bar_row)
 	var maxed := Run.is_maxed(u)
 	var bar := UiKit.bar(float(u.xp), float(need if need > 0 and not maxed else maxi(u.xp, 1)),
-		"gold" if Run.can_level_up(u) or maxed else "soul", 150)
+		"gold" if Run.can_level_up(u) or maxed else "soul", 120)
 	bar_row.add_child(bar)
-	var xp_text := "%d XP · final form (XP → gold)" % u.xp if maxed else "%d / %d XP" % [u.xp, need]
-	bar_row.add_child(UiKit.label(xp_text, 16, UiKit.MUTED))
+	var xp_text := "%d XP, turns to gold" % u.xp if maxed else "%d / %d XP" % [u.xp, need]
+	var xl := UiKit.label(xp_text, 16, UiKit.MUTED, true)
+	xl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar_row.add_child(xl)
 	if u.lineage.size() > 1 and not compact:
 		var names: Array = []
 		for t in u.lineage:
 			names.append(UiKit.piece_name(StringName(t)))
-		col.add_child(UiKit.label(" → ".join(names), 15, UiKit.MUTED))
+		col.add_child(UiKit.label(" → ".join(names), 15, UiKit.MUTED, true))
 	h.tooltip_text = "%s\n%s\nCaptures: %d · Fights: %d" % [UiKit.unit_name(u), UiKit.moves_text(u.type), u.captures, u.fights]
 	h.mouse_filter = Control.MOUSE_FILTER_PASS
 	return h

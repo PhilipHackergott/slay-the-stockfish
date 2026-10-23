@@ -32,13 +32,10 @@ func _ready() -> void:
 	m.body.add_child(_options)
 	for opt in event.options:
 		var o: Dictionary = opt
-		var label := String(o.get("label", "..."))
-		if String(o.get("cost", "")) == "gold":
-			label += "   [%d gold]" % int(o.get("cost_amount", 0))
-		var b := UiKit.button(label, func(): _choose(o), 20)
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.disabled = not Run.can_afford_option(o)
-		if b.disabled:
+		var parts := option_text(o)
+		var ok := Run.can_afford_option(o)
+		var b := UiKit.option_button(parts[0], parts[1], func(): _choose(o), UiKit.MUTED, ok)
+		if not ok:
 			b.tooltip_text = "You cannot pay this."
 		_options.add_child(b)
 	_continue = UiKit.button("Continue", func(): done.emit(), 24, true)
@@ -55,6 +52,22 @@ func _ready() -> void:
 		_choose(pick)
 		await get_tree().create_timer(0.2).timeout
 		done.emit()
+
+
+## [title, detail] for an option: its `detail`, or the part of the label in parentheses, plus the cost.
+static func option_text(o: Dictionary) -> Array:
+	var title := String(o.get("label", "..."))
+	var detail := String(o.get("detail", ""))
+	var i := title.find(" (")
+	if detail == "" and i > 0 and title.ends_with(")"):
+		detail = title.substr(i + 2, title.length() - i - 3)
+		title = title.substr(0, i)
+	if String(o.get("cost", "")) == "gold":
+		var cost := "Costs %d gold." % int(o.get("cost_amount", 0))
+		detail = cost if detail == "" else "%s · %s" % [detail, cost]
+	if detail != "":
+		detail = detail.substr(0, 1).to_upper() + detail.substr(1)
+	return [title, detail]
 
 
 func _choose(opt: Dictionary) -> void:

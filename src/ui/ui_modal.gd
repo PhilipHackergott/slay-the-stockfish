@@ -9,7 +9,7 @@ signal closed
 var title_text := ""
 var subtitle_text := ""
 var width := 1100
-## > 0: the body scrolls beyond this height.
+## > 0: the body scrolls beyond this height. It always scrolls once the modal would leave the window.
 var max_body_height := 0
 ## Close button and Esc.
 var closable := false
@@ -26,6 +26,11 @@ var _crest: TextureRect
 var _close: BaseButton
 var _edge := 0.0
 var _closing := false
+var _scroll: ScrollContainer
+var _fade: Control
+var _fitting := false
+## Space kept free above and below the frame (the plaque and crest stick out of its top edge).
+const SCREEN_MARGIN := 150.0
 
 
 func setup(p_title: String, p_width: int = 1100, p_closable: bool = false, p_subtitle: String = "",
@@ -110,15 +115,24 @@ func _ready() -> void:
 		col.add_child(s)
 	body = UiKit.vbox(14)
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	if max_body_height > 0:
-		var scroll := ScrollContainer.new()
-		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		scroll.custom_minimum_size = Vector2(0, max_body_height)
-		scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		col.add_child(scroll)
-		scroll.add_child(body)
-	else:
-		col.add_child(body)
+	var holder := PanelContainer.new()
+	holder.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(holder)
+	_scroll = ScrollContainer.new()
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	holder.add_child(_scroll)
+	_scroll.add_child(body)
+	_fade = Control.new()
+	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fade.draw.connect(_draw_fade)
+	holder.add_child(_fade)
+	body.minimum_size_changed.connect(_queue_fit)
+	_scroll.get_v_scroll_bar().value_changed.connect(func(_v: float): _fade.queue_redraw())
+	_scroll.get_v_scroll_bar().changed.connect(_fade.queue_redraw)
+	get_viewport().size_changed.connect(_queue_fit)
 	footer = UiKit.hbox(22)
 	footer.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_child(footer)
@@ -127,8 +141,54 @@ func _ready() -> void:
 		_overlay.add_child(_close)
 	_frame.resized.connect(_place)
 	_place.call_deferred()
+	_fit()
 	UiKit.pop_in(_root)
 	Audio.play("ui_open")
+
+
+func _queue_fit() -> void:
+	if not _fitting:
+		_fitting = true
+		_fit.call_deferred()
+
+
+## The body is as tall as its content, but never so tall that the frame leaves the window.
+func _fit() -> void:
+	_fitting = false
+	if _scroll == null or not is_inside_tree():
+		return
+	var content := body.get_combined_minimum_size().y
+	var chrome := _frame.get_combined_minimum_size().y - _scroll.custom_minimum_size.y
+	var room := get_viewport_rect().size.y - SCREEN_MARGIN - chrome
+	var cap := room if max_body_height <= 0 else minf(room, float(max_body_height))
+	var h := clampf(content, 0.0, maxf(cap, 120.0))
+	if absf(_scroll.custom_minimum_size.y - h) > 0.5:
+		_scroll.custom_minimum_size.y = h
+	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO if content > h + 0.5 else ScrollContainer.SCROLL_MODE_DISABLED
+	_fade.queue_redraw()
+
+
+func can_scroll() -> bool:
+	var bar := _scroll.get_v_scroll_bar()
+	return _scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED and bar.max_value - bar.page > 1.0
+
+
+## A dark fade with a chevron at the bottom of the body while there is more to scroll to.
+func _draw_fade() -> void:
+	if not can_scroll():
+		return
+	var bar := _scroll.get_v_scroll_bar()
+	if bar.value >= bar.max_value - bar.page - 2.0:
+		return
+	var s := _fade.size
+	var w := s.x - bar.size.x - 6.0
+	var h := minf(70.0, s.y * 0.4)
+	var clear := Color(0.02, 0.015, 0.03, 0.0)
+	var dark := Color(0.02, 0.015, 0.03, 0.85)
+	_fade.draw_polygon(PackedVector2Array([Vector2(0, s.y - h), Vector2(w, s.y - h), Vector2(w, s.y), Vector2(0, s.y)]),
+		PackedColorArray([clear, clear, dark, dark]))
+	var c := Vector2(w * 0.5, s.y - 16.0)
+	_fade.draw_polyline(PackedVector2Array([c + Vector2(-14, -7), c, c + Vector2(14, -7)]), Color(accent, 0.9), 3.0, true)
 
 
 ## The ornaments sit on the frame's top edge; the overlay is a zero-size control at its centre.

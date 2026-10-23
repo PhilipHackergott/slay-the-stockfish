@@ -67,6 +67,12 @@ var slain: Array = []
 var xp_log: Array = []
 var ply_count := 0
 var _next_temp_id := -1
+## Lines the HUD shows under the enemy: omens and relics that change this fight.
+var banner := PackedStringArray()
+
+
+func banner_lines() -> PackedStringArray:
+	return banner
 
 
 ## units: Array of Unit (healthy army). relics: Array of RelicDef. p_mods: difficulty modifiers.
