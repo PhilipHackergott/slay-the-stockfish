@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"lichs_phylactery"
+display_name = "Lich's Phylactery"
+kind = &"army"
+tier = &"rare"
+description = "Once per run: a fight that would end your run starts over instead, and the Phylactery shatters."
+second_chance = true
+icon = "res://assets/ui/icons/icon_relic_phylactery_256.png"

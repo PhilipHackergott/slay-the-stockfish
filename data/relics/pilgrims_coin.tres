@@ -10,5 +10,5 @@ kind = &"gold"
 tier = &"common"
 description = "+5 gold after every won fight."
 gold_flat = 5
-kindle_text = "+12 gold after every won fight."
+kindle_text = "+8 gold after every won fight."
 icon = "res://assets/ui/icons/icon_relic_coin_256.png"

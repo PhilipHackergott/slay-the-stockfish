@@ -171,3 +171,15 @@ func test_bell_and_crown_in_a_real_fight() -> void:
 		guard += 1
 		await get_tree().process_frame
 	assert_eq(fight.moves.size(), 1, "the engine opened")
+
+
+func test_phylactery_gives_one_second_chance() -> void:
+	Run.new_run(3)
+	assert_false(Run.take_second_chance(), "nothing to shatter")
+	Run.add_relic(&"lichs_phylactery")
+	assert_true(Run.take_second_chance())
+	assert_false(Run.has_relic(&"lichs_phylactery"), "it shatters")
+	var banner: Array = Run.fight_mods(&"fight", null)["banner"]
+	assert_true(banner.any(func(l): return String(l).contains("shatters")))
+	assert_false(Run.fight_mods(&"fight", null)["banner"].any(func(l): return String(l).contains("shatters")), "said once")
+	assert_false(Run.take_second_chance(), "once per run")

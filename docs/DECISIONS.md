@@ -328,6 +328,19 @@ are a one-file edit. Mirrored to Notion: Project Slay the Stockfish → Build de
 - Gold relics follow the base: Pilgrim's Coin +5 per won fight, Debt of Bone -9.
 - Seed-7 autoplay earns 529 gold over the run (852 before); a human run with less clock left earns less.
 
+## Elite affixes, guardian arenas, second chance (v0.3)
+
+- **Elite affixes** (`data/affixes`, `ActDef.affix_*`): act 1 one, act 2 one or two, act 3 two,
+  drawn without repeats from the act's pool (act 1: Reinforced, Deep Thought, Vigilant, Hurried;
+  act 2 adds Brutal, Legion; act 3 adds Relentless). Rolled with the map, saved with it, shown as a
+  crown badge and tooltip lines on the node and as banner lines in the fight. Elites only; the
+  roaming elite and guardians carry none. Affixes do not raise gold yet.
+- **Guardian signature arenas** (`EncounterDef.arena`): the Choir Engine fights on Tolling Bells,
+  the Abbot Engine on Gorgon Cloister. The boss stays plain chess.
+- **Lich's Phylactery** (rare relic, `RelicDef.second_chance`): a fight that would end the run
+  (a loss, or anything but a win against a guardian or the boss) starts over instead; the relic
+  shatters and the loss is not applied. The base rule (losing ends the run) is unchanged.
+
 ## Known gaps in v0.1
 
 - An army with more than 19 distinct fairy piece types cannot fight (letter budget).

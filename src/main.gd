@@ -5,7 +5,7 @@ extends Node
 ## boss|roamer|unknown|reward|campfire|event|shop|treasure|codex|settings|formation|pause|act|end, --act=N (0-based),
 ## --omen=id, --arena=id, --encounter=id (on the node the screen enters), --event=id (the event screen shows this one),
 ## --relics=id,id, --units=type,type, --kind=elite|guardian (reward screen), --gold=N, --autoplay (plays a whole run unattended), --shot=path.png
-## [--shot-delay=s], --click=sq,sq, --hover=sq (mouse over a square in a fight), --win-after=s (the fight is won after s seconds), --quit-after-shot, --quit-on-end, --isolated (separate profile and save files;
+## [--shot-delay=s], --click=sq,sq, --hover=sq (mouse over a square in a fight), --win-after=s / --lose-after=s (the fight is won / resigned after s seconds), --quit-after-shot, --quit-on-end, --isolated (separate profile and save files;
 ## these dev runs are muted unless --sound is given).
 
 var world: World
@@ -384,6 +384,9 @@ func _start_fight(node: Dictionary) -> void:
 	if args.has("win-after"):
 		await get_tree().create_timer(float(args["win-after"])).timeout
 		fight._finish("win", "checkmate: the engine's king falls")
+	if args.has("lose-after"):
+		await get_tree().create_timer(float(args["lose-after"])).timeout
+		fight.resign()
 	if args.has("click"):
 		_scripted_clicks(String(args["click"]).split(",", false))
 	if args.has("hover"):
@@ -424,6 +427,14 @@ func _after_fight(outcome: Dictionary, node: Dictionary) -> void:
 		e.autoplay = autoplay
 		e.done.connect(_after_node)
 		_set_screen(e)
+		return
+	var result := String(outcome.get("state", "draw"))
+	var ends_run := (result == "loss" and Content.config.loss_ends_run) or (result != "win" and (kind == &"boss" or kind == &"guardian"))
+	if ends_run and Run.take_second_chance():
+		print("STS SECOND CHANCE act=%d row=%d kind=%s enc=%s result=%s" % [Run.act_index + 1, int(node["row"]), kind, node["encounter"], result])
+		world.board_view.interactive = false
+		Content.clear_fight_letters()
+		_start_fight(node)
 		return
 	Run.apply_fight(outcome, kind)
 	var army: Array = Run.deployed_units().map(func(u): return String(u.type))
