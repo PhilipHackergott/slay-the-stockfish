@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="OmenDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/omen_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"fog"
+display_name = "Fog"
+description = "The engine plays 4 skill levels weaker."
+icon = "res://assets/ui/icons/icon_omen_fog_256.png"
+engine_skill_delta = -4

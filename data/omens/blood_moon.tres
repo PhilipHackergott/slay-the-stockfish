@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="OmenDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/omen_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"blood_moon"
+display_name = "Blood Moon"
+description = "Captures give double XP."
+icon = "res://assets/ui/icons/icon_omen_blood_moon_256.png"
+xp_mult = 2.0

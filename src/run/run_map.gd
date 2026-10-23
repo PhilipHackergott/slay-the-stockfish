@@ -1,7 +1,8 @@
 class_name RunMap
 extends RefCounted
 ## One act: rows of nodes from the bottom (row 0) to the boss at the top, as in Slay the Spire.
-## Node: {id, row, x (0..1), type, encounter, edges (ids in the next row)}.
+## Node: {id, row, x (0..1), type, encounter, edges (ids in the next row), omen (id or &""),
+## unknown (it was a "?" node, resolved on entry)}.
 
 var nodes: Array = []
 var rows: int = 0
@@ -23,7 +24,8 @@ static func generate(rows_spec: PackedStringArray, rng: RandomNumberGenerator, p
 		for i in types.size():
 			var n := {
 				"id": m.nodes.size(), "row": r, "x": (i + 1.0) / (types.size() + 1.0),
-				"type": StringName(String(types[i]).strip_edges()), "encounter": &"", "edges": [],
+				"type": StringName(String(types[i]).strip_edges()), "encounter": &"", "edges": [], "omen": &"",
+				"unknown": false,
 			}
 			n["encounter"] = pick_encounter.call(n["type"], r)
 			m.nodes.append(n)
@@ -58,7 +60,8 @@ func to_dict() -> Dictionary:
 	var out: Array = []
 	for n in nodes:
 		out.append({"id": n["id"], "row": n["row"], "x": n["x"], "type": String(n["type"]),
-			"encounter": String(n["encounter"]), "edges": n["edges"].duplicate()})
+			"encounter": String(n["encounter"]), "edges": n["edges"].duplicate(), "omen": String(n.get("omen", "")),
+			"unknown": bool(n.get("unknown", false))})
 	return {"rows": rows, "nodes": out}
 
 
@@ -67,7 +70,8 @@ static func from_dict(d: Dictionary) -> RunMap:
 	m.rows = int(d.get("rows", 0))
 	for n in d.get("nodes", []):
 		m.nodes.append({"id": int(n["id"]), "row": int(n["row"]), "x": float(n["x"]), "type": StringName(n["type"]),
-			"encounter": StringName(n["encounter"]), "edges": Array(n["edges"]).map(func(e): return int(e))})
+			"encounter": StringName(n["encounter"]), "edges": Array(n["edges"]).map(func(e): return int(e)),
+			"omen": StringName(n.get("omen", "")), "unknown": bool(n.get("unknown", false))})
 	return m
 
 

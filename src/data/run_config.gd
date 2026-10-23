@@ -56,7 +56,8 @@ extends Resource
 @export var relic_odds: Dictionary = {
 	"start": {"common": 60, "uncommon": 40}, "elite": {"uncommon": 60, "rare": 40}, "guardian": {"boss": 1},
 	"treasure": {"common": 65, "uncommon": 35}, "shop": {"common": 50, "uncommon": 35, "rare": 15},
-	"flawless": {"common": 70, "uncommon": 30}, "event": {"common": 60, "uncommon": 40}}
+	"flawless": {"common": 70, "uncommon": 30}, "event": {"common": 60, "uncommon": 40},
+	"roamer": {"rare": 90, "uncommon": 10}}
 ## Shop price of a relic by tier (a relic's own price, if set, wins).
 @export var relic_prices: Dictionary = {"common": 50, "uncommon": 85, "rare": 130, "boss": 200}
 ## A won fight without losses may offer a relic (chance per node kind; elites offer one more card).
@@ -65,5 +66,15 @@ extends Resource
 @export var camp_mend_count: int = 2
 @export var camp_drill_xp: int = 3
 @export var camp_study_clock_s: int = 60
+## What a "?" node turns into when entered (weights); every non-fight adds fight_pity to the fight weight.
+@export var unknown_odds: Dictionary = {"event": 65, "fight": 15, "treasure": 10, "shop": 10}
+@export var unknown_fight_pity: int = 10
+## Share of fight and elite nodes that carry an omen.
+@export var omen_chance: float = 0.25
+## The roaming elite starts on this row and climbs one row every roamer_every nodes you enter; if it
+## reaches the guardian, the guardian's material target grows by roamer_guardian_ratio (of Command).
+@export var roamer_start_row: int = 3
+@export var roamer_every: int = 2
+@export var roamer_guardian_ratio: float = 0.15
 @export var treasure_relic_choices: int = 2
 @export var treasure_gold: PackedInt32Array = PackedInt32Array([15, 30])

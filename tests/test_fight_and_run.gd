@@ -61,8 +61,9 @@ func test_scripted_run_crosses_three_acts_to_the_boss() -> void:
 		var options := Run.available_nodes()
 		assert_false(options.is_empty(), "the map always continues")
 		var node := Run.enter_node(options[0])
+		assert_ne(node["type"], &"unknown", "a ? node resolves when entered")
 		match node["type"]:
-			&"fight", &"elite", &"guardian":
+			&"fight", &"elite", &"guardian", &"roamer":
 				assert_ne(node["encounter"], &"", "fight nodes have an encounter")
 				var pawns: Array = Run.healthy_units().filter(func(u): return u.type == &"pawn")
 				var pawn: Unit = pawns[0] if not pawns.is_empty() else null

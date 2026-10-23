@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="OmenDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/omen_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"requiem"
+display_name = "Requiem"
+description = "Win, and your pieces slain in this fight rise again."
+icon = "res://assets/ui/icons/icon_omen_requiem_256.png"
+revive_slain = true

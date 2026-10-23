@@ -116,6 +116,10 @@ func _build_act_map() -> void:
 	var used := {}
 	map = RunMap.generate(rows, rng, func(type: StringName, row: int) -> StringName:
 		return _pick_encounter(type, row, used))
+	for n in map.nodes:
+		if n["type"] == &"fight" or n["type"] == &"elite":
+			_roll_omen(n)
+	_spawn_roamer()
 
 
 func _pick_encounter(type: StringName, row: int, used: Dictionary) -> StringName:
@@ -144,6 +148,105 @@ func _pick_encounter(type: StringName, row: int, used: Dictionary) -> StringName
 	var pick: EncounterDef = src[rng.randi_range(0, src.size() - 1)]
 	used[pick.id] = true
 	return pick.id
+
+
+## Encounters already placed on this act's map.
+func _used_encounters() -> Dictionary:
+	var used := {}
+	for n in map.nodes:
+		if n["encounter"] != &"":
+			used[n["encounter"]] = true
+	return used
+
+
+## Node kinds that borrow another kind's numbers (gold, rewards, enemy ratio): the roamer is an elite.
+func base_kind(kind: StringName) -> String:
+	return "elite" if kind == &"roamer" else String(kind)
+
+
+# --- omens, "?" nodes, the roaming elite ------------------------------------------------------
+
+func _roll_omen(n: Dictionary) -> void:
+	if Content.omens.is_empty() or rng.randf() >= cfg().omen_chance:
+		return
+	var ids: Array = Content.omens.keys()
+	ids.sort()
+	n["omen"] = ids[rng.randi_range(0, ids.size() - 1)]
+
+
+## The omen over the node you stand on, or null.
+func current_omen() -> OmenDef:
+	if map == null or current_node < 0:
+		return null
+	return Content.omen(StringName(map.node(current_node).get("omen", &"")))
+
+
+## A "?" node turns into an event, a fight, a treasure or the merchant when entered. Every time it
+## is no fight, the next one is likelier to be (pity, carried across acts).
+func _resolve_unknown(n: Dictionary) -> void:
+	var w: Dictionary = cfg().unknown_odds.duplicate()
+	var streak := int(flags.get("unknown_streak", 0))
+	w["fight"] = int(w.get("fight", 0)) + streak * cfg().unknown_fight_pity
+	var t := StringName(_weighted(w))
+	flags["unknown_streak"] = 0 if t == &"fight" else streak + 1
+	n["type"] = t
+	n["unknown"] = true
+	if t == &"fight":
+		n["encounter"] = _pick_encounter(&"fight", int(n["row"]), _used_encounters())
+		_roll_omen(n)
+
+
+## One elite per act (not the final one) walks the map: {node, encounter, steps} in flags["roamer"].
+## It climbs one row every roamer_every nodes you enter; catch it for a rare relic. If it reaches the
+## guardian, flags["roamer_joined"] holds its encounter and the guardian fields more material.
+func _spawn_roamer() -> void:
+	flags.erase("roamer")
+	flags.erase("roamer_joined")
+	var act := current_act()
+	if act == null or act.is_final_act() or map == null:
+		return
+	var row: Array = map.nodes.filter(func(n): return int(n["row"]) == cfg().roamer_start_row)
+	var pool: Array = Content.encounters_of(&"elite", act.elite_tier)
+	if row.is_empty() or pool.is_empty():
+		return
+	var used := _used_encounters()
+	var fresh := pool.filter(func(e): return not used.has(e.id))
+	if not fresh.is_empty():
+		pool = fresh
+	var start: Dictionary = row[rng.randi_range(0, row.size() - 1)]
+	var enc: EncounterDef = pool[rng.randi_range(0, pool.size() - 1)]
+	flags["roamer"] = {"node": int(start["id"]), "encounter": String(enc.id), "steps": 0}
+
+
+## The node the roaming elite stands on, or -1.
+func roamer_node() -> int:
+	var r: Dictionary = flags.get("roamer", {})
+	return int(r.get("node", -1))
+
+
+func roamer_encounter() -> EncounterDef:
+	var r: Dictionary = flags.get("roamer", flags.get("roamer_joined", {}))
+	return Content.encounter(StringName(r.get("encounter", "")))
+
+
+func _move_roamer() -> void:
+	var r: Dictionary = flags.get("roamer", {})
+	if r.is_empty():
+		return
+	r["steps"] = int(r.get("steps", 0)) + 1
+	if int(r["steps"]) < cfg().roamer_every:
+		return
+	r["steps"] = 0
+	var nxt := map.next_nodes(int(r["node"]))
+	if nxt.is_empty():
+		return
+	var to: int = nxt[rng.randi_range(0, nxt.size() - 1)]
+	var t: StringName = map.node(to)["type"]
+	if t == &"guardian" or t == &"boss":
+		flags.erase("roamer")
+		flags["roamer_joined"] = {"encounter": r["encounter"]}
+	else:
+		r["node"] = to
 
 
 # --- difficulty -------------------------------------------------------------------------------
@@ -470,16 +573,18 @@ func enemy_target(kind: StringName) -> float:
 	var mult := 1.0
 	for r in relic_defs():
 		mult *= r.enemy_ratio_mult
-	return float(act.enemy_ratio.get(String(kind), 0.0)) * mult * command_cap()
+	var ratio := float(act.enemy_ratio.get(base_kind(kind), 0.0))
+	if kind == &"guardian" and flags.has("roamer_joined"):
+		ratio += cfg().roamer_guardian_ratio
+	return ratio * mult * command_cap()
 
 
-## Reinforcements that join an encounter, in order: [[square, piece id], ...].
-func reinforcements(enc: EncounterDef, kind: StringName) -> Array:
+## Reinforcements that join an encounter, in order: [[square, piece id], ...]. extra_pawns come on
+## top of the material target (Iron Rain).
+func reinforcements(enc: EncounterDef, kind: StringName, extra_pawns: int = 0) -> Array:
 	var target := enemy_target(kind)
 	var have := layout_material(enc.layout)
 	var out: Array = []
-	if target <= 0.0 or have >= target:
-		return out
 	var order: Array = []
 	for sq in enc.reinforcements:
 		order.append([String(sq), String(enc.reinforcements[sq])])
@@ -490,27 +595,38 @@ func reinforcements(enc: EncounterDef, kind: StringName) -> Array:
 		taken[String(sq)] = true
 		if StringName(enc.layout[sq]) == &"king":
 			king = Vector2i(Fen.file_of(Fen.sq(String(sq))), Fen.rank_of(Fen.sq(String(sq))))
+	# The engine king keeps its flight squares: no back-rank box made of reinforcements.
+	var free := func(sq: String) -> bool:
+		var at := Vector2i(Fen.file_of(Fen.sq(sq)), Fen.rank_of(Fen.sq(sq)))
+		return not taken.has(sq) and (absi(at.x - king.x) > 1 or absi(at.y - king.y) > 1)
 	for e in order:
-		if have >= target:
+		if target <= 0.0 or have >= target:
 			break
-		var at := Vector2i(Fen.file_of(Fen.sq(e[0])), Fen.rank_of(Fen.sq(e[0])))
-		# The engine king keeps its flight squares: no back-rank box made of reinforcements.
-		if taken.has(e[0]) or (absi(at.x - king.x) <= 1 and absi(at.y - king.y) <= 1):
-			continue
 		var d := Content.piece(StringName(e[1]))
-		if d == null:
+		if d == null or not free.call(e[0]):
 			continue
 		taken[e[0]] = true
 		out.append(e)
 		have += d.value
+	for e in GENERIC_REINFORCEMENTS:
+		if extra_pawns <= 0:
+			break
+		if e[1] == "pawn" and free.call(e[0]):
+			taken[e[0]] = true
+			out.append(e)
+			extra_pawns -= 1
 	return out
 
 
 ## Everything a fight needs from the run besides units and relics: difficulty, reinforcements,
-## relic effects on XP and the engine (relics never weaken the final boss), temporary pieces.
+## relic effects on XP and the engine (relics never weaken the final boss), temporary pieces, the
+## node's omen, banner lines for the HUD.
 func fight_mods(kind: StringName, enc: EncounterDef) -> Dictionary:
 	var m := difficulty_mods()
-	m["reinforcements"] = reinforcements(enc, kind) if enc != null else []
+	var omen := current_omen() if kind != &"guardian" and kind != &"boss" else null
+	var banner: Array = []
+	m["node_kind"] = kind
+	m["reinforcements"] = reinforcements(enc, kind, omen.extra_pawns if omen != null else 0) if enc != null else []
 	var xp_mult := 1.0
 	var skill := 0
 	var think := 1.0
@@ -530,6 +646,19 @@ func fight_mods(kind: StringName, enc: EncounterDef) -> Dictionary:
 	m["start_pieces"] = extra
 	if kind == &"guardian" and studied():
 		m["clock_delta_s"] = int(m["clock_delta_s"]) + cfg().camp_study_clock_s
+	if map != null and current_node >= 0 and bool(map.node(current_node).get("unknown", false)) and kind == &"fight":
+		banner.append("Ambush: the unknown path was a fight.")
+	if kind == &"roamer":
+		banner.append("You caught the roaming elite. Beat it for a rare relic.")
+	if kind == &"guardian" and flags.has("roamer_joined"):
+		var re := roamer_encounter()
+		banner.append("%s has joined the guardian: more enemy pieces." % (re.display_name if re != null else "The roaming elite"))
+	if omen != null:
+		m["xp_mult"] = float(m["xp_mult"]) * omen.xp_mult
+		m["omen_skill"] = omen.engine_skill_delta
+		m["no_increment"] = omen.no_increment
+		banner.append("Omen · %s: %s" % [omen.display_name, omen.description])
+	m["banner"] = banner
 	return m
 
 
@@ -577,7 +706,7 @@ func roll_fight_gold(kind: StringName) -> int:
 	var act := current_act()
 	var r: Array = [10, 18]
 	if act != null:
-		r = act.gold.get(String(kind), act.gold.get("fight", r))
+		r = act.gold.get(base_kind(kind), act.gold.get("fight", r))
 	var base := rng.randi_range(int(r[0]), int(r[1]))
 	return int(round(base * float(difficulty_mods()["gold_mult"]) * (1.0 + gold_bonus())))
 
@@ -757,12 +886,25 @@ func available_nodes() -> Array:
 	return map.start_nodes() if current_node < 0 else map.next_nodes(current_node)
 
 
+## Steps onto a node. A "?" resolves here; the roaming elite, if it stands here, is the fight instead
+## (kind roamer); otherwise it climbs on.
 func enter_node(id: int) -> Dictionary:
+	var caught := roamer_node() == id
 	current_node = id
 	visited.append(id)
 	stats["nodes"] = int(stats.get("nodes", 0)) + 1
+	var n: Dictionary = map.node(id)
+	if caught:
+		var enc := roamer_encounter()
+		flags.erase("roamer")
+		changed.emit()
+		return {"id": id, "row": n["row"], "type": &"roamer", "encounter": enc.id if enc != null else n["encounter"],
+			"omen": n.get("omen", &"")}
+	if n["type"] == &"unknown":
+		_resolve_unknown(n)
+	_move_roamer()
 	changed.emit()
-	return map.node(id)
+	return n
 
 
 func is_boss_node(id: int) -> bool:
@@ -777,6 +919,8 @@ func apply_fight(outcome: Dictionary, kind: StringName = &"fight") -> void:
 	last_outcome = outcome
 	var won: bool = outcome.get("state") == "win"
 	var defs := relic_defs()
+	var omen := current_omen() if kind != &"guardian" and kind != &"boss" else null
+	var requiem := won and omen != null and omen.revive_slain
 	var veil := won and defs.any(func(r): return r.save_first_slain)
 	var saved: Array = []
 	var fell: Array = []
@@ -785,7 +929,7 @@ func apply_fight(outcome: Dictionary, kind: StringName = &"fight") -> void:
 		var u := unit(int(id))
 		if u == null or Content.piece(u.type).is_royal():
 			continue
-		if won and u.has_perk(&"bulwark"):
+		if (won and u.has_perk(&"bulwark")) or requiem:
 			saved.append(u.id)
 			continue
 		if veil:
@@ -817,8 +961,10 @@ func apply_fight(outcome: Dictionary, kind: StringName = &"fight") -> void:
 		for u in fought:
 			u.xp += after
 		notes.append("Drill Whistle: +%d XP to %d pieces." % [after, fought.size()])
+	if requiem and not saved.is_empty():
+		notes.append("Requiem: %d slain pieces rise again." % saved.size())
 	outcome["relic_notes"] = notes
-	var chance := float(cfg().flawless_relic_chance.get(String(kind), 0.0))
+	var chance := float(cfg().flawless_relic_chance.get(base_kind(kind), 0.0))
 	outcome["flawless_relic"] = bool(outcome["flawless"]) and chance > 0.0 and rng.randf() < chance
 	var overflow := 0
 	var bounty := 0
@@ -837,7 +983,10 @@ func apply_fight(outcome: Dictionary, kind: StringName = &"fight") -> void:
 		var flat := 0
 		for r in defs:
 			flat += r.gold_flat
-		outcome["gold"] = maxi(0, roll_fight_gold(kind) + flat)
+		var gold_mult := omen.gold_mult if omen != null else 1.0
+		outcome["gold"] = maxi(0, int(round(roll_fight_gold(kind) * gold_mult)) + flat)
+		if gold_mult != 1.0:
+			notes.append("%s: %d%% gold." % [omen.display_name, int(round(gold_mult * 100.0))])
 	add_gold(int(outcome["gold"]) + overflow + bounty)
 	autofill()
 
@@ -848,7 +997,7 @@ func reward_offer(kind: StringName) -> Dictionary:
 	var act := current_act()
 	var tiers: Array = [1]
 	if act != null:
-		tiers = Array(act.reward_tiers.get(String(kind), act.reward_tiers.get("fight", [1])))
+		tiers = Array(act.reward_tiers.get(base_kind(kind), act.reward_tiers.get("fight", [1])))
 	var tier := int(tiers[rng.randi_range(0, tiers.size() - 1)])
 	var n := cfg().reward_choices
 	for r in relic_defs():
@@ -1144,7 +1293,7 @@ func from_save(d: Dictionary) -> bool:
 	used_events = Array(d.get("used_events", [])).map(func(x): return StringName(x))
 	unlocks = Array(d.get("unlocks", [])).map(func(x): return String(x))
 	kindled = Array(d.get("kindled", [])).map(func(x): return StringName(x))
-	flags = d.get("flags", {})
+	flags = _whole(d.get("flags", {}))
 	formation_prefs.clear()
 	var prefs: Dictionary = d.get("formation_prefs", {})
 	for k in prefs:
@@ -1161,6 +1310,20 @@ func from_save(d: Dictionary) -> bool:
 	active = true
 	changed.emit()
 	return true
+
+
+## JSON reads every number as a float: whole ones back to int (node ids, counters), nested too.
+func _whole(v: Variant) -> Variant:
+	if v is float and is_equal_approx(v, roundf(v)):
+		return int(v)
+	if v is Dictionary:
+		var out := {}
+		for k in v:
+			out[k] = _whole(v[k])
+		return out
+	if v is Array:
+		return v.map(func(e): return _whole(e))
+	return v
 
 
 func save_game() -> void:

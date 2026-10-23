@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="OmenDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/omen_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"eclipse"
+display_name = "Eclipse"
+description = "Your clock gains nothing per move."
+icon = "res://assets/ui/icons/icon_omen_eclipse_256.png"
+no_increment = true

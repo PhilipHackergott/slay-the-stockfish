@@ -7,9 +7,10 @@ signal formation_changed
 
 const ICONS := {&"fight": "icon_fight", &"elite": "icon_elite", &"campfire": "icon_campfire",
 	&"event": "icon_event", &"boss": "icon_boss", &"guardian": "icon_guardian", &"shop": "icon_shop",
-	&"treasure": "icon_treasure"}
+	&"treasure": "icon_treasure", &"unknown": "icon_unknown"}
 const TYPE_NAME := {&"fight": "Fight", &"elite": "Elite fight", &"campfire": "Campfire", &"event": "Event",
-	&"boss": "Boss", &"guardian": "Guardian", &"shop": "The Bone Merchant", &"treasure": "Sealed reliquary"}
+	&"boss": "Boss", &"guardian": "Guardian", &"shop": "The Bone Merchant", &"treasure": "Sealed reliquary",
+	&"unknown": "Unknown path"}
 const ROMAN := ["I", "II", "III", "IV", "V"]
 
 var _map_area: Control
@@ -105,6 +106,12 @@ func _side_panel() -> Control:
 	col.add_child(UiKit.label("Fights won: %d" % int(s.get("fights_won", 0)), 19))
 	col.add_child(UiKit.label("Pieces lost: %d" % int(s.get("units_lost", 0)), 19))
 	col.add_child(UiKit.label("Nodes cleared: %d" % maxi(0, Run.visited.size()), 19))
+	var re := Run.roamer_encounter()
+	if re != null and Run.roamer_node() >= 0:
+		col.add_child(UiKit.label("Roaming elite: %s, on row %d. Catch it for a rare relic before it reaches the guardian." % [
+			re.display_name, int(Run.map.node(Run.roamer_node())["row"]) + 1], 17, UiKit.EMBER, true))
+	elif re != null:
+		col.add_child(UiKit.label("%s has joined the guardian." % re.display_name, 17, UiKit.BLOOD, true))
 	col.add_child(UiKit.spacer(16))
 	col.add_child(UiKit.label("Captured pieces stay dead until a campfire or the merchant restores them. XP is gained by capturing; level-ups happen after fights. Each act ends with a guardian engine.", 16, UiKit.MUTED, true))
 	return p
@@ -178,6 +185,20 @@ func _node_button(n: Dictionary) -> Control:
 		tip += "\nBuy pieces and relics, or raise the fallen."
 	elif t == &"treasure":
 		tip += "\nGold and a relic of your choice."
+	elif t == &"unknown":
+		tip += "\nMost often an event; sometimes a fight, a treasure or the merchant. The longer you go without a fight, the likelier one gets."
+	var omen := Content.omen(StringName(n.get("omen", &"")))
+	if omen != null and not visited:
+		tip += "\nOmen · %s: %s" % [omen.display_name, omen.description]
+		_badge(b, omen.icon, size, Vector2(0.62, -0.08), UiKit.SOUL)
+	var re := Run.roamer_encounter()
+	if Run.roamer_node() == id and re != null:
+		tip += "\nThe roaming elite stands here: %s. Step here to fight it for a rare relic. It climbs one row every %d nodes you enter; if it reaches the guardian, it fights beside it." % [
+			re.display_name, Content.config.roamer_every]
+		_badge(b, "res://assets/ui/icons/icon_roamer_256.png", size, Vector2(-0.14, -0.1), UiKit.BLOOD, 0.56)
+	elif big and Run.flags.has("roamer_joined") and re != null:
+		tip += "\n%s has joined the guardian." % re.display_name
+		_badge(b, "res://assets/ui/icons/icon_roamer_256.png", size, Vector2(-0.05, -0.02), UiKit.BLOOD, 0.4)
 	b.tooltip_text = tip
 	b.pivot_offset = Vector2(size, size) * 0.5
 	if avail:
@@ -190,6 +211,26 @@ func _node_button(n: Dictionary) -> Control:
 		mark.position = Vector2(size * 0.62, -size * 0.12)
 		b.add_child(mark)
 	return b
+
+
+## A small ringed icon on a node's corner (omen, roaming elite); at is a share of the node size.
+func _badge(b: Control, path: String, size: int, at: Vector2, ring: Color, share: float = 0.42) -> void:
+	var s := int(size * share)
+	var disc := Panel.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.02, 0.02, 0.03, 0.95)
+	sb.border_color = ring
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(s)
+	disc.add_theme_stylebox_override("panel", sb)
+	disc.position = Vector2(size, size) * at
+	disc.size = Vector2(s, s)
+	disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(disc)
+	var ic := UiKit.icon(path, s - 4)
+	ic.position = Vector2(2, 2)
+	ic.size = Vector2(s - 4, s - 4)
+	disc.add_child(ic)
 
 
 func _draw_edges() -> void:

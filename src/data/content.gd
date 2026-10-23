@@ -8,6 +8,7 @@ var relics: Dictionary = {}
 var events: Dictionary = {}
 var acts: Dictionary = {}
 var perks: Dictionary = {}
+var omens: Dictionary = {}
 var difficulties: Array = []
 var config: RunConfig
 
@@ -28,6 +29,7 @@ func reload() -> void:
 	events = _load_dir("res://data/events")
 	acts = _load_dir("res://data/acts")
 	perks = _load_dir("res://data/perks")
+	omens = _load_dir("res://data/omens")
 	difficulties = _load_dir("res://data/difficulty").values()
 	difficulties.sort_custom(func(a, b): return a.level < b.level)
 	config = load("res://data/run_config.tres") as RunConfig
@@ -110,6 +112,10 @@ func encounter(id: StringName) -> EncounterDef:
 
 func act(id: StringName) -> ActDef:
 	return acts.get(id)
+
+
+func omen(id: StringName) -> OmenDef:
+	return omens.get(id)
 
 
 func difficulty(level: int) -> DifficultyDef:

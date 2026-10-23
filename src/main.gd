@@ -2,7 +2,8 @@ extends Node
 ## Game flow: title -> starting relic -> act intro -> map -> nodes (fight, elite, campfire, event,
 ## shop, guardian) -> next act ... -> boss -> end. The run is saved whenever the map shows.
 ## Command line (after `--`): --seed=N, --difficulty=N, --screen=title|relic|map|fight|elite|guardian|
-## boss|reward|campfire|event|shop|treasure|codex|settings|formation|pause|act|end, --act=N (0-based),
+## boss|roamer|unknown|reward|campfire|event|shop|treasure|codex|settings|formation|pause|act|end, --act=N (0-based),
+## --omen=id (on the node the screen enters),
 ## --relics=id,id, --units=type,type, --kind=elite|guardian (reward screen), --gold=N, --autoplay (plays a whole run unattended), --shot=path.png
 ## [--shot-delay=s], --quit-after-shot, --quit-on-end, --isolated (separate profile and save files).
 
@@ -92,8 +93,18 @@ func _jump(where: String) -> void:
 			_show_start_relics()
 		"map":
 			_show_map()
-		"fight", "elite", "guardian", "boss", "shop", "treasure":
-			_enter(_first_node_of(StringName(where)))
+		"fight", "elite", "guardian", "boss", "shop", "treasure", "unknown":
+			var id := _first_node_of(StringName(where))
+			if args.has("omen"):
+				Run.map.node(id)["omen"] = StringName(args["omen"])
+			_enter(id)
+		"roamer":
+			if Run.roamer_node() < 0:
+				_show_map()
+				return
+			if args.has("omen"):
+				Run.map.node(Run.roamer_node())["omen"] = StringName(args["omen"])
+			_enter(Run.roamer_node())
 		"reward":
 			Run.unit(2).xp += 3
 			var o := {"state": "win", "reason": "checkmate: the engine's king falls", "slain": [],
@@ -252,7 +263,7 @@ func _display_army() -> void:
 func _enter(id: int) -> void:
 	var node := Run.enter_node(id)
 	match node["type"]:
-		&"fight", &"elite", &"guardian", &"boss":
+		&"fight", &"elite", &"guardian", &"boss", &"roamer":
 			_start_fight(node)
 		&"campfire":
 			_set_screen(_campfire())
@@ -356,8 +367,8 @@ func _after_fight(outcome: Dictionary, node: Dictionary) -> void:
 	Run.apply_fight(outcome, kind)
 	var army: Array = Run.deployed_units().map(func(u): return String(u.type))
 	var bench: Array = Run.benched_units().map(func(u): return String(u.type))
-	print("STS FIGHT act=%d row=%d kind=%s enc=%s result=%s (%s) plies=%d gold=%d command=%d/%d army=%s bench=%s relics=%s" % [
-		Run.act_index + 1, int(node["row"]), kind, node["encounter"], outcome.get("state"), outcome.get("reason"),
+	print("STS FIGHT act=%d row=%d kind=%s enc=%s omen=%s result=%s (%s) plies=%d gold=%d command=%d/%d army=%s bench=%s relics=%s" % [
+		Run.act_index + 1, int(node["row"]), kind, node["encounter"], node.get("omen", ""), outcome.get("state"), outcome.get("reason"),
 		int(outcome.get("plies", 0)), Run.gold, Run.command_used(), Run.command_cap(), ",".join(army), ",".join(bench),
 		",".join(Run.relics)])
 	world.board_view.interactive = false

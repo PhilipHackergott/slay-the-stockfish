@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="OmenDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/omen_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"iron_rain"
+display_name = "Iron Rain"
+description = "The engine fields 2 more pawns; the fight pays 50% more gold."
+icon = "res://assets/ui/icons/icon_omen_iron_rain_256.png"
+extra_pawns = 2
+gold_mult = 1.5

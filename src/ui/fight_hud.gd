@@ -83,7 +83,7 @@ func _build() -> void:
 	left.add_child(enemy)
 	var ec := UiKit.vbox(4)
 	enemy.add_child(ec)
-	var kind_text: String = KIND_TEXT.get(enc.kind, "Fight")
+	var kind_text: String = KIND_TEXT.get(StringName(fight.mods.get("node_kind", enc.kind)), "Fight")
 	ec.add_child(UiKit.caption(kind_text + " · tier %d" % enc.tier, 16, UiKit.EMBER))
 	var name_l := UiKit.heading(enc.display_name, 30)
 	name_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

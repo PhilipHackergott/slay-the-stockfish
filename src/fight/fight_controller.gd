@@ -176,6 +176,8 @@ func setup(p_encounter: EncounterDef, units: Array, relics: Array, p_cfg: RunCon
 	var rs := int(mods.get("relic_skill", 0))
 	if rs != 0:
 		banner.append("Your relics: the engine plays %d skill levels %s." % [absi(rs), "weaker" if rs < 0 else "stronger"])
+	for line in mods.get("banner", []):
+		banner.append(String(line))
 	var st := {"board": board, "pocket": pocket, "has_pocket": has_pocket, "side": "b" if engine_first else "w", "castling": "-",
 		"ep": "-", "halfmove": 0, "fullmove": 1}
 	# Reinforcements never check your king or box theirs into a mate in one: the last ones step back.
@@ -202,7 +204,7 @@ func setup(p_encounter: EncounterDef, units: Array, relics: Array, p_cfg: RunCon
 		if int(id) > 0:
 			fought.append(int(id))
 	player_ms = maxf(60.0, float(cfg.clock_base_s + clock_bonus + int(mods.get("clock_delta_s", 0)))) * 1000.0
-	increment_ms = (cfg.clock_increment_s + inc_bonus) * 1000
+	increment_ms = 0 if bool(mods.get("no_increment", false)) else (cfg.clock_increment_s + inc_bonus) * 1000
 	ready_to_play.emit()
 	return true
 
@@ -473,7 +475,7 @@ func engine_skill() -> int:
 		s += int(mods.get("skill_bonus", 0))
 	if encounter.kind == &"elite":
 		s += int(mods.get("elite_skill_bonus", 0))
-	s += int(mods.get("relic_skill", 0))
+	s += int(mods.get("relic_skill", 0)) + int(mods.get("omen_skill", 0))
 	return clampi(s, -20, 20)
 
 
