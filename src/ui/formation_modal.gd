@@ -116,16 +116,19 @@ func _rebuild() -> void:
 		_grid.add_child(l)
 	for i in _reserve.size():
 		var idx := i
-		_reserve_row.add_child(_unit_button(int(_reserve[i]), _sel_reserve == i, func(): _click_reserve(idx)))
+		_reserve_row.add_child(_named(int(_reserve[i]), _sel_reserve == i, func(): _click_reserve(idx)))
 	if _reserve.is_empty():
-		_reserve_row.add_child(_drop_button("Everyone has a square." if _selected_unit() == null else "Move here",
-			func(): _click_reserve(-1)))
+		if _selected_unit() == null:
+			_reserve_row.add_child(_empty_note("Everyone has a square."))
+		else:
+			_reserve_row.add_child(_drop_button("Move here", func(): _click_reserve(-1)))
 	for i in _bench.size():
 		var idx := i
-		_bench_row.add_child(_unit_button(int(_bench[i]), _sel_bench == i, func(): _click_bench(idx)))
-	if _sel >= 0 or _sel_reserve >= 0 or _bench.is_empty():
-		_bench_row.add_child(_drop_button("Bench it" if _sel >= 0 or _sel_reserve >= 0 else "Nobody on the bench.",
-			func(): _click_bench(-1)))
+		_bench_row.add_child(_named(int(_bench[i]), _sel_bench == i, func(): _click_bench(idx)))
+	if _sel >= 0 or _sel_reserve >= 0:
+		_bench_row.add_child(_drop_button("Bench it", func(): _click_bench(-1)))
+	elif _bench.is_empty():
+		_bench_row.add_child(_empty_note("Nobody on the bench."))
 	var cap := Run.command_cap()
 	var used := _used()
 	_meter.text = "Command %d / %d" % [used, cap] if cap > 0 else "Command: no limit this act"
@@ -165,9 +168,28 @@ func _cell(sq: int) -> Control:
 	return b
 
 
+## A piece off the board, with its name under it (the board's squares say enough on their own).
+func _named(id: int, selected: bool, cb: Callable) -> Control:
+	var col := UiKit.vbox(2)
+	col.add_child(_unit_button(id, selected, cb))
+	var n := UiKit.label(UiKit.unit_name(Run.unit(id)), 14, UiKit.GOLD if selected else UiKit.MUTED)
+	n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	n.custom_minimum_size.x = CELL
+	n.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	col.add_child(n)
+	return col
+
+
+func _empty_note(text: String) -> Control:
+	var l := UiKit.label(text, 17, UiKit.DIM)
+	l.custom_minimum_size.y = 36
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	return l
+
+
 func _drop_button(text: String, cb: Callable) -> Button:
 	var b := _unit_button(-1, false, cb)
-	b.custom_minimum_size = Vector2(CELL * 2, CELL * 0.6)
+	b.custom_minimum_size = Vector2(CELL * 2, CELL)
 	b.text = text
 	b.add_theme_font_size_override("font_size", 17)
 	b.add_theme_color_override("font_color", UiKit.MUTED)

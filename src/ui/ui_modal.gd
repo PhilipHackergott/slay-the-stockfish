@@ -142,6 +142,8 @@ func _ready() -> void:
 	_frame.resized.connect(_place)
 	_place.call_deferred()
 	_fit()
+	# Buttons and labels settle their size a frame after the theme applies; measure again then.
+	get_tree().process_frame.connect(_queue_fit, CONNECT_ONE_SHOT)
 	UiKit.pop_in(_root)
 	Audio.play("ui_open")
 

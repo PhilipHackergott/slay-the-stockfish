@@ -45,11 +45,13 @@ func _ready() -> void:
 	col.add_child(UiKit.divider(600, true))
 	col.add_child(UiKit.caption("Your army at the end", 20, UiKit.BONE))
 	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 40)
-	grid.add_theme_constant_override("v_separation", 8)
-	col.add_child(grid)
+	grid.columns = 3
+	grid.add_theme_constant_override("h_separation", 28)
+	grid.add_theme_constant_override("v_separation", 10)
+	col.add_child(UiKit.centered(grid))
 	for u in Run.units:
-		grid.add_child(ArmyPanel.row(u, true))
+		var r := ArmyPanel.row(u, true)
+		r.custom_minimum_size.x = 310
+		grid.add_child(r)
 	m.footer.add_child(UiKit.button("Title", func(): to_title.emit(), 22))
 	m.footer.add_child(UiKit.button("Begin a new run", func(): new_run.emit(), 24, true))

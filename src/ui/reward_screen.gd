@@ -44,11 +44,12 @@ func _ready() -> void:
 		"%s · %s" % [enc.display_name if enc else "Fight", outcome.get("reason", "")], 720)
 	add_child(m)
 	var col := m.body
-	col.add_child(_gold_summary())
-	col.add_child(_xp_summary())
+	var head := _xp_summary()
+	head.add_child(_gold_summary())
+	head.move_child(head.get_child(-1), 0)
 	_command = UiKit.label("", 19, UiKit.GOLD)
-	_command.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(_command)
+	head.add_child(_command)
+	col.add_child(head)
 	col.add_child(UiKit.divider(700, true))
 	col.add_child(UiKit.caption("Level-ups", 20, UiKit.GOLD))
 	_levels = UiKit.vbox(12)
@@ -105,9 +106,7 @@ func _gold_summary() -> Control:
 		parts.append("%d from XP your finished pieces could not use" % o)
 	if b > 0:
 		parts.append("%d in bounties" % b)
-	var l := UiKit.label(" · ".join(parts), 20, UiKit.MUTED, true)
-	l.custom_minimum_size = Vector2(600, 0)
-	h.add_child(l)
+	h.add_child(UiKit.label(" · ".join(parts), 20, UiKit.MUTED))
 	if g + o + b > 0:
 		Audio.play("gold")
 	return h
@@ -156,10 +155,10 @@ func _rebuild_levels() -> void:
 	for u in pending:
 		var block := UiKit.vbox(8)
 		var row := UiKit.hbox(14)
-		row.add_child(UiKit.portrait(u.type, true, 72))
-		var info := UiKit.vbox(2)
+		row.add_child(UiKit.portrait(u.type, true, 56))
+		var info := UiKit.vbox(0)
 		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		info.add_child(UiKit.heading(UiKit.unit_name(u), 24))
+		info.add_child(UiKit.heading(UiKit.unit_name(u), 22))
 		var bench := " · on the bench" if u.is_benched() else ""
 		info.add_child(UiKit.label("%d / %d XP · level %d → %d · rise one tier, or keep its form and take a perk%s" % [
 			u.xp, Run.xp_needed(u), u.level, u.level + 1, bench], 18, UiKit.GOLD, true))
