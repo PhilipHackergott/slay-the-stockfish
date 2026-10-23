@@ -71,7 +71,7 @@ func _build_body() -> void:
 	else:
 		_body = _fallback_body()
 		_yaw.add_child(_body)
-	if stand_in:
+	if stand_in or (def != null and def.look != &""):
 		_add_halo()
 	for mi in _body.find_children("*", "MeshInstance3D", true, false):
 		_meshes.append(mi)
@@ -80,7 +80,7 @@ func _build_body() -> void:
 	_apply_glow()
 
 
-## Marks a fairy piece that still borrows its family's model: a glowing ring above it.
+## Marks a fairy piece that still borrows its family's model, or a stitched one: a glowing ring above it.
 func _add_halo() -> void:
 	var ring := MeshInstance3D.new()
 	var t := TorusMesh.new()

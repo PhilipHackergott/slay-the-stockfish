@@ -137,6 +137,12 @@ func mates_in_one(fen: String) -> PackedStringArray:
 	return PackedStringArray(res.get("moves", []))
 
 
+## Key moves of the side to move that win next move whatever the reply (problems; nothing wins at once).
+func mate_in_two(fen: String) -> PackedStringArray:
+	var res: Dictionary = await call_core({"op": "mate_in_two", "fen": fen})
+	return PackedStringArray(res.get("moves", []))
+
+
 func engine_move(fen: String, moves: PackedStringArray, movetime_ms: int, skill: int, depth: int = 0) -> Dictionary:
 	return await call_core({"op": "engine_move", "fen": fen, "moves": Array(moves),
 		"movetime_ms": movetime_ms, "skill": skill, "depth": depth})

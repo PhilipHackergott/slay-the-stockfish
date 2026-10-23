@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"puzzle_2_3"
+display_name = "The Drowned Problem III"
+kind = &"puzzle"
+tier = 2
+layout = {"a8": &"king", "b3": &"pawn", "e5": &"pawn"}
+player_layout = {"b5": &"king", "g4": &"rook", "h8": &"knight"}
+move_limit = 2
+solution = "b5b6"
+movetime_ms = 400
+skill = 20
+flavor = "White to move. Mate in two, whatever the engine answers."

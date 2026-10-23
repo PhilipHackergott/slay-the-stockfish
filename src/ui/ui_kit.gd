@@ -644,6 +644,8 @@ static func portrait_path(type: StringName, white: bool) -> String:
 		if ResourceLoader.exists(p):
 			return p
 	var d: PieceDef = Content.piece(type)
+	if d != null and d.look != &"":
+		return portrait_path(d.look, white)
 	if d != null and d.base != &"" and d.base != type:
 		return portrait_path(d.base, white)
 	return ""

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/event_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hanged_problemist"
+title = "The Hanged Problemist"
+text = "A man hangs from the stair rail by his ankles, a chalk board in his hands. \"White to move and mate in two,\" he says, upside down. \"Nobody has solved it. Nobody has cut me down either.\""
+options = Array[Dictionary]([{"label": "Attempt the problem", "fight": "puzzle", "tier": 1, "detail": "Mate in two against the engine at full strength, with its pieces, not yours. Solve it: a relic, most likely a rare one. Fail: lose 15 gold.", "win": {"effect": "gain_relic", "source": "roamer", "result": "He laughs until the rope creaks, and drops something into your hand."}, "lose": {"effect": "lose_gold", "amount": 15, "result": "\"Again nobody,\" he sighs. Your purse is lighter; you did not see him take it."}}, {"label": "Leave him hanging", "effect": "nothing", "result": "He is still explaining the problem when you turn the corner."}])
+acts = PackedInt32Array(1)
+icon = "res://assets/ui/icons/icon_event_puzzle_256.png"

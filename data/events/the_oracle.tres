@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/event_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"the_oracle"
+title = "The Oracle of the Throne"
+text = "In an alcove, a blind woman turns the pages of a book with no words. \"This is the engine's opening book,\" she says. \"I can read you a line from it. Or from its endgames.\""
+options = Array[Dictionary]([{"label": "Hear the opening line", "effect": "study_boss", "amount": 90, "detail": "+90 s on your clock in the fight against the engine at the bottom.", "result": "You learn how it will begin. That is something."}, {"label": "Hear the endgames", "effect": "xp_all", "amount": 3, "detail": "Every healthy piece gains 3 XP.", "result": "Your pieces listen in silence and stand a little differently afterwards."}, {"label": "Leave her to her book", "effect": "nothing", "result": "She keeps reading aloud after you are gone."}])
+acts = PackedInt32Array(3)

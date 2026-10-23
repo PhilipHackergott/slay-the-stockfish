@@ -130,11 +130,23 @@ func test_treasure_fits() -> void:
 
 func test_every_event_fits() -> void:
 	_worst_case()
+	Run.add_unit(&"chancellor")
+	Run.add_unit(&"dragon_horse")
 	for id in Content.events:
 		var e := EventScreen.new().setup(Content.events[id])
 		await _show(e)
 		_check(e, "event %s" % id)
+		for o in e.event.options:
+			if String(o.get("effect", "")) == "stitch":
+				e._stitch_step(o)
+				await get_tree().process_frame
+				await get_tree().process_frame
+				_check(e, "event %s stitch %s" % [id, o["atom"]])
 		e.queue_free()
+	var long := "The panel goes dark with a sound like a sigh. A drawer slides open. You gain the Stockfish's Tooth, and Creeping Rot clings to you."
+	var r := EventScreen.new().setup(Content.events[&"engine_riddle"], long)
+	await _show(r)
+	_check(r, "event result")
 
 
 func test_relic_pick_fits() -> void:

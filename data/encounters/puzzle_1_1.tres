@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"puzzle_1_1"
+display_name = "The Hanged Problem I"
+kind = &"puzzle"
+tier = 1
+layout = {"a8": &"king", "g3": &"pawn", "g7": &"pawn"}
+player_layout = {"a2": &"king", "d2": &"rook", "h5": &"rook"}
+move_limit = 2
+solution = "d2d7"
+movetime_ms = 400
+skill = 20
+flavor = "White to move. Mate in two, whatever the engine answers."

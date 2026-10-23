@@ -8,3 +8,4 @@ id = &"crypt_offering"
 title = "The Crypt Offering"
 text = "An altar in a sealed crypt holds a relic under glass. A carved line reads: A LIFE OR A TITHE."
 options = Array[Dictionary]([{"label": "Offer a pawn (gain a random relic, lose a pawn)", "effect": "gain_relic", "cost": "lose_pawn", "result": "The glass lifts on its own."}, {"label": "Offer a tithe (75 gold: gain a random relic)", "effect": "gain_relic", "cost": "gold", "cost_amount": 75, "result": "The coins sink into the stone like water."}, {"label": "Leave the crypt sealed", "effect": "nothing", "result": "Some doors are better closed."}])
+acts = PackedInt32Array(1)

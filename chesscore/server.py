@@ -47,6 +47,8 @@ def handle(core: ChessCore, req: dict) -> dict:
         return {"check": core.in_check(fen, req.get("side", "w"))}
     if op == "mates_in_one":
         return {"moves": core.mates_in_one(fen)}
+    if op == "mate_in_two":
+        return {"moves": core.mate_in_two(fen)}
     if op == "engine_move":
         return core.engine_move(fen, moves, int(req.get("movetime_ms", 100)), int(req.get("skill", 20)),
                                 int(req.get("depth", 0)))

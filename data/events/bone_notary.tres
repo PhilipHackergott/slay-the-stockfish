@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/event_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bone_notary"
+title = "The Bone Notary"
+text = "A notary in a collar of finger bones unrolls a contract across the stair. \"Gold now, gold later,\" he says. \"Only the later part is yours to pay.\""
+options = Array[Dictionary]([{"label": "Sign for gold", "effect": "gold", "amount": 90, "detail": "Gain 90 gold.", "curse": "debt_of_bone", "result": "The ink is still wet when the coins arrive."}, {"label": "Sign for a relic", "effect": "gain_relic", "source": "elite", "curse": "debt_of_bone", "detail": "Gain a relic, most often an uncommon one.", "result": "He hands you a box and keeps a copy of your signature."}, {"label": "Refuse to sign", "effect": "nothing", "result": "He rolls the contract up again. He has time."}])
+acts = PackedInt32Array(1)

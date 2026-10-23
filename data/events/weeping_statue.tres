@@ -8,3 +8,4 @@ id = &"weeping_statue"
 title = "The Weeping Statue"
 text = "A saint of black marble weeps molten gold from empty eyes. The tears pool at its feet and harden."
 options = Array[Dictionary]([{"label": "Kneel and pray (a random healthy piece gains 6 XP)", "effect": "xp_random", "amount": 6, "result": "Something answers. Not the saint."}, {"label": "Pry the gold from its eyes (+55 gold, a random piece is slain)", "effect": "gold", "amount": 55, "cost": "lose_random", "result": "The statue screams. One of yours does not get up."}, {"label": "Leave it to weep", "effect": "nothing", "result": "The weeping follows you for a long time."}])
+acts = PackedInt32Array(2)

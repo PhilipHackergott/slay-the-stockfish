@@ -189,6 +189,23 @@ class ChessCore:
         mover_wins = "win" if side_to_move(fen) == "w" else "loss"
         return [m for m in self.legal(fen, []) if self.result(fen, [m])["state"] == mover_wins]
 
+    def mate_in_two(self, fen: str) -> list[str]:
+        """Key moves of the side to move that checkmate next move against every reply (nothing may win
+        at once). Only checkmates count, so the second move must give check."""
+        v = self.variant
+
+        def mates(f: str) -> bool:
+            return any(sf.gives_check(v, f, [x]) and not sf.legal_moves(v, f, [x]) for x in sf.legal_moves(v, f, []))
+
+        keys = []
+        for m in self.legal(fen, []):
+            if self.result(fen, [m])["state"] != "ongoing":
+                continue
+            f1 = sf.get_fen(v, fen, [m])
+            if all(mates(sf.get_fen(v, f1, [r])) for r in sf.legal_moves(v, f1, [])):
+                keys.append(m)
+        return keys
+
     def apply(self, fen: str, moves: list[str], move: str) -> dict:
         if move not in self.legal(fen, moves):
             raise CoreError(f"illegal move {move}")

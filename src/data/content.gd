@@ -52,8 +52,44 @@ func _load_dir(dir: String) -> Dictionary:
 	return out
 
 
+## Stitched pieces (the Tailor): "<base>__<atom>" is the base piece plus one Betza atom.
+const STITCH := "__"
+const STITCH_VALUE := {"W": 2, "F": 2, "N": 3}
+const STITCH_TEXT := {"W": "also steps one square straight", "F": "also steps one square diagonally",
+	"N": "also leaps like a knight"}
+var _stitched: Dictionary = {}
+
+
 func piece(id: StringName) -> PieceDef:
-	return pieces.get(id)
+	var d: PieceDef = pieces.get(id)
+	if d == null and String(id).contains(STITCH):
+		d = _stitched.get(id)
+		if d == null:
+			d = _stitch(id)
+	return d
+
+
+static func stitched_id(base: StringName, atom: String) -> StringName:
+	return StringName("%s%s%s" % [base, STITCH, atom])
+
+
+func _stitch(id: StringName) -> PieceDef:
+	var parts := String(id).split(STITCH)
+	var b: PieceDef = pieces.get(StringName(parts[0]))
+	if b == null or parts.size() != 2 or not STITCH_VALUE.has(parts[1]):
+		return null
+	var d: PieceDef = b.duplicate()
+	d.id = id
+	d.letter = ""
+	d.betza = Betza.of(b.id) + parts[1]
+	d.value = b.value + int(STITCH_VALUE[parts[1]])
+	d.display_name = "Stitched " + b.display_name
+	d.moves_text = "%s Stitched: %s." % [b.moves_text, STITCH_TEXT[parts[1]]]
+	d.rarity = &""
+	d.unlock = &""
+	d.look = b.look if b.look != &"" else b.id
+	_stitched[id] = d
+	return d
 
 
 ## letters: {piece id: letter} from VariantGen for custom pieces. royal_type: the player's king node.
@@ -90,7 +126,7 @@ func piece_by_letter(letter: String, white: bool = true) -> PieceDef:
 	if l == VariantGen.PLAYER_KING:
 		return pieces.get(_royal_type if white else &"king", pieces.get(&"king"))
 	if _letters.has(l):
-		return pieces.get(_letters[l])
+		return piece(_letters[l])
 	for p in pieces.values():
 		if p.letter == l:
 			return p

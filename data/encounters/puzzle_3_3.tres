@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"puzzle_3_3"
+display_name = "The Engine's Riddle III"
+kind = &"puzzle"
+tier = 3
+layout = {"b3": &"pawn", "f3": &"pawn", "h2": &"pawn", "h6": &"pawn", "h8": &"king"}
+player_layout = {"a3": &"king", "c2": &"queen", "h4": &"bishop"}
+move_limit = 2
+solution = "c2g6"
+movetime_ms = 400
+skill = 20
+flavor = "White to move. Mate in two, whatever the engine answers."

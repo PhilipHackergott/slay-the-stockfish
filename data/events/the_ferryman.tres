@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/event_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"the_ferryman"
+title = "The Ferryman"
+text = "A boat glides out of the dark with a hooded figure at the pole. Your fallen pieces sit in it, waiting. \"Everyone pays the crossing,\" it says. \"Coming or going.\""
+options = Array[Dictionary]([{"label": "Pay for their return", "effect": "restore_all", "cost": "gold", "cost_amount": 45, "detail": "Every slain piece returns, with its XP.", "result": "The boat bumps the shore and your dead step off it."}, {"label": "Give him a pawn for the ferry", "effect": "xp_all", "amount": 3, "cost": "lose_pawn", "detail": "Lose a pawn; every healthy piece gains 3 XP from the passage.", "result": "The pawn climbs into the boat without looking back."}, {"label": "Wave him off", "effect": "nothing", "result": "The boat turns and the dead in it watch you go."}])
+acts = PackedInt32Array(2)

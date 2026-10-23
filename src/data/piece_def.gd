@@ -37,6 +37,8 @@ extends Resource
 ## Height in metres (selection glow, hover info); the glb is authored to it.
 @export var height: float = 1.0
 @export var model: String
+## The piece whose model and portrait this one wears (the Tailor's stitched pieces).
+@export var look: StringName
 ## Profile unlock key ("" = always available), see Profile.UNLOCKS.
 @export var unlock: StringName
 ## Extra variant lines for custom pieces; "{L}" is replaced by the assigned letter.

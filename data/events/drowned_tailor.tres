@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/event_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"drowned_tailor"
+title = "The Drowned Tailor"
+text = "A tailor sits on a sunken pew, sewing by the light of drowned candles. His thread is made of moves. \"I can stitch a step onto one of yours,\" he says. \"It holds until the piece rises a tier.\""
+options = Array[Dictionary]([{"label": "Stitch a straight step", "effect": "stitch", "atom": "W", "cost": "gold", "cost_amount": 30, "detail": "One piece of your choice (not a pawn or the king) also steps one square straight, until it rises a tier. Its value and Command cost rise by 2.", "result": "The needle goes in and out of the piece without a sound."}, {"label": "Stitch a diagonal step", "effect": "stitch", "atom": "F", "cost": "gold", "cost_amount": 30, "detail": "One piece of your choice also steps one square diagonally. Its value and Command cost rise by 2.", "result": "The tailor bites off the thread and nods."}, {"label": "Stitch a knight's leap", "effect": "stitch", "atom": "N", "cost": "gold", "cost_amount": 55, "detail": "One piece of your choice also leaps like a knight. Its value and Command cost rise by 3.", "result": "This one takes longer. The piece flinches only once."}, {"label": "Keep your pieces as they are", "effect": "nothing", "result": "He shrugs and goes back to his hem."}])
+acts = PackedInt32Array(2)
+icon = "res://assets/ui/icons/icon_event_tailor_256.png"

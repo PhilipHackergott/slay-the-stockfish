@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"pit_rabble"
+display_name = "The Pit's Rabble"
+kind = &"skirmish"
+tier = 1
+layout = {"e7": &"king", "d6": &"pawn", "e6": &"pawn", "f6": &"pawn", "h7": &"pawn", "b8": &"knight", "a8": &"rook"}
+movetime_ms = 60
+skill = -10
+flavor = "Bones that fight for the crowd. They have done this before."

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/event_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"sunken_pact"
+title = "The Sunken Pact"
+text = "A crown lies on the floor of the flooded nave, just under the surface. The water around it is warm, and it whispers in the voice of whoever is closest."
+options = Array[Dictionary]([{"label": "Drink the black water", "effect": "transform_up", "amount": 1, "curse": "creeping_rot", "detail": "A random piece below tier 5 becomes a random piece one tier higher.", "result": "It tastes of iron and old games."}, {"label": "Take the drowned crown", "effect": "gain_relic", "source": "roamer", "curse": "cracked_hourglass", "detail": "Gain a relic, most likely a rare one.", "result": "The crown comes up dripping. Somewhere a clock cracks."}, {"label": "Leave it to the water", "effect": "nothing", "result": "The whispering stops when you are out of reach. Mostly."}])
+acts = PackedInt32Array(2)

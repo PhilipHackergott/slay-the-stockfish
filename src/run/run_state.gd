@@ -632,7 +632,7 @@ func fight_mods(kind: StringName, enc: EncounterDef) -> Dictionary:
 	var think := 1.0
 	var first := false
 	var extra: Array = []
-	for r in relic_defs():
+	for r in (relic_defs() if kind != &"puzzle" else []):
 		xp_mult *= r.xp_mult
 		skill += r.engine_skill_delta
 		think *= r.movetime_mult
@@ -650,6 +650,13 @@ func fight_mods(kind: StringName, enc: EncounterDef) -> Dictionary:
 		banner.append("Ambush: the unknown path was a fight.")
 	if kind == &"roamer":
 		banner.append("You caught the roaming elite. Beat it for a rare relic.")
+	if enc != null and enc.move_limit > 0:
+		banner.append("Mate in %d: your relics stay out of it, and move %d must checkmate." % [enc.move_limit, enc.move_limit])
+	if kind == &"skirmish":
+		banner.append("The Pit: no piece of yours stays dead here.")
+	if kind == &"boss" and int(flags.get("oracle_s", 0)) > 0:
+		m["clock_delta_s"] = int(m["clock_delta_s"]) + int(flags["oracle_s"])
+		banner.append("The Oracle's reading: +%d s on your clock." % int(flags["oracle_s"]))
 	if kind == &"guardian" and flags.has("roamer_joined"):
 		var re := roamer_encounter()
 		banner.append("%s has joined the guardian: more enemy pieces." % (re.display_name if re != null else "The roaming elite"))
@@ -778,20 +785,32 @@ func relic_card_count(base: int) -> int:
 
 # --- events -----------------------------------------------------------------------------------
 
+## An unused event of this act's pool; else any unused one; else any.
 func pick_event() -> EventDef:
-	var pool: Array = Content.events.keys().filter(func(id): return not used_events.has(id))
+	var all: Array = Content.events.keys()
+	all.sort()
+	var fresh := all.filter(func(id): return not used_events.has(id))
+	var pool := fresh.filter(func(id):
+		var acts: PackedInt32Array = Content.events[id].acts
+		return acts.is_empty() or acts.has(act_index + 1))
 	if pool.is_empty():
-		pool = Content.events.keys()
+		pool = fresh
+	if pool.is_empty():
+		pool = all
 	if pool.is_empty():
 		return null
-	pool.sort()
 	var id: StringName = pool[rng.randi_range(0, pool.size() - 1)]
 	used_events.append(id)
 	return Content.events[id]
 
 
-## Whether an option's cost can be paid (gold, or a pawn to give up).
+## Whether an option can be taken: its cost paid (gold, a pawn to give up), a piece to stitch, a
+## problem to set.
 func can_afford_option(opt: Dictionary) -> bool:
+	if String(opt.get("effect", "")) == "stitch" and stitch_options(String(opt.get("atom", "W"))).is_empty():
+		return false
+	if String(opt.get("fight", "")) == "puzzle" and _puzzles(int(opt.get("tier", 1))).is_empty():
+		return false
 	match String(opt.get("cost", "")):
 		"gold":
 			return gold >= int(opt.get("cost_amount", 0))
@@ -839,7 +858,7 @@ func apply_event_option(opt: Dictionary) -> String:
 				var nu := add_unit(ids[0])
 				text += " %s joins you%s." % [_name(nu), " on the bench" if nu.is_benched() else ""]
 		"gain_relic":
-			var choices := relic_choices(1, "event")
+			var choices := relic_choices(1, String(opt.get("source", "event")))
 			if choices.is_empty():
 				text += " The reliquary is empty."
 			else:
@@ -848,20 +867,103 @@ func apply_event_option(opt: Dictionary) -> String:
 		"gold":
 			add_gold(amount)
 			text += " (+%d gold)" % amount
+		"lose_gold":
+			var lost := mini(gold, amount)
+			spend_gold(lost)
+			text += " (-%d gold)" % lost
 		"transform_up":
-			var pool := healthy_units().filter(func(u):
-				var d := Content.piece(u.type)
-				return not d.is_royal() and d.tier < 5 and d.rarity != &"legendary")
-			if not pool.is_empty():
+			for i in amount:
+				var pool := healthy_units().filter(func(u):
+					var d := Content.piece(u.type)
+					return not d.is_royal() and d.tier < 5 and d.rarity != &"legendary")
+				if pool.is_empty():
+					break
 				var t: Unit = pool[rng.randi_range(0, pool.size() - 1)]
 				var ids := draw_tier(Content.piece(t.type).tier + 1, 1)
 				if not ids.is_empty():
 					var before := _name(t)
 					_set_type(t, ids[0])
 					text += " %s is now a %s." % [before, Content.piece(ids[0]).display_name]
+		"restore_all":
+			var fallen := slain_units()
+			for u in fallen:
+				restore(u)
+			text += " (%d pieces return)" % fallen.size()
+		"study_boss":
+			flags["oracle_s"] = int(flags.get("oracle_s", 0)) + amount
+		"stitch":
+			var u := unit(int(opt.get("unit", -1)))
+			if u != null:
+				var before := _name(u)
+				stitch(u, String(opt.get("atom", "W")))
+				text += " %s is now a %s." % [before, Content.piece(u.type).display_name.to_lower()]
+	if opt.has("curse"):
+		var c := Content.relic(StringName(opt["curse"]))
+		if c != null and not has_relic(c.id):
+			add_relic(c.id)
+			text += " %s clings to you." % c.display_name
 	enforce_command()
 	changed.emit()
 	return text
+
+
+## Pieces the Tailor can stitch this atom onto: healthy, not royal, not pawn-like, not stitched yet,
+## and the atom must add squares.
+func stitch_options(atom: String) -> Array:
+	return healthy_units().filter(func(u):
+		var d := Content.piece(u.type)
+		if d == null or d.is_royal() or d.pawn_like or d.base == &"pawn" or String(u.type).contains(Content.STITCH):
+			return false
+		var b := Betza.of(u.type)
+		return Betza.squares(b + atom).size() > Betza.squares(b).size())
+
+
+## The stitch keeps the unit's level; it holds until the piece rises a tier.
+func stitch(u: Unit, atom: String) -> void:
+	u.type = Content.stitched_id(u.type, atom)
+	u.lineage.append(String(u.type))
+	enforce_command()
+	changed.emit()
+
+
+## The Pit: your king and your n greenest deployed pieces (least XP first).
+func skirmish_units(n: int) -> Array:
+	var out: Array = []
+	var k := king_unit()
+	if k != null and k.is_healthy():
+		out.append(k)
+	var rest := deployed_units().filter(func(u): return not Content.piece(u.type).is_royal())
+	rest.sort_custom(func(a, b): return a.xp < b.xp or (a.xp == b.xp and a.id < b.id))
+	out.append_array(rest.slice(0, n))
+	return out
+
+
+## Problems of a tier not solved or failed yet this run (all of them once every one was tried).
+func _puzzles(tier: int) -> Array:
+	var done: Array = flags.get("puzzles", [])
+	var all := Content.encounters_of(&"puzzle", tier)
+	all.sort_custom(func(a, b): return String(a.id) < String(b.id))
+	var fresh := all.filter(func(e): return not done.has(String(e.id)))
+	return fresh if not fresh.is_empty() else all
+
+
+## The encounter of an event fight: the option's own, or a problem of its tier.
+func event_encounter(opt: Dictionary) -> EncounterDef:
+	if opt.has("encounter"):
+		return Content.encounter(StringName(opt["encounter"]))
+	var pool := _puzzles(int(opt.get("tier", 1)))
+	return pool[rng.randi_range(0, pool.size() - 1)] if not pool.is_empty() else null
+
+
+## An event fight is over. Nothing of it lasts but XP taken (no losses, no fight count); the
+## option's win or lose part applies.
+func apply_event_fight(outcome: Dictionary, opt: Dictionary) -> String:
+	if String(opt.get("fight", "")) == "puzzle":
+		var done: Array = flags.get("puzzles", [])
+		done.append(String(outcome.get("encounter", "")))
+		flags["puzzles"] = done
+	var part: Dictionary = opt.get("win" if String(outcome.get("state", "")) == "win" else "lose", {})
+	return apply_event_option(part) if not part.is_empty() else ""
 
 
 ## Tier for event pieces: the option's, else the top tier of this act's fight rewards.

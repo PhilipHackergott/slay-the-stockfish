@@ -28,6 +28,22 @@ func test_scripted_game_against_engine_reaches_a_result() -> void:
 	gut.p("result: %s (%s) after %d plies" % [fight.outcome["state"], fight.outcome["reason"], fight.ply_count])
 
 
+
+func test_a_formation_that_mates_at_once_gives_the_engine_the_first_move() -> void:
+	Run.new_run(5)
+	var units: Array = [Unit.make(1, &"king"), Unit.make(2, &"queen"), Unit.make(3, &"queen")]
+	var fight := FightController.new()
+	add_child_autofree(fight)
+	assert_true(await fight.setup(Content.encounter(&"stockfish"), units, [], Content.config, {4: 1, 13: 2, 8: 3}))
+	assert_true(fight.engine_first, "Qf2xf7 with the a2 queen behind it would mate at once")
+	assert_eq(fight.base_fen.split(" ")[1], "b")
+	assert_true(fight.banner_lines().has("Your formation threatens mate at once: the engine moves first."))
+	var plain := FightController.new()
+	add_child_autofree(plain)
+	var army := Run.healthy_units()
+	assert_true(await plain.setup(Content.encounter(&"stockfish"), army, [], Content.config, Run.formation(army)))
+	assert_false(plain.engine_first)
+
 func test_xp_goes_to_the_capturing_unit() -> void:
 	Run.new_run(6)
 	var fight := FightController.new()

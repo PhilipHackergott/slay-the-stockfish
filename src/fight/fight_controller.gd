@@ -54,6 +54,8 @@ var pocket_units: Array = []
 
 var player_ms := 0.0
 var increment_ms := 0
+## Your moves so far (a problem's move_limit counts them).
+var player_moves := 0
 var clock_running := false
 var edit_charges := 0
 var move_charges := 0
@@ -160,6 +162,8 @@ func setup(p_encounter: EncounterDef, units: Array, relics: Array, p_cfg: RunCon
 		_place_twin()
 	for t in mods.get("start_pieces", []):
 		_place_temp(StringName(t))
+	for sq_name in encounter.player_layout:
+		_place_temp_at(Fen.sq(String(sq_name)), StringName(encounter.player_layout[sq_name]))
 	for sq_name in encounter.layout:
 		board[Fen.sq(String(sq_name))] = _letter_for(StringName(encounter.layout[sq_name]), false)
 	var added: Array = []
@@ -197,6 +201,16 @@ func setup(p_encounter: EncounterDef, units: Array, relics: Array, p_cfg: RunCon
 			push_warning("fight: start position invalid (%s): %s" % [v.get("reason", v.get("error", "in check")), base_fen])
 			return false
 		board.erase(added.pop_back())
+	# No fight is won on the first move: a formation that mates at once hands the engine the first move.
+	if not engine_first and encounter.move_limit == 0 and not (await ChessCore.mates_in_one(base_fen)).is_empty():
+		st["side"] = "b"
+		var flipped := Fen.serialize(st)
+		if (await ChessCore.mates_in_one(flipped)).is_empty():
+			engine_first = true
+			base_fen = flipped
+			banner.append("Your formation threatens mate at once: the engine moves first.")
+		else:
+			st["side"] = "w"
 	fen = base_fen
 	moves = PackedStringArray()
 	fought.clear()
@@ -227,16 +241,19 @@ func _place_twin() -> void:
 ## A relic's temporary piece on the first free square of your third rank, centre first.
 func _place_temp(type: StringName) -> void:
 	for f in [3, 4, 2, 5, 1, 6, 0, 7]:
-		var i: int = 16 + f
-		if board.has(i):
-			continue
-		board[i] = _letter_for(type, true)
-		var t := Unit.make(_next_temp_id, type)
-		t.temporary = true
-		temp_units[t.id] = t
-		unit_map.place(i, t.id)
-		_next_temp_id -= 1
-		return
+		if not board.has(16 + f):
+			_place_temp_at(16 + f, type)
+			return
+
+
+## A piece of yours for this fight only (relics, a problem's position): no run unit.
+func _place_temp_at(i: int, type: StringName) -> void:
+	board[i] = _letter_for(type, true)
+	var t := Unit.make(_next_temp_id, type)
+	t.temporary = true
+	temp_units[t.id] = t
+	unit_map.place(i, t.id)
+	_next_temp_id -= 1
 
 
 ## Every non-standard, non-royal piece type on either side: {id, betza, pawn_like, ep, ini_extra}.
@@ -253,6 +270,9 @@ func _custom_pieces(units: Array) -> Array:
 		if not ids.has(StringName(e[1])):
 			ids.append(StringName(e[1]))
 	for t in mods.get("start_pieces", []):
+		if not ids.has(StringName(t)):
+			ids.append(StringName(t))
+	for t in encounter.player_layout.values():
 		if not ids.has(StringName(t)):
 			ids.append(StringName(t))
 	for id in ids:
@@ -342,9 +362,13 @@ func try_player_move(uci: String) -> bool:
 	_stop_clock_with_increment()
 	await _play(uci, "w")
 	busy = false
+	player_moves += 1
 	if finished:
 		return true
 	if await _check_end():
+		return true
+	if encounter.move_limit > 0 and player_moves >= encounter.move_limit:
+		_finish("loss", "no mate in %d: the problem stands" % encounter.move_limit)
 		return true
 	await _engine_turn()
 	return true

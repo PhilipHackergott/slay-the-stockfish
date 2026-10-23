@@ -3,7 +3,7 @@ extends Node
 ## shop, guardian) -> next act ... -> boss -> end. The run is saved whenever the map shows.
 ## Command line (after `--`): --seed=N, --difficulty=N, --screen=title|relic|map|fight|elite|guardian|
 ## boss|roamer|unknown|reward|campfire|event|shop|treasure|codex|settings|formation|pause|act|end, --act=N (0-based),
-## --omen=id (on the node the screen enters),
+## --omen=id (on the node the screen enters), --event=id (the event screen shows this one),
 ## --relics=id,id, --units=type,type, --kind=elite|guardian (reward screen), --gold=N, --autoplay (plays a whole run unattended), --shot=path.png
 ## [--shot-delay=s], --quit-after-shot, --quit-on-end, --isolated (separate profile and save files).
 
@@ -120,7 +120,10 @@ func _jump(where: String) -> void:
 			if args.has("camp"):
 				c.open_step.call_deferred(String(args["camp"]))
 		"event":
-			_show_event()
+			_show_event(Content.events.get(StringName(args.get("event", ""))))
+			var e := screen as EventScreen
+			if e != null and args.has("option"):
+				e._choose.call_deferred(e.event.options[clampi(int(args["option"]), 0, e.event.options.size() - 1)])
 		"codex":
 			_show_map()
 			CodexModal.open_codex(ui_root)
@@ -301,15 +304,29 @@ func _show_treasure() -> void:
 	_set_screen(t)
 
 
-func _show_event() -> void:
-	var ev := Run.pick_event()
+func _show_event(ev: EventDef = null) -> void:
+	if ev == null:
+		ev = Run.pick_event()
 	if ev == null:
 		_after_node()
 		return
 	var e := EventScreen.new().setup(ev)
 	e.autoplay = autoplay
 	e.done.connect(_after_node)
+	e.fight_requested.connect(func(opt: Dictionary): _start_event_fight(ev, opt))
 	_set_screen(e)
+
+
+## A problem or the Pit: a fight that never ends the run; the option's win or lose part follows.
+func _start_event_fight(ev: EventDef, opt: Dictionary) -> void:
+	var enc := Run.event_encounter(opt)
+	if enc == null:
+		_after_node()
+		return
+	var kind := StringName(opt.get("fight", "skirmish"))
+	var row := int(Run.map.node(Run.current_node)["row"]) if Run.current_node >= 0 else 0
+	_start_fight({"id": Run.current_node, "row": row, "type": kind, "encounter": enc.id, "event": ev, "opt": opt,
+		"units": [] if kind == &"puzzle" else Run.skirmish_units(int(opt.get("units", 3)))})
 
 
 func _after_node() -> void:
@@ -329,8 +346,10 @@ func _start_fight(node: Dictionary) -> void:
 	fight.name = "Fight"
 	add_child(fight)
 	var kind: StringName = node["type"]
-	var units := Run.fight_units(kind)
-	var ok: bool = await fight.setup(enc, units, Run.relic_defs(), Content.config, Run.formation(units), Run.fight_mods(kind, enc))
+	var units: Array = node["units"] if node.has("units") else Run.fight_units(kind)
+	var puzzle := kind == &"puzzle"
+	var ok: bool = await fight.setup(enc, units, [] if puzzle else Run.relic_defs(), Content.config,
+		{} if puzzle else Run.formation(units), Run.fight_mods(kind, enc))
 	if not ok:
 		push_warning("fight setup failed for %s" % enc.id)
 		_show_map()
@@ -364,6 +383,18 @@ func _scripted_clicks(squares: PackedStringArray) -> void:
 
 func _after_fight(outcome: Dictionary, node: Dictionary) -> void:
 	var kind: StringName = node["type"]
+	if node.has("event"):
+		print("STS FIGHT act=%d row=%d kind=%s enc=%s result=%s (%s) plies=%d" % [Run.act_index + 1, int(node["row"]), kind,
+			node["encounter"], outcome.get("state"), outcome.get("reason"), int(outcome.get("plies", 0))])
+		world.board_view.interactive = false
+		Content.clear_fight_letters()
+		world.rig.set_mode("map")
+		_display_army()
+		var e := EventScreen.new().setup(node["event"], Run.apply_event_fight(outcome, node["opt"]))
+		e.autoplay = autoplay
+		e.done.connect(_after_node)
+		_set_screen(e)
+		return
 	Run.apply_fight(outcome, kind)
 	var army: Array = Run.deployed_units().map(func(u): return String(u.type))
 	var bench: Array = Run.benched_units().map(func(u): return String(u.type))

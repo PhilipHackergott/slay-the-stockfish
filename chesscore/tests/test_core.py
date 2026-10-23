@@ -61,6 +61,14 @@ def test_engine_side_not_extinct_and_mated_normally(core):
     assert core.mates_in_one("6k1/6pp/8/8/8/8/8/R3W3 w - - 0 1") == []  # f7 is free
 
 
+def test_mate_in_two_finds_the_one_key(core):
+    load(core, "t_m2")
+    fen = "1k6/4b3/Q3R3/8/2W5/8/8/8 w - - 0 1"  # data/encounters/puzzle_2_2.tres
+    assert core.mates_in_one(fen) == []
+    assert core.mate_in_two(fen) == ["e6c6"]
+    assert core.mate_in_two("6k1/5ppp/8/8/8/8/8/R3W3 w - - 0 1") == []  # mate in one is no problem
+
+
 def test_validate_with_custom_king(core):
     load(core, "t_validate")
     fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQWBNR w - - 0 1"
@@ -148,3 +156,35 @@ def test_server_json_lines_roundtrip():
     assert not err["ok"] and "illegal" in err["error"]
     call({"id": 7, "op": "quit"})
     proc.wait(timeout=5)
+
+
+def test_every_problem_has_exactly_its_one_key(core):
+    """data/encounters/puzzle_*.tres: nothing mates at once, and the stored solution is the only key."""
+    import re
+    load(core, "t_problems")
+    letters = {"pawn": "p", "knight": "n", "bishop": "b", "rook": "r", "queen": "q", "king": "k"}
+    files = sorted((HERE.parent / "data" / "encounters").glob("puzzle_*.tres"))
+    assert len(files) == 9
+    for f in files:
+        text = f.read_text()
+        board = {}
+        for key, white in (("layout", False), ("player_layout", True)):
+            body = re.search(rf"^{key} = \{{(.*)\}}$", text, re.M).group(1)
+            for sq, t in re.findall(r'"([a-h][1-8])": &"(\w+)"', body):
+                letter = letters[t]
+                board[sq] = ("W" if letter == "k" else letter.upper()) if white else letter
+        rows = []
+        for r in range(8, 0, -1):
+            row, empty = "", 0
+            for fl in "abcdefgh":
+                c = board.get(f"{fl}{r}")
+                if c is None:
+                    empty += 1
+                    continue
+                row += (str(empty) if empty else "") + c
+                empty = 0
+            rows.append(row + (str(empty) if empty else ""))
+        fen = "/".join(rows) + " w - - 0 1"
+        solution = re.search(r'^solution = "(\w+)"$', text, re.M).group(1)
+        assert core.mates_in_one(fen) == [], f.name
+        assert core.mate_in_two(fen) == [solution], f.name

@@ -8,3 +8,4 @@ id = &"bell_tower"
 title = "The Bell Tower"
 text = "A rope hangs from the dark above, frayed and stiff with old blood. Somewhere up there, a bell waits."
 options = Array[Dictionary]([{"label": "Ring it (every healthy piece gains 2 XP)", "effect": "xp_all", "amount": 2, "result": "The toll rolls down the stair and your army stands straighter."}, {"label": "Search the bell-ringer's corpse (+35 gold)", "effect": "gold", "amount": 35, "result": "He will not need his wages."}, {"label": "Climb on", "effect": "nothing", "result": "The rope sways behind you though there is no wind."}])
+acts = PackedInt32Array(1)

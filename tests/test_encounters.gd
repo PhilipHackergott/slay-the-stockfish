@@ -44,7 +44,7 @@ func _customs(enc: EncounterDef) -> Array:
 func test_every_encounter_piece_exists_and_kinds_are_known() -> void:
 	for id: StringName in Content.encounters:
 		var enc: EncounterDef = Content.encounters[id]
-		assert_true([&"fight", &"elite", &"guardian", &"boss"].has(enc.kind), "%s kind %s" % [id, enc.kind])
+		assert_true([&"fight", &"elite", &"guardian", &"boss", &"puzzle", &"skirmish"].has(enc.kind), "%s kind %s" % [id, enc.kind])
 		assert_true(enc.layout.values().has(&"king") or enc.layout.values().has("king"), "%s has an engine king" % id)
 		_customs(enc)
 
@@ -99,6 +99,8 @@ func test_no_encounter_allows_mate_in_one() -> void:
 	var n := 0
 	for id: StringName in Content.encounters:
 		var enc: EncounterDef = Content.encounters[id]
+		if enc.kind == &"puzzle":
+			continue
 		n += 1
 		var gen := VariantGen.build("sts_m1_test_%d" % n, "K", _customs(enc), PackedStringArray(), false)
 		assert_false(gen.has("error"), "%s builds a variant" % id)
