@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="PerkDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/perk_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bounty"
+display_name = "Bounty"
+description = "Each capture it makes pays 5 gold."
+icon = "res://assets/ui/icons/icon_perk_bounty_256.png"

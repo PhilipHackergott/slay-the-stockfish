@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="PerkDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/perk_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"veteran"
+display_name = "Veteran"
+description = "Gains half again as much XP from every capture."
+icon = "res://assets/ui/icons/icon_perk_veteran_256.png"

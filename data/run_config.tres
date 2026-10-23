@@ -6,7 +6,7 @@
 script = ExtResource("1")
 starting_army = Array[StringName]([&"king", &"pawn", &"pawn", &"pawn", &"pawn", &"knight", &"bishop"])
 starting_gold = 30
-xp_thresholds = PackedInt32Array(3, 8, 15, 24, 35)
+xp_thresholds = PackedInt32Array(3, 9, 18, 30, 45, 65)
 overflow_gold_per_xp = 2
 clock_base_s = 300
 clock_increment_s = 3
@@ -24,3 +24,4 @@ start_relic_choices = 4
 elite_relic_choices = 2
 acts = Array[StringName]([&"act1", &"act2", &"act3"])
 guardian_relic_choices = 3
+shop_relics = 3

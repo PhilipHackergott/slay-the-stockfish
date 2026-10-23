@@ -4,6 +4,7 @@ extends PanelContainer
 
 var _list: VBoxContainer
 var _title: Label
+var _command: Label
 
 
 func _ready() -> void:
@@ -14,6 +15,8 @@ func _ready() -> void:
 	add_child(col)
 	_title = UiKit.heading("Your Army", 28)
 	col.add_child(_title)
+	_command = UiKit.label("", 18, UiKit.GOLD)
+	col.add_child(_command)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -34,10 +37,15 @@ func refresh() -> void:
 	units.sort_custom(func(a, b):
 		if a.is_healthy() != b.is_healthy():
 			return a.is_healthy()
+		if a.is_benched() != b.is_benched():
+			return b.is_benched()
 		var va: int = 99 if Content.piece(a.type).is_royal() else Content.piece(a.type).value
 		var vb: int = 99 if Content.piece(b.type).is_royal() else Content.piece(b.type).value
 		return va > vb if va != vb else a.id < b.id)
 	_title.text = "Your Army  (%d / %d)" % [Run.healthy_units().size(), Run.units.size()]
+	var cap := Run.command_cap()
+	_command.text = "Command %d / %d · %d on the bench" % [Run.command_used(), cap, Run.benched_units().size()] if cap > 0 else ""
+	_command.visible = cap > 0
 	for u in units:
 		_list.add_child(row(u))
 
@@ -59,6 +67,15 @@ static func row(u: Unit, compact: bool = false) -> Control:
 	top.add_child(lv)
 	if slain:
 		top.add_child(UiKit.label("slain", 18, UiKit.BLOOD))
+	elif u.is_benched():
+		top.add_child(UiKit.label("bench", 18, UiKit.MUTED))
+	for p in u.perks:
+		var pd: PerkDef = Content.perk(StringName(p))
+		if pd != null:
+			var ic := UiKit.icon(pd.icon, 22)
+			ic.tooltip_text = "%s: %s" % [pd.display_name, pd.description]
+			ic.mouse_filter = Control.MOUSE_FILTER_PASS
+			top.add_child(ic)
 	var need := Run.xp_needed(u)
 	var bar_row := UiKit.hbox(8)
 	col.add_child(bar_row)

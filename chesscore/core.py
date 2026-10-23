@@ -184,6 +184,11 @@ class ChessCore:
     def legal(self, fen: str, moves: list[str]) -> list[str]:
         return list(sf.legal_moves(self.variant, fen, moves))
 
+    def mates_in_one(self, fen: str) -> list[str]:
+        """Moves of the side to move that win on the spot (mate or a variant win)."""
+        mover_wins = "win" if side_to_move(fen) == "w" else "loss"
+        return [m for m in self.legal(fen, []) if self.result(fen, [m])["state"] == mover_wins]
+
     def apply(self, fen: str, moves: list[str], move: str) -> dict:
         if move not in self.legal(fen, moves):
             raise CoreError(f"illegal move {move}")

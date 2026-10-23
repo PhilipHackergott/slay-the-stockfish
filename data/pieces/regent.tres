@@ -15,3 +15,5 @@ height = 1.65
 model = "res://models/pieces/regent.glb"
 moves_text = "Brings a twin king to every fight. You lose only when the last one falls. A final form."
 flavor = "One face looks forward, one looks back. Both are yours."
+tier = 0
+command_bonus = 2

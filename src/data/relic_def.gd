@@ -22,6 +22,8 @@ extends Resource
 @export var increment_bonus_s: int = 0
 ## gold: extra share of fight gold (0.5 = +50 %).
 @export var gold_bonus: float = 0.0
+## Extra Command for the deployed army.
+@export var command_bonus: int = 0
 ## Shop price before difficulty.
 @export var price: int = 100
 ## Profile unlock key ("" = always available).

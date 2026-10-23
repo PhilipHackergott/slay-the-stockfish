@@ -17,3 +17,4 @@ model = "res://models/pieces/nightmare.glb"
 unlock = &"win"
 moves_text = "A queen that also rides knight lines: repeated knight leaps in one direction. A final form."
 flavor = "The engine dreams, too. This is what it dreams about."
+tier = 6

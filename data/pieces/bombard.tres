@@ -14,3 +14,6 @@ height = 1.55
 model = "res://models/pieces/bombard.glb"
 moves_text = "A queen with cannon captures over one piece in all eight directions. A final form."
 flavor = "Her crown is a ring of smoking mortars."
+tier = 6
+rarity = &"legendary"
+reward_weight = 10

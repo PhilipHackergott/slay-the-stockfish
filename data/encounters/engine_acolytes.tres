@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"engine_acolytes"
+display_name = "The Engine's Acolytes"
+kind = &"fight"
+tier = 5
+layout = {"a7": &"pawn", "b7": &"pawn", "b8": &"chancellor", "c7": &"pawn", "d6": &"pawn", "e7": &"pawn", "e8": &"king", "f7": &"pawn", "f8": &"archbishop", "g7": &"pawn", "h8": &"rook"}
+movetime_ms = 300
+skill = 8
+flavor = "They chant evaluations in a language of numbers. Every number is a threat."

@@ -53,7 +53,18 @@ func _rebuild() -> void:
 	for c in _wares.get_children():
 		c.queue_free()
 	var stock := Run.shop(node_id)
-	_wares.add_child(UiKit.caption("Pieces", 20, UiKit.GOLD))
+	var head := UiKit.hbox(18)
+	head.add_child(UiKit.caption("Pieces", 20, UiKit.GOLD))
+	head.add_child(UiKit.spacer(0, 20))
+	var price := Run.reroll_price(node_id)
+	var reroll := UiKit.button("New wares  ·  %d gold" % price, func():
+		if Run.reroll_shop(node_id):
+			Audio.play("shop_buy")
+			_rebuild(), 17)
+	reroll.disabled = Run.gold < price
+	reroll.tooltip_text = "Restock pieces and relics. Each restock here costs %d more." % Content.config.reroll_step
+	head.add_child(reroll)
+	_wares.add_child(head)
 	var row := UiKit.hbox(18)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_wares.add_child(row)
@@ -91,6 +102,69 @@ func _rebuild() -> void:
 				_rebuild())
 		h.add_child(b)
 		flow.add_child(h)
+	_wares.add_child(UiKit.divider(700, true))
+	_wares.add_child(UiKit.caption("The Bone Surgeon", 20, UiKit.GOLD))
+	_wares.add_child(UiKit.label("Raise a piece one tier for %d gold, or let one go for %d gold. Pick a piece:" % [
+		Run.surgeon_price(), Content.config.dismiss_gold], 18, UiKit.MUTED, true))
+	_wares.add_child(_surgeon())
+
+
+var _surgeon_sel := -1
+
+
+func _surgeon() -> Control:
+	var col := UiKit.vbox(10)
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 8)
+	flow.add_theme_constant_override("v_separation", 8)
+	col.add_child(flow)
+	for u in Run.healthy_units():
+		if Content.piece(u.type).is_royal():
+			continue
+		var unit: Unit = u
+		var b := Button.new()
+		b.toggle_mode = true
+		b.button_pressed = unit.id == _surgeon_sel
+		b.custom_minimum_size = Vector2(64, 64)
+		b.add_theme_stylebox_override("normal", UiKit.frame("slot", -1.0, 4.0))
+		b.add_theme_stylebox_override("hover", UiKit.frame("slot_hover", -1.0, 4.0))
+		b.add_theme_stylebox_override("pressed", UiKit.frame("slot_selected", -1.0, 4.0))
+		b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		var p := UiKit.portrait(unit.type, true, 52)
+		p.position = Vector2(6, 6)
+		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(p)
+		b.tooltip_text = UiKit.unit_name(unit)
+		b.pressed.connect(func():
+			_surgeon_sel = unit.id if _surgeon_sel != unit.id else -1
+			_rebuild())
+		flow.add_child(b)
+	var su := Run.unit(_surgeon_sel)
+	if su == null or not su.is_healthy():
+		return col
+	var opts := UiKit.hbox(12)
+	opts.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_child(opts)
+	var price := Run.surgeon_price()
+	for t in Run.upgrade_options(su):
+		var target: StringName = t
+		var def: PieceDef = Content.piece(target)
+		var ob := UiKit.option_button("%s → %s" % [UiKit.unit_name(su), UiKit.piece_name(target)],
+			"Tier %d · value %d · %d gold" % [def.tier, def.value, price], func():
+				if Run.surgeon_promote(su, target):
+					Audio.play("level_up")
+					_rebuild(), UiKit.GOLD, Run.gold >= price)
+		ob.custom_minimum_size.x = 280
+		opts.add_child(ob)
+	var dismiss := UiKit.option_button("Let %s go" % UiKit.unit_name(su), "+%d gold · gone for the run" % Content.config.dismiss_gold,
+		func():
+			Run.dismiss(su)
+			_surgeon_sel = -1
+			Audio.play("gold")
+			_rebuild(), UiKit.BLOOD)
+	dismiss.custom_minimum_size.x = 240
+	opts.add_child(dismiss)
+	return col
 
 
 func _price_button(price: int, sold: bool, cb: Callable) -> Button:
@@ -105,19 +179,24 @@ func _piece_card(i: int, item: Dictionary) -> Control:
 	var t := StringName(item["id"])
 	var def: PieceDef = Content.piece(t)
 	var box := UiKit.vbox(8)
-	var parts := UiKit.card(260, 340, func(): pass)
+	var parts := UiKit.card(250, 0, func(): pass)
 	parts[0].disabled = bool(item["sold"])
 	parts[0].mouse_default_cursor_shape = Control.CURSOR_ARROW
 	var c: VBoxContainer = parts[1]
 	c.add_theme_constant_override("separation", 5)
-	c.add_child(UiKit.centered(UiKit.portrait(t, true, 120, 0.6 if item["sold"] else 0.0)))
-	var n := UiKit.heading(UiKit.piece_name(t), 23)
+	c.alignment = BoxContainer.ALIGNMENT_BEGIN
+	c.add_child(UiKit.centered(UiKit.portrait(t, true, 96, 0.6 if item["sold"] else 0.0)))
+	var n := UiKit.heading(UiKit.piece_name(t), 22)
 	n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	c.add_child(n)
-	c.add_child(UiKit.rarity_badge(def.rarity if def else &"common"))
-	var mv := UiKit.label(UiKit.moves_text(t), 16, UiKit.MUTED, true)
+	var v := UiKit.label("Tier %d · value %d" % [def.tier, def.value], 16, UiKit.RARITY_COLOR.get(def.rarity, UiKit.MUTED))
+	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	c.add_child(v)
+	c.add_child(UiKit.centered(MoveDiagram.make(t, 12.0)))
+	var mv := UiKit.label(UiKit.moves_text(t), 15, UiKit.MUTED, true)
 	mv.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	c.add_child(mv)
+	parts[0].size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(parts[0])
 	box.add_child(_price_button(int(item["price"]), bool(item["sold"]), func():
 		if Run.buy(node_id, "pieces", i) != null:
@@ -129,7 +208,7 @@ func _piece_card(i: int, item: Dictionary) -> Control:
 func _relic_card(i: int, item: Dictionary) -> Control:
 	var r: RelicDef = Content.relic(StringName(item["id"]))
 	var box := UiKit.vbox(8)
-	var parts := UiKit.card(380, 200, func(): pass, UiKit.KIND_COLOR.get(r.kind, UiKit.EDGE))
+	var parts := UiKit.card(380, 0, func(): pass, UiKit.KIND_COLOR.get(r.kind, UiKit.EDGE))
 	parts[0].disabled = bool(item["sold"])
 	parts[0].mouse_default_cursor_shape = Control.CURSOR_ARROW
 	var c: VBoxContainer = parts[1]
@@ -142,6 +221,7 @@ func _relic_card(i: int, item: Dictionary) -> Control:
 	info.add_child(UiKit.label(r.description, 15, UiKit.MUTED, true))
 	h.add_child(info)
 	c.add_child(h)
+	parts[0].size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(parts[0])
 	box.add_child(_price_button(int(item["price"]), bool(item["sold"]), func():
 		if Run.buy(node_id, "relics", i) != null:

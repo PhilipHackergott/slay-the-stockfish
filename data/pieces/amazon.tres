@@ -17,3 +17,4 @@ model = "res://models/pieces/amazon.glb"
 unlock = &"guardian_1"
 moves_text = "Slides in every direction or leaps like a knight. A final form."
 flavor = "The engine has a word for her. It is not a polite one."
+tier = 6

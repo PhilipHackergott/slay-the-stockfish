@@ -15,3 +15,4 @@ height = 1.6
 model = "res://models/pieces/king.glb"
 moves_text = "Your life: steps one square. If it falls, the run ends."
 flavor = "Your king. Everything else is negotiable."
+tier = 0

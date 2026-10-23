@@ -14,3 +14,5 @@ height = 1.7
 model = "res://models/pieces/conqueror.glb"
 moves_text = "Your king: steps, knight leaps, and jumps of exactly two squares. A final form."
 flavor = "It has buried three engines already."
+tier = 0
+command_bonus = 4

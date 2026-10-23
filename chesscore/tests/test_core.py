@@ -57,6 +57,8 @@ def test_engine_side_not_extinct_and_mated_normally(core):
     fen = "6k1/5ppp/8/8/8/8/8/R3W3 w - - 0 1"
     assert core.result(fen, [])["state"] == "ongoing"  # black has no w pieces and is not extinct
     assert core.result(fen, ["a1a8"]) == {"state": "win", "reason": "checkmate"}
+    assert core.mates_in_one(fen) == ["a1a8"]
+    assert core.mates_in_one("6k1/6pp/8/8/8/8/8/R3W3 w - - 0 1") == []  # f7 is free
 
 
 def test_validate_with_custom_king(core):

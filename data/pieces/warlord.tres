@@ -14,3 +14,5 @@ height = 1.65
 model = "res://models/pieces/warlord.glb"
 moves_text = "Your king, stepping one square or leaping like a knight out of mating nets."
 flavor = "It stopped waiting for its army to save it."
+tier = 0
+command_bonus = 2

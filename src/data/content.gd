@@ -7,6 +7,7 @@ var encounters: Dictionary = {}
 var relics: Dictionary = {}
 var events: Dictionary = {}
 var acts: Dictionary = {}
+var perks: Dictionary = {}
 var difficulties: Array = []
 var config: RunConfig
 
@@ -26,6 +27,7 @@ func reload() -> void:
 	relics = _load_dir("res://data/relics")
 	events = _load_dir("res://data/events")
 	acts = _load_dir("res://data/acts")
+	perks = _load_dir("res://data/perks")
 	difficulties = _load_dir("res://data/difficulty").values()
 	difficulties.sort_custom(func(a, b): return a.level < b.level)
 	config = load("res://data/run_config.tres") as RunConfig
@@ -126,8 +128,19 @@ func encounters_of(kind: StringName, tier: int = -1) -> Array:
 	return out
 
 
-## Reward pool of one rarity, sorted by id.
-func pieces_of_rarity(rarity: StringName) -> Array:
-	var out: Array = pieces.values().filter(func(p): return p.rarity == rarity)
+## Recruitable pieces of one tier, sorted by id.
+func recruits_of_tier(tier: int) -> Array:
+	var out: Array = pieces.values().filter(func(p): return p.tier == tier and p.is_recruitable())
 	out.sort_custom(func(a, b): return String(a.id) < String(b.id))
 	return out
+
+
+func perk(id: StringName) -> PerkDef:
+	return perks.get(id)
+
+
+## Perk ids in a fixed order.
+func perk_ids() -> Array:
+	var ids: Array = perks.keys()
+	ids.sort()
+	return ids

@@ -131,6 +131,12 @@ func in_check(fen: String, side: String) -> bool:
 	return bool(res.get("check", false))
 
 
+## Moves of the side to move that win at once.
+func mates_in_one(fen: String) -> PackedStringArray:
+	var res: Dictionary = await call_core({"op": "mates_in_one", "fen": fen})
+	return PackedStringArray(res.get("moves", []))
+
+
 func engine_move(fen: String, moves: PackedStringArray, movetime_ms: int, skill: int, depth: int = 0) -> Dictionary:
 	return await call_core({"op": "engine_move", "fen": fen, "moves": Array(moves),
 		"movetime_ms": movetime_ms, "skill": skill, "depth": depth})

@@ -14,3 +14,6 @@ height = 1.55
 model = "res://models/pieces/maharani.glb"
 moves_text = "A queen with knight leaps and two-square jumps. A final form."
 flavor = "Every crown in the ruin bows to hers."
+tier = 6
+rarity = &"legendary"
+reward_weight = 10

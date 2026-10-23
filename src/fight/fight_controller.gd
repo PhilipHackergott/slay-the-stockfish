@@ -69,6 +69,8 @@ var ply_count := 0
 var _next_temp_id := -1
 ## Lines the HUD shows under the enemy: omens and relics that change this fight.
 var banner := PackedStringArray()
+## Run units that stood on the board at the start.
+var fought: Array = []
 
 
 func banner_lines() -> PackedStringArray:
@@ -155,15 +157,35 @@ func setup(p_encounter: EncounterDef, units: Array, relics: Array, p_cfg: RunCon
 		_place_twin()
 	for sq_name in encounter.layout:
 		board[Fen.sq(String(sq_name))] = _letter_for(StringName(encounter.layout[sq_name]), false)
+	var added: Array = []
+	for e in mods.get("reinforcements", []):
+		var i := Fen.sq(String(e[0]))
+		if not board.has(i):
+			board[i] = _letter_for(StringName(e[1]), false)
+			added.append(i)
+	if not added.is_empty():
+		banner.append("Reinforced: %d more enemy pieces stand ready." % added.size())
 	var st := {"board": board, "pocket": pocket, "has_pocket": has_pocket, "side": "w", "castling": "-",
 		"ep": "-", "halfmove": 0, "fullmove": 1}
-	base_fen = Fen.serialize(st)
+	# Reinforcements never check your king or box theirs into a mate in one: the last ones step back.
+	while true:
+		base_fen = Fen.serialize(st)
+		var v: Dictionary = await ChessCore.validate(base_fen)
+		var ok: bool = v.get("valid", false)
+		if ok and not added.is_empty():
+			ok = not await ChessCore.in_check(base_fen, "w") and (await ChessCore.mates_in_one(base_fen)).is_empty()
+		if ok:
+			break
+		if added.is_empty():
+			push_warning("fight: start position invalid (%s): %s" % [v.get("reason", v.get("error", "in check")), base_fen])
+			return false
+		board.erase(added.pop_back())
 	fen = base_fen
 	moves = PackedStringArray()
-	var v: Dictionary = await ChessCore.validate(fen)
-	if not v.get("valid", false):
-		push_warning("fight: start position invalid (%s): %s" % [v.get("reason", v.get("error", "?")), fen])
-		return false
+	fought.clear()
+	for id in unit_map.by_square.values():
+		if int(id) > 0:
+			fought.append(int(id))
 	player_ms = maxf(60.0, float(cfg.clock_base_s + clock_bonus + int(mods.get("clock_delta_s", 0)))) * 1000.0
 	increment_ms = (cfg.clock_increment_s + inc_bonus) * 1000
 	ready_to_play.emit()
@@ -195,6 +217,9 @@ func _custom_pieces(units: Array) -> Array:
 	for id in encounter.layout.values():
 		if not ids.has(StringName(id)):
 			ids.append(StringName(id))
+	for e in mods.get("reinforcements", []):
+		if not ids.has(StringName(e[1])):
+			ids.append(StringName(e[1]))
 	for id in ids:
 		var def: PieceDef = Content.piece(id)
 		if def != null and def.betza != "" and not def.is_royal():
@@ -481,7 +506,7 @@ func _play(uci: String, side: String) -> Dictionary:
 		_place_dropped(ev)
 	if side == "w" and ev["captured"] != "":
 		var u: Unit = Run.unit(int(ev["mover_unit"]))
-		var amount := Content.value_of_letter(ev["captured"])
+		var amount := Run.capture_xp(u, Content.value_of_letter(ev["captured"]), mods) if u != null else 0
 		if u != null and amount > 0:
 			u.xp += amount
 			u.captures += 1
@@ -542,6 +567,6 @@ func _finish(state: String, reason: String) -> void:
 	finished = true
 	clock_running = false
 	outcome = {"state": state, "reason": reason, "slain": slain.duplicate(), "xp": xp_log.duplicate(),
-		"plies": ply_count, "encounter": encounter.id if encounter else &""}
+		"plies": ply_count, "encounter": encounter.id if encounter else &"", "fought": fought.duplicate()}
 	message.emit(reason)
 	fight_finished.emit(outcome)

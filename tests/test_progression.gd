@@ -92,25 +92,43 @@ func test_level_ups_offer_every_child_and_maxed_xp_turns_into_gold() -> void:
 	assert_true(Run.can_level_up(pawn))
 	assert_eq(Run.upgrade_options(pawn), Array(Content.piece(&"pawn").upgrades))
 	var maxed := Run.add_unit(&"amazon")
+	assert_false(Run.is_maxed(maxed), "a final form still has perks to take")
+	while Run.perk_option(maxed) != &"":
+		Run.take_perk(maxed, Run.perk_option(maxed))
+	assert_eq(maxed.perks.size(), Content.config.max_perks)
+	assert_true(Run.is_maxed(maxed))
 	var gold_before := Run.gold
 	var o := {"state": "win", "slain": [], "xp": [{"unit": maxed.id, "amount": 5, "captured": "r"}]}
 	Run.apply_fight(o, &"fight")
 	assert_eq(int(o["overflow_gold"]), 5 * Content.config.overflow_gold_per_xp)
 	assert_gt(int(o["gold"]), 0, "a win pays gold")
-	assert_eq(Run.gold, gold_before + int(o["gold"]) + int(o["overflow_gold"]))
+	assert_eq(Run.gold, gold_before + int(o["gold"]) + int(o["overflow_gold"]) + int(o["bounty_gold"]))
 
 
-func test_rewards_are_distinct_and_respect_unlocks() -> void:
+func test_rewards_are_one_tier_distinct_and_respect_unlocks() -> void:
 	Run.new_run(17)
-	for kind in [&"fight", &"elite", &"guardian"]:
-		for i in 20:
-			var r := Run.reward_choices(kind)
-			assert_eq(r.size(), Content.config.reward_choices)
-			var uniq := {}
-			for id in r:
-				uniq[id] = true
-				assert_true(Profile.is_unlocked(Content.piece(id).unlock), "%s is unlocked" % id)
-			assert_eq(uniq.size(), r.size())
+	var trains := 0
+	for act in 3:
+		Run.act_index = act
+		var tiers: Dictionary = Run.current_act().reward_tiers
+		for kind in [&"fight", &"elite", &"guardian"]:
+			if not tiers.has(String(kind)):
+				continue
+			for i in 20:
+				var offer := Run.reward_offer(kind)
+				var r: Array = offer["pieces"]
+				assert_true(Array(tiers[String(kind)]).has(offer["tier"]), "act %d %s rolls its own tiers" % [act + 1, kind])
+				assert_eq(r.size() + (1 if int(offer["train"]) > 0 else 0), Content.config.reward_choices)
+				trains += 1 if int(offer["train"]) > 0 else 0
+				var uniq := {}
+				for id in r:
+					uniq[id] = true
+					var d: PieceDef = Content.piece(id)
+					assert_true(Run.is_unlocked(d.unlock), "%s is unlocked" % id)
+					assert_eq(d.tier, int(offer["tier"]), "%s is tier %d" % [id, offer["tier"]])
+					assert_ne(d.rarity, &"legendary", "legends come only from Ascension")
+				assert_eq(uniq.size(), r.size())
+	assert_gt(trains, 0, "a Train slot shows up sometimes")
 
 
 func test_locked_relics_are_not_offered_until_unlocked() -> void:

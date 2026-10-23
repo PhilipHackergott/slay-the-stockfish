@@ -9,19 +9,28 @@ extends Resource
 @export var letter: String
 ## Betza for custom pieces (empty for standard ones).
 @export var betza: String
-## Point value: the XP a unit gains for capturing this piece, and the base of its shop price.
+## Point value: the XP a unit gains for capturing this piece, its Command cost, and the base of its
+## shop price.
 @export var value: int = 1
-## Children in the promotion tree (standard-ladder steps and custom nodes alike). Empty = final form.
+## Power tier by value: 1 (1-2), 2 (3), 3 (4-5), 4 (6-8), 5 (9-10), 6 legendary; 0 for the king line.
+## A level-up rises exactly one tier; reward offers come from one tier at a time.
+@export var tier: int = 1
+## Next-tier pieces a level-up may turn this into. Empty = no further promotion (perks still can).
 @export var upgrades: Array[StringName] = []
+## Tier 5 only: the legendary forms an Ascension (a guardian's gift) may turn this into.
+@export var ascensions: Array[StringName] = []
+## King line only: extra Command for the deployed army.
+@export var command_bonus: int = 0
 ## King line only: how the player's pseudo-royal king moves (the piece is always the letter w).
 @export var royal_betza: String
 ## King line only: a second pseudo-royal king joins each fight; the fight is lost when the last falls.
 @export var twin_king: bool = false
 ## Moves forward only and promotes like a pawn (joins promotionPawnTypes, keeps to rank 2 and up).
 @export var pawn_like: bool = false
-## Reward pool: &"common", &"uncommon", &"legendary"; empty = only reachable through a tree.
+## &"common" or &"uncommon": offered as a recruit of its tier; &"legendary": only through Ascension;
+## empty: only reachable through a tree.
 @export var rarity: StringName
-## Weight inside its rarity pool.
+## Weight inside its tier's reward pool.
 @export var reward_weight: int = 10
 ## Model family and formation slot: pawn, knight, bishop, rook, queen, king.
 @export var base: StringName
@@ -42,7 +51,11 @@ func is_royal() -> bool:
 
 
 func is_final() -> bool:
-	return upgrades.is_empty()
+	return upgrades.is_empty() and ascensions.is_empty()
+
+
+func is_recruitable() -> bool:
+	return (rarity == &"common" or rarity == &"uncommon") and not is_royal()
 
 
 func is_standard() -> bool:

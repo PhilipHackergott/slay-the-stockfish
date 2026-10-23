@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bone_organ"
+display_name = "The Bone Organ"
+kind = &"fight"
+tier = 5
+layout = {"a8": &"cannon", "b7": &"pawn", "c7": &"pawn", "d7": &"pawn", "d8": &"siege_queen", "e6": &"pawn", "e8": &"king", "f7": &"pawn", "g7": &"pawn", "g8": &"centaur", "h8": &"cannon"}
+movetime_ms = 300
+skill = 7
+flavor = "Its pipes are femurs. When it plays, the cannons answer."

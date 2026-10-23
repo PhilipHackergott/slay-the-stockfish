@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="PerkDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/perk_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bulwark"
+display_name = "Bulwark"
+description = "If it is captured in a fight you win, it gets back up afterwards."
+icon = "res://assets/ui/icons/icon_perk_bulwark_256.png"

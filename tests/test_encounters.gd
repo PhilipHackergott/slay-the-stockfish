@@ -49,6 +49,52 @@ func test_every_encounter_piece_exists_and_kinds_are_known() -> void:
 		_customs(enc)
 
 
+## Every encounter an act can roll, with that act's reinforcements: valid, no check on the player,
+## no mate in one from the classic first rank, and the enemy reaches its share of your Command.
+func test_reinforced_layouts_are_valid_and_safe() -> void:
+	Run.new_run(1)
+	var n := 0
+	for ai in Content.acts.size():
+		Run.act_index = ai
+		var act := Run.current_act()
+		var pairs: Array = []
+		for t in [act.fight_tier, act.late_fight_tier]:
+			for e in Content.encounters_of(&"fight", t):
+				pairs.append([&"fight", e])
+		for e in Content.encounters_of(&"elite", act.elite_tier):
+			pairs.append([&"elite", e])
+		var fin: EncounterDef = Content.encounter(act.final_encounter)
+		pairs.append([fin.kind, fin])
+		for p in pairs:
+			var kind: StringName = p[0]
+			var enc: EncounterDef = p[1]
+			var extra := Run.reinforcements(enc, kind)
+			var full := enc.duplicate()
+			var layout: Dictionary = enc.layout.duplicate()
+			var material := Run.layout_material(layout)
+			for e in extra:
+				layout[e[0]] = StringName(e[1])
+				material += Content.piece(StringName(e[1])).value
+			full.layout = layout
+			if Run.enemy_target(kind) > 0.0:
+				assert_true(material >= Run.enemy_target(kind) - 0.001 or extra.size() > 0,
+					"act %d %s %s: %d material for a target of %.1f" % [ai + 1, kind, enc.id, material, Run.enemy_target(kind)])
+			n += 1
+			var gen := VariantGen.build("sts_rf_test_%d" % n, "K", _customs(full), PackedStringArray(), false)
+			assert_true((await ChessCore.load_variant("sts_rf_test_%d" % n, gen["ini"])).get("ok", false))
+			var board: Dictionary = ARMIES[1].duplicate()
+			for square: String in layout:
+				var t := StringName(layout[square])
+				var def: PieceDef = Content.piece(t)
+				board[square] = def.letter if def.letter != "" else String(gen["letters"][t])
+			var fen := _fen(board)
+			var tag := "act %d %s %s +%d (%s)" % [ai + 1, kind, enc.id, extra.size(), fen]
+			assert_true((await ChessCore.validate(fen)).get("valid", false), "%s is valid" % tag)
+			assert_false(await ChessCore.in_check(fen, "w"), "%s does not check the player" % tag)
+			assert_eq(await ChessCore.mates_in_one(fen), PackedStringArray(), "%s has no mate in one" % tag)
+	Run.act_index = 0
+
+
 func test_no_encounter_allows_mate_in_one() -> void:
 	var n := 0
 	for id: StringName in Content.encounters:

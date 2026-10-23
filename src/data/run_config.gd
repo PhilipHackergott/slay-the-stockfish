@@ -5,7 +5,13 @@ extends Resource
 @export var starting_army: Array[StringName] = [&"king", &"pawn", &"pawn", &"pawn", &"pawn", &"knight", &"bishop"]
 @export var starting_gold: int = 30
 ## Total XP needed to reach level 2, 3, 4, ...
-@export var xp_thresholds: PackedInt32Array = PackedInt32Array([3, 8, 15, 24, 35])
+@export var xp_thresholds: PackedInt32Array = PackedInt32Array([3, 9, 18, 30, 45, 65])
+## Perks a unit may hold; a level-up offers one perk next to its promotions.
+@export var max_perks: int = 2
+## Chance that one recruit slot is a Train slot instead (XP for a piece you already have).
+@export var train_chance: float = 0.25
+## Gold for skipping the recruit.
+@export var skip_gold: int = 10
 ## A unit that cannot rise any further (final form or top level) turns each XP point into this much gold.
 @export var overflow_gold_per_xp: int = 2
 @export var clock_base_s: int = 300
@@ -40,3 +46,9 @@ extends Resource
 @export var piece_price_per_value: int = 8
 @export var legendary_markup: int = 25
 @export var restore_price: int = 45
+## Rerolling the shop's wares: the first reroll costs this, each further one reroll_step more.
+@export var reroll_price: int = 15
+@export var reroll_step: int = 10
+## The Bone Surgeon: promote a piece one tier for gold, or dismiss one for a little gold.
+@export var surgeon_price: int = 60
+@export var dismiss_gold: int = 10

@@ -10,6 +10,11 @@ var state: StringName = &"healthy"
 var lineage: PackedStringArray = []
 var captures: int = 0
 var fights: int = 0
+## Perk ids (PerkDef) taken at level-ups.
+var perks: PackedStringArray = []
+## &"" deployed, &"bench" benched to fit Command (deployed again when room frees up),
+## &"held" benched by the player (stays benched until the player deploys it).
+var post: StringName = &""
 ## Pocket pieces from relics and the Regent's twin exist for one fight only.
 var temporary := false
 
@@ -32,6 +37,8 @@ static func from_dict(d: Dictionary) -> Unit:
 	u.lineage = PackedStringArray(d.get("lineage", [String(u.type)]))
 	u.captures = int(d.get("captures", 0))
 	u.fights = int(d.get("fights", 0))
+	u.perks = PackedStringArray(d.get("perks", []))
+	u.post = StringName(d.get("post", ""))
 	return u
 
 
@@ -39,6 +46,15 @@ func is_healthy() -> bool:
 	return state == &"healthy"
 
 
+func is_benched() -> bool:
+	return post != &""
+
+
+func has_perk(p: StringName) -> bool:
+	return perks.has(String(p))
+
+
 func to_dict() -> Dictionary:
 	return {"id": id, "type": String(type), "xp": xp, "level": level, "state": String(state),
-		"lineage": Array(lineage), "captures": captures, "fights": fights}
+		"lineage": Array(lineage), "captures": captures, "fights": fights, "perks": Array(perks),
+		"post": String(post)}

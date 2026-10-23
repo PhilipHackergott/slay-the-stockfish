@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/encounter_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cloister_of_queens"
+display_name = "The Cloister of Queens"
+kind = &"fight"
+tier = 5
+layout = {"a7": &"pawn", "b7": &"pawn", "c7": &"pawn", "c8": &"dragon_horse", "d8": &"queen", "e6": &"pawn", "e8": &"king", "f7": &"pawn", "g7": &"pawn", "g8": &"knight", "h7": &"pawn", "h8": &"rook"}
+movetime_ms = 300
+skill = 7
+flavor = "Veiled figures glide between the pews. None of them has ever been captured."

@@ -3,7 +3,7 @@ extends Node
 ## shop, guardian) -> next act ... -> boss -> end. The run is saved whenever the map shows.
 ## Command line (after `--`): --seed=N, --difficulty=N, --screen=title|relic|map|fight|elite|guardian|
 ## boss|reward|campfire|event|shop|codex|settings|formation|pause|act|end, --act=N (0-based),
-## --relics=id,id, --units=type,type, --autoplay (plays a whole run unattended), --shot=path.png
+## --relics=id,id, --units=type,type, --kind=elite|guardian (reward screen), --gold=N, --autoplay (plays a whole run unattended), --shot=path.png
 ## [--shot-delay=s], --quit-after-shot, --quit-on-end, --isolated (separate profile and save files).
 
 var world: World
@@ -99,8 +99,9 @@ func _jump(where: String) -> void:
 			var o := {"state": "win", "reason": "checkmate: the engine's king falls", "slain": [],
 				"xp": [{"unit": 6, "amount": 3, "captured": "n"}, {"unit": 2, "amount": 1, "captured": "p"}],
 				"plies": 31, "encounter": &"bishop_of_ash"}
-			Run.apply_fight(o, &"elite")
-			_show_reward(o, &"elite")
+			var kind := StringName(args.get("kind", "elite"))
+			Run.apply_fight(o, kind)
+			_show_reward(o, kind)
 		"campfire":
 			Run.units[2].state = &"slain"
 			_set_screen(_campfire())
@@ -303,8 +304,9 @@ func _start_fight(node: Dictionary) -> void:
 	fight = FightController.new()
 	fight.name = "Fight"
 	add_child(fight)
-	var units := Run.healthy_units()
-	var ok: bool = await fight.setup(enc, units, Run.relic_defs(), Content.config, Run.formation(units), Run.difficulty_mods())
+	var kind: StringName = node["type"]
+	var units := Run.fight_units(kind)
+	var ok: bool = await fight.setup(enc, units, Run.relic_defs(), Content.config, Run.formation(units), Run.fight_mods(kind, enc))
 	if not ok:
 		push_warning("fight setup failed for %s" % enc.id)
 		_show_map()
@@ -339,10 +341,12 @@ func _scripted_clicks(squares: PackedStringArray) -> void:
 func _after_fight(outcome: Dictionary, node: Dictionary) -> void:
 	var kind: StringName = node["type"]
 	Run.apply_fight(outcome, kind)
-	var army: Array = Run.healthy_units().map(func(u): return String(u.type))
-	print("STS FIGHT act=%d row=%d kind=%s enc=%s result=%s (%s) plies=%d gold=%d army=%s relics=%s" % [Run.act_index + 1,
-		int(node["row"]), kind, node["encounter"], outcome.get("state"), outcome.get("reason"), int(outcome.get("plies", 0)),
-		Run.gold, ",".join(army), ",".join(Run.relics)])
+	var army: Array = Run.deployed_units().map(func(u): return String(u.type))
+	var bench: Array = Run.benched_units().map(func(u): return String(u.type))
+	print("STS FIGHT act=%d row=%d kind=%s enc=%s result=%s (%s) plies=%d gold=%d command=%d/%d army=%s bench=%s relics=%s" % [
+		Run.act_index + 1, int(node["row"]), kind, node["encounter"], outcome.get("state"), outcome.get("reason"),
+		int(outcome.get("plies", 0)), Run.gold, Run.command_used(), Run.command_cap(), ",".join(army), ",".join(bench),
+		",".join(Run.relics)])
 	world.board_view.interactive = false
 	Content.clear_fight_letters()
 	var state := String(outcome.get("state", "draw"))
