@@ -207,8 +207,10 @@ func current_affixes() -> Array:
 func _roll_arenas(act: ActDef) -> void:
 	if act == null or act.arena_max <= 0 or Content.arenas.is_empty():
 		return
-	var ids: Array = Content.arenas.keys()
+	var ids: Array = Content.arenas.keys().filter(func(id): return is_unlocked(Content.arena(id).unlock))
 	ids.sort()
+	if ids.is_empty():
+		return
 	var placed := 0
 	# Elites first, so an act that promises arena elites keeps that promise under arena_max.
 	for kind in [&"elite", &"fight"]:
@@ -447,6 +449,68 @@ func _set_type(u: Unit, new_type: StringName) -> void:
 	u.lineage.append(String(new_type))
 
 
+# --- fusion (Graft) ---------------------------------------------------------------------------
+
+## What two healthy units fuse into, or &"" (a recipe in the run config, tiers within the band).
+func fusion_result(a: Unit, b: Unit) -> StringName:
+	if a == null or b == null or a == b or not a.is_healthy() or not b.is_healthy():
+		return &""
+	var da := Content.piece(a.type)
+	var db := Content.piece(b.type)
+	if da == null or db == null or da.is_royal() or db.is_royal() or absi(da.tier - db.tier) > cfg().fusion_tier_band:
+		return &""
+	var parts := [String(a.type), String(b.type)]
+	parts.sort()
+	var into := StringName(cfg().fusions.get("+".join(parts), ""))
+	return into if Content.piece(into) != null and is_unlocked(Content.piece(into).unlock) else &""
+
+
+## Every pair of healthy units that can fuse: [a, b, result].
+func fusion_pairs() -> Array:
+	var hs := healthy_units()
+	var out: Array = []
+	for i in hs.size():
+		for j in range(i + 1, hs.size()):
+			var into := fusion_result(hs[i], hs[j])
+			if into != &"":
+				out.append([hs[i], hs[j], into])
+	return out
+
+
+## Fuses b into a's line or a into b's: the part with more XP survives with XP = higher + half the
+## lower, the higher level, one perk (keep_perk if either has it, else the first), both lineages,
+## and a Command cost of the higher part's value + 1. Returns the fused unit, or null.
+func fuse(a: Unit, b: Unit, keep_perk: String = "") -> Unit:
+	var into := fusion_result(a, b)
+	if into == &"":
+		return null
+	var hi := a if a.xp >= b.xp else b
+	var lo := b if hi == a else a
+	var cost := maxi(Content.piece(a.type).value, Content.piece(b.type).value) + 1
+	var perks := Array(hi.perks) + Array(lo.perks)
+	hi.xp += lo.xp / 2
+	hi.level = maxi(hi.level, lo.level)
+	hi.perks = PackedStringArray([keep_perk] if perks.has(keep_perk) else perks.slice(0, 1))
+	hi.lineage.append_array(lo.lineage)
+	hi.lineage.append(String(into))
+	hi.captures += lo.captures
+	hi.fights = maxi(hi.fights, lo.fights)
+	hi.type = into
+	hi.command_type = into
+	hi.command_override = cost
+	units.erase(lo)
+	stats["fusions"] = int(stats.get("fusions", 0)) + 1
+	enforce_command()
+	autofill()
+	changed.emit()
+	return hi
+
+
+## A campfire may Graft while a relic allows it.
+func can_graft() -> bool:
+	return relic_defs().any(func(r): return r.campfire_graft)
+
+
 ## Campfire: restore one slain unit (it keeps its XP and level: the handover's proposal).
 func restore(u: Unit) -> void:
 	u.state = &"healthy"
@@ -535,7 +599,8 @@ func command_cost(u: Unit) -> int:
 	var d := Content.piece(u.type)
 	if d == null or d.is_royal():
 		return 0
-	return maxi(0, d.value - (1 if u.has_perk(&"vanguard") else 0))
+	var base := u.command_override if u.command_override >= 0 and u.command_type == u.type else d.value
+	return maxi(0, base - (1 if u.has_perk(&"vanguard") else 0))
 
 
 func deployed_units() -> Array:
@@ -871,7 +936,7 @@ func relic_card_count(base: int) -> int:
 
 ## An unused event of this act's pool; else any unused one; else any.
 func pick_event() -> EventDef:
-	var all: Array = Content.events.keys()
+	var all: Array = Content.events.keys().filter(func(id): return is_unlocked(Content.events[id].unlock))
 	all.sort()
 	var fresh := all.filter(func(id): return not used_events.has(id))
 	var pool := fresh.filter(func(id):
@@ -892,6 +957,10 @@ func pick_event() -> EventDef:
 ## problem to set.
 func can_afford_option(opt: Dictionary) -> bool:
 	if String(opt.get("effect", "")) == "stitch" and stitch_options(String(opt.get("atom", "W"))).is_empty():
+		return false
+	if String(opt.get("effect", "")) == "graft" and fusion_pairs().is_empty():
+		return false
+	if String(opt.get("effect", "")) == "gain_relic" and opt.has("relic") and has_relic(StringName(opt["relic"])):
 		return false
 	if String(opt.get("fight", "")) == "puzzle" and _puzzles(int(opt.get("tier", 1))).is_empty():
 		return false
@@ -941,8 +1010,15 @@ func apply_event_option(opt: Dictionary) -> String:
 			if not ids.is_empty():
 				var nu := add_unit(ids[0])
 				text += " %s joins you%s." % [_name(nu), " on the bench" if nu.is_benched() else ""]
+		"graft":
+			var pairs := fusion_pairs()
+			pairs.sort_custom(func(x, y): return Content.piece(x[2]).value > Content.piece(y[2]).value)
+			if not pairs.is_empty():
+				var names := "%s and %s" % [_name(pairs[0][0]), _name(pairs[0][1])]
+				var fused := fuse(pairs[0][0], pairs[0][1])
+				text += " %s become one %s." % [names, Content.piece(fused.type).display_name.to_lower()]
 		"gain_relic":
-			var choices := relic_choices(1, String(opt.get("source", "event")))
+			var choices := [StringName(opt["relic"])] if opt.has("relic") else relic_choices(1, String(opt.get("source", "event")))
 			if choices.is_empty():
 				text += " The reliquary is empty."
 			else:

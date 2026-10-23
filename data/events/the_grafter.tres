@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/event_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"the_grafter"
+title = "The Grafter"
+text = "An old woman sits among half-finished pieces, a horse's head on a mitre, a tower with a rider's mane. She tests the edge of a curved knife on her thumb and looks at your army as if it were a garden."
+options = Array[Dictionary]([{"label": "Let her graft two of your pieces", "effect": "graft", "detail": "Your best-fitting pair fuses into one stronger piece (knight + bishop = archbishop, knight + rook = chancellor, bishop + rook = queen, knight + queen = amazon). It keeps the higher XP plus half the other's and one perk, and costs the higher part's value + 1 Command.", "result": "She works quickly. Where the two pieces met there is only a thin silver seam."}, {"label": "Buy her knife (60 gold)", "effect": "gain_relic", "relic": "grafting_knife", "cost": "gold", "cost_amount": 60, "detail": "Gain the Grafting Knife: every campfire offers Graft.", "result": "She wraps the knife in oilcloth. \"Cut along the grain.\""}, {"label": "Keep your pieces whole", "effect": "nothing", "result": "She goes back to her work, humming."}])
+acts = PackedInt32Array(2)
+icon = "res://assets/ui/icons/icon_event_tailor_256.png"

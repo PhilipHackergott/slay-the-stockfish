@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"grafting_knife"
+display_name = "Grafting Knife"
+kind = &"army"
+tier = &"uncommon"
+description = "Campfires offer Graft: fuse two pieces into one (knight + bishop = archbishop, knight + rook = chancellor, bishop + rook = queen, knight + queen = amazon)."
+campfire_graft = true
+icon = "res://assets/ui/icons/icon_relic_grafting_knife_256.png"

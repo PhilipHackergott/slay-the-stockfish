@@ -340,6 +340,20 @@ are a one-file edit. Mirrored to Notion: Project Slay the Stockfish → Build de
 - **Lich's Phylactery** (rare relic, `RelicDef.second_chance`): a fight that would end the run
   (a loss, or anything but a win against a guardian or the boss) starts over instead; the relic
   shatters and the loss is not applied. The base rule (losing ends the run) is unchanged.
+- **Unlocks gate arenas and events too** (`unlock` on `ArenaDef` and `EventDef`, same keys as
+  pieces and relics). Beating guardian 1 opens The Hunger, Gorgon Cloister and The Sunken Pact;
+  guardian 2 opens Burning Stakes, The Crow, The Last Pit and Throne Pact; the first finished run
+  opens The Ascent, Tolling Bells and The Drowned Composer. Meta-progression stays content-only.
+  A guardian's signature arena ignores its lock.
+- **Fusion (Graft)**: recipes live in `RunConfig.fusions` (knight + bishop = archbishop, knight +
+  rook = chancellor, bishop + rook = queen, knight + queen = amazon), parts at most
+  `fusion_tier_band` (3) tiers apart, never the king, the result must be unlocked. The part with
+  more XP survives: XP = its own + half the other's, the higher level, one perk (the player picks
+  at a campfire, the first otherwise), both lineages, captures summed. It costs the higher part's
+  value + 1 Command (`Unit.command_override`, kept until the unit changes type), so a graft is a
+  Command bargain, not a free upgrade. Sources: the Grafting Knife relic (uncommon; campfires offer
+  Graft) and the Grafter event in act 2 (fuse the best-valued pair, or buy the knife for 60 gold).
+  A shop service is left for later.
 
 ## Known gaps in v0.1
 

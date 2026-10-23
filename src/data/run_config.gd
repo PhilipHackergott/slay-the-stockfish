@@ -69,6 +69,11 @@ extends Resource
 @export var camp_mend_count: int = 2
 @export var camp_drill_xp: int = 3
 @export var camp_study_clock_s: int = 60
+## Fusion (Graft): two unit types (sorted, joined by "+") -> the piece they become. Parts may differ by
+## at most fusion_tier_band tiers. The result costs the higher part's value + 1 Command.
+@export var fusions: Dictionary = {"bishop+knight": "archbishop", "knight+rook": "chancellor",
+	"knight+queen": "amazon", "bishop+rook": "queen"}
+@export var fusion_tier_band: int = 3
 ## What a "?" node turns into when entered (weights); every non-fight adds fight_pity to the fight weight.
 @export var unknown_odds: Dictionary = {"event": 65, "fight": 15, "treasure": 10, "shop": 10}
 @export var unknown_fight_pity: int = 10

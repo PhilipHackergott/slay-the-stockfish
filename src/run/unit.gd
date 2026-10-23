@@ -15,6 +15,9 @@ var perks: PackedStringArray = []
 ## &"" deployed, &"bench" benched to fit Command (deployed again when room frees up),
 ## &"held" benched by the player (stays benched until the player deploys it).
 var post: StringName = &""
+## Fusion: while the unit is still command_type, it costs command_override Command (-1 = its value).
+var command_type: StringName
+var command_override: int = -1
 ## Pocket pieces from relics and the Regent's twin exist for one fight only.
 var temporary := false
 
@@ -39,6 +42,8 @@ static func from_dict(d: Dictionary) -> Unit:
 	u.fights = int(d.get("fights", 0))
 	u.perks = PackedStringArray(d.get("perks", []))
 	u.post = StringName(d.get("post", ""))
+	u.command_type = StringName(d.get("command_type", ""))
+	u.command_override = int(d.get("command_override", -1))
 	return u
 
 
@@ -57,4 +62,4 @@ func has_perk(p: StringName) -> bool:
 func to_dict() -> Dictionary:
 	return {"id": id, "type": String(type), "xp": xp, "level": level, "state": String(state),
 		"lineage": Array(lineage), "captures": captures, "fights": fights, "perks": Array(perks),
-		"post": String(post)}
+		"post": String(post), "command_type": String(command_type), "command_override": command_override}

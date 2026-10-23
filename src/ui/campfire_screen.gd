@@ -89,6 +89,9 @@ func _menu() -> void:
 		"No relic can be kindled." if Run.kindle_options().is_empty() else "", _pick_kindle))
 	if not curses.is_empty():
 		flow.add_child(_card("cleanse", "Cleanse", "Burn away one curse.", "", _pick_cleanse))
+	if Run.can_graft():
+		flow.add_child(_card("graft", "Graft", "Fuse two pieces into one stronger piece.",
+			"No two pieces fit together." if Run.fusion_pairs().is_empty() else "", _pick_graft))
 	_same_size.call_deferred(flow, false)
 
 
@@ -272,6 +275,58 @@ func _pick_heir(burned: Unit) -> void:
 			_burn = null
 			Audio.play("level_up")
 			_finish("%s burns. %s takes in the ash: +%d XP." % [name_b, UiKit.unit_name(unit), gain], "rite", [unit.type]), 180))
+
+
+# --- graft ------------------------------------------------------------------------------------
+
+func _pick_graft() -> void:
+	var flow := _step("graft", "Graft", "Choose the first piece. Only pieces with a partner are shown.")
+	var firsts := {}
+	for p in Run.fusion_pairs():
+		firsts[p[0]] = true
+		firsts[p[1]] = true
+	for u in Run.healthy_units():
+		var unit: Unit = u
+		if firsts.has(unit):
+			flow.add_child(UiKit.unit_card(unit, _lv(unit), func(): _graft_with(unit), 180))
+
+
+func _graft_with(first: Unit) -> void:
+	var flow := _step("graft", "Graft %s with…" % UiKit.unit_name(first),
+		"The one with more XP lives on: it keeps its XP plus half the other's, and one perk.", _pick_graft)
+	for u in Run.healthy_units():
+		var other: Unit = u
+		var into := Run.fusion_result(first, other)
+		if into == &"":
+			continue
+		var cost := maxi(Content.piece(first.type).value, Content.piece(other.type).value) + 1
+		flow.add_child(UiKit.unit_card(other, "%s\n→ %s · Command %d" % [_lv(other), UiKit.piece_name(into), cost], func():
+			var perks := Array(first.perks) + Array(other.perks)
+			if perks.size() > 1:
+				_graft_perk(first, other, perks)
+			else:
+				_graft(first, other, ""), 200))
+
+
+func _graft_perk(a: Unit, b: Unit, perks: Array) -> void:
+	var flow := _step("graft", "Which perk survives?", "A fused piece keeps one perk.", func(): _graft_with(a))
+	for p in perks:
+		var perk: PerkDef = Content.perks.get(StringName(p))
+		var parts := UiKit.card(300, 0, func(): _graft(a, b, String(p)), UiKit.GOLD)
+		parts[1].add_child(UiKit.heading(perk.display_name if perk != null else String(p), 20))
+		if perk != null:
+			parts[1].add_child(UiKit.label(perk.description, 15, UiKit.MUTED, true))
+		flow.add_child(parts[0])
+
+
+func _graft(a: Unit, b: Unit, perk: String) -> void:
+	var names := "%s and %s" % [UiKit.unit_name(a), UiKit.unit_name(b)]
+	var fused := Run.fuse(a, b, perk)
+	if fused == null:
+		_menu()
+		return
+	Audio.play("level_up")
+	_finish("%s are grafted together and become one %s." % [names, UiKit.piece_name(fused.type).to_lower()], "graft", [fused.type])
 
 
 # --- kindle and cleanse -----------------------------------------------------------------------

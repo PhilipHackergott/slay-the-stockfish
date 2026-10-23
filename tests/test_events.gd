@@ -2,12 +2,13 @@ extends GutTest
 ## v0.2d events: act pools, every option well formed, problems, the Pit, pacts, the Tailor.
 
 const EFFECTS := ["xp_all", "xp_random", "gain_piece", "gain_piece_tier", "gain_relic", "gold", "lose_gold",
-	"transform_up", "restore_all", "study_boss", "stitch", "nothing"]
+	"transform_up", "restore_all", "study_boss", "stitch", "graft", "nothing"]
 const COSTS := ["", "gold", "lose_pawn", "lose_random"]
 
 
 func before_each() -> void:
 	Run.new_run(41)
+	Run.unlocks = Profile.UNLOCKS.keys().map(func(k): return String(k))
 
 
 func _option(event: StringName, i: int) -> Dictionary:
@@ -22,12 +23,14 @@ func _check_part(id: StringName, o: Dictionary) -> void:
 	if o.has("curse"):
 		var c := Content.relic(StringName(o["curse"]))
 		assert_true(c != null and c.tier == &"curse", "%s curse %s" % [id, o["curse"]])
+	if o.has("relic"):
+		assert_not_null(Content.relic(StringName(o["relic"])), "%s relic %s" % [id, o["relic"]])
 	if o.has("atom"):
 		assert_true(Content.STITCH_VALUE.has(String(o["atom"])), "%s atom" % id)
 
 
-func test_eighteen_events_six_per_act_and_every_option_is_well_formed() -> void:
-	assert_eq(Content.events.size(), 18)
+func test_nineteen_events_and_every_option_is_well_formed() -> void:
+	assert_eq(Content.events.size(), 19)
 	var per_act := {1: 0, 2: 0, 3: 0}
 	for id in Content.events:
 		var ev: EventDef = Content.events[id]
@@ -47,13 +50,13 @@ func test_eighteen_events_six_per_act_and_every_option_is_well_formed() -> void:
 				assert_true([&"puzzle", &"skirmish"].has(Run.event_encounter(o).kind))
 			else:
 				_check_part(id, o)
-	assert_eq(per_act, {1: 6, 2: 6, 3: 6})
+	assert_eq(per_act, {1: 6, 2: 7, 3: 6})
 
 
 func test_events_come_from_the_act_pool_first() -> void:
 	for a in 3:
 		var seen := []
-		for i in 6:
+		for i in Content.events.values().filter(func(e): return e.acts.has(a + 1)).size():
 			var ev := Run.pick_event()
 			assert_true(ev.acts.has(a + 1), "act %d drew %s" % [a + 1, ev.id])
 			assert_false(seen.has(ev.id), "no repeat")
