@@ -1,8 +1,10 @@
 class_name SettingsModal
 extends RefCounted
-## Volume sliders, fullscreen, and a profile reset (asks first). Settings live in the Profile.
+## Volume sliders, fullscreen, names over pieces, and a profile reset (asks first). Settings live
+## in the Profile.
 
 const VOLUMES := [["master_db", "Master"], ["music_db", "Music"], ["sfx_db", "Effects"]]
+const NAME_MODES := [["fairy", "Special pieces"], ["all", "All pieces"], ["off", "None (hold Alt)"]]
 
 
 static func open_settings(parent: Node) -> UiModal:
@@ -39,6 +41,16 @@ static func open_settings(parent: Node) -> UiModal:
 		Profile.set_setting("fullscreen", on)
 		apply_window())
 	m.body.add_child(UiKit.centered(fs))
+	var names := UiKit.hbox(16)
+	names.alignment = BoxContainer.ALIGNMENT_CENTER
+	names.add_child(UiKit.caption("Names over pieces", 20, UiKit.BONE))
+	var pick := OptionButton.new()
+	for pair in NAME_MODES:
+		pick.add_item(pair[1])
+	pick.selected = maxi(0, NAME_MODES.map(func(p): return p[0]).find(String(Profile.setting("piece_names", "fairy"))))
+	pick.item_selected.connect(func(i: int): Profile.set_setting("piece_names", NAME_MODES[i][0]))
+	names.add_child(pick)
+	m.body.add_child(names)
 	m.body.add_child(UiKit.divider(500, true))
 	var reset := UiKit.button("Erase all progress", func():
 		UiModal.confirm(m, "Erase Progress?", "Runs, victories, unlocks and difficulty tiers are forgotten. Settings stay.",

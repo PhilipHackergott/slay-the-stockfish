@@ -12,7 +12,7 @@ uniform float facet_tilt = 0.32;
 uniform vec3 highlight_color : source_color = vec3(1.0, 0.45, 0.12);
 // Cool moonlit rim so dark pieces separate from the dark squares.
 uniform vec3 rim_color : source_color = vec3(0.42, 0.48, 0.95);
-uniform float rim_strength = 0.32;
+uniform float rim_strength = 0.6;
 instance uniform float glow_boost = 0.0;
 
 varying vec3 obj_pos;
@@ -36,7 +36,7 @@ void fragment() {
 	ROUGHNESS = 0.16 + 0.18 * sts_hash3(cell).y;
 	METALLIC = 0.25;
 	SPECULAR = 0.75;
-	float fres = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
+	float fres = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 2.5);
 	EMISSION = ember_color * ember_energy * crack * live * pulse * mix(0.4, 1.0, ao)
 		+ rim_color * fres * rim_strength
 		+ highlight_color * (fres * 1.6 + 0.1) * glow_boost;

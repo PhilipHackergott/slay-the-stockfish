@@ -284,6 +284,16 @@ are a one-file edit. Mirrored to Notion: Project Slay the Stockfish → Build de
 - Variant wins are checked before "no legal moves" in the core, so they never read as mate.
 - Props are procedural stand-ins (stone blocks, gold zone glow) until Blender props exist.
 
+## Piece readability
+
+- Hovering any piece (either side, either turn) shows a tooltip at the cursor: portrait, side, name,
+  unit stats or capture XP, moves text and move diagram. Rubble squares explain themselves.
+- Fairy pieces wear a nameplate (world-space Label3D, blue-white for yours, ember for the engine's).
+  Setting "Names over pieces": special pieces (default) / all / none; holding Alt shows all names.
+- Plates sit at two heights by square colour, so neighbours never overlap. They follow the piece.
+- Obsidian rim light raised (0.32 to 0.6, wider falloff) so the engine's pieces separate from the
+  dark squares at the far side. Model silhouettes are unchanged; new silhouettes are art work.
+
 ## Known gaps in v0.1
 
 - An army with more than 19 distinct fairy piece types cannot fight (letter budget).

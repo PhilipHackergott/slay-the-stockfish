@@ -20,7 +20,12 @@ const HIGHLIGHT := preload("res://shaders/highlight.gdshader")
 var camera: Camera3D
 var pieces: Dictionary = {}  # sq -> PieceView
 var interactive := false
+## Hover reports squares in a fight even while the engine moves (the HUD shows what stands there).
+var hover_enabled := false
 var hovered := -1
+## Names over pieces: "fairy", "all" or "off" (only fights turn them on).
+var names := "off"
+var _selected := -1
 
 var _markers: Array[MeshInstance3D] = []
 var _marker_used := 0
@@ -174,8 +179,15 @@ func _spawn(letter: String, sq: int, unit_id: int = 0) -> PieceView:
 	_pieces_root.add_child(p)
 	p.setup(letter, unit_id)
 	p.position = sq_pos(sq)
+	p.set_nameplate(names)
 	pieces[sq] = p
 	return p
+
+
+func set_names(mode: String) -> void:
+	names = mode
+	for p in pieces.values():
+		p.set_nameplate(mode)
 
 
 func piece_at(sq: int) -> PieceView:
@@ -275,6 +287,7 @@ func _after_move(ev: Dictionary) -> void:
 func _kill(victim: PieceView, by_player: bool) -> void:
 	var pos := victim.global_position
 	var col := Color(1.0, 0.45, 0.12) if by_player else Color(0.5, 0.75, 1.0)
+	victim.set_nameplate("off")
 	var d := victim.play("capture")
 	Audio.play("piece_capture", 0.0, randf_range(0.92, 1.05))
 	Fx.burst(_fx_root, pos + Vector3(0, 0.5, 0), col, "capture")
@@ -373,8 +386,13 @@ func show_selection(from_sq: int, targets: Dictionary) -> void:
 
 
 func set_selected(sq: int) -> void:
+	_selected = sq
+	_refresh_glow()
+
+
+func _refresh_glow() -> void:
 	for s in pieces:
-		pieces[s].set_glow(1.0 if s == sq else 0.0)
+		pieces[s].set_glow(1.0 if s == _selected else (0.45 if s == hovered and hover_enabled else 0.0))
 
 
 # --- input --------------------------------------------------------------------------------------
@@ -398,14 +416,15 @@ func pick(screen_pos: Vector2) -> int:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not interactive:
-		return
-	if event is InputEventMouseMotion:
+	if event is InputEventMouseMotion and (interactive or hover_enabled):
 		var sq := pick(event.position)
 		if sq != hovered:
 			hovered = sq
+			_refresh_glow()
 			square_hovered.emit(sq)
-	elif event is InputEventMouseButton and event.pressed:
+	if not interactive:
+		return
+	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			var sq := pick(event.position)
 			if sq >= 0:

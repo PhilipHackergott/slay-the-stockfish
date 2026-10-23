@@ -35,6 +35,8 @@ var _clock_bar: ProgressBar
 var _clock_max := 1.0
 var _info: PanelContainer
 var _info_body: VBoxContainer
+var _tip: PanelContainer
+var _tip_body: VBoxContainer
 var _overlay: Control
 var _resign_armed := false
 var _think_t := 0.0
@@ -191,14 +193,21 @@ func _build() -> void:
 	right.add_child(_info)
 	_info_body = UiKit.vbox(4)
 	_info.add_child(_info_body)
+	_tip = UiKit.panel(UiKit.EDGE, Color(0.03, 0.025, 0.045, 0.94), 12)
+	_tip.visible = false
+	_tip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tip.z_index = 5
+	add_child(_tip)
+	_tip_body = UiKit.vbox(6)
+	_tip.add_child(_tip_body)
 	# Controls hint.
-	var hint := UiKit.label("Left click: select and move · Right click: cancel · Right drag: orbit · Wheel: zoom", 16, UiKit.DIM)
+	var hint := UiKit.label("Left click: select and move · Right click: cancel · Right drag: orbit · Wheel: zoom · Hold Alt: all names", 16, UiKit.DIM)
 	hint.anchor_left = 0.5
 	hint.anchor_right = 0.5
 	hint.anchor_top = 1.0
 	hint.anchor_bottom = 1.0
-	hint.offset_left = -400
-	hint.offset_right = 400
+	hint.offset_left = -560
+	hint.offset_right = 560
 	hint.offset_top = -40
 	hint.offset_bottom = -12
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -216,6 +225,13 @@ func _process(delta: float) -> void:
 	_clock_bar.value = ms
 	_clock_bar.max_value = maxf(_clock_max, ms)
 	Audio.loop("clock_low", low and fight.clock_running and not fight.finished, -6.0)
+	if _tip.visible:
+		_tip.reset_size()
+		var at := get_local_mouse_position() + Vector2(28, 20)
+		_tip.position = Vector2(minf(at.x, size.x - _tip.size.x - 12), minf(at.y, size.y - _tip.size.y - 12))
+	var names := "all" if Input.is_key_pressed(KEY_ALT) else String(Profile.setting("piece_names", "fairy"))
+	if names != board.names and not fight.finished:
+		board.set_names(names)
 	if _thinking:
 		_think_t += delta
 		_think.text = "Stockfish is thinking" + ".".repeat(1 + int(_think_t * 3.0) % 3)
@@ -266,6 +282,7 @@ func _on_moved(ev: Dictionary) -> void:
 		text += " · check"
 	_add_log(text, UiKit.SOUL if ev["side"] == "w" else UiKit.EMBER)
 	_refresh_bells()
+	_on_hover(board.hovered)
 
 
 ## Tolling Bells: the checks each side still needs to win.
@@ -544,11 +561,20 @@ func _on_resign() -> void:
 
 # --- hover info ---------------------------------------------------------------------------------
 
+## The piece (or rubble) under the cursor, in a tooltip beside it. Works on either side's turn.
 func _on_hover(sq: int) -> void:
-	for c in _info_body.get_children():
+	for c in _tip_body.get_children():
+		_tip_body.remove_child(c)
 		c.queue_free()
+	if sq >= 0 and fight.walls.has(sq):
+		_tip_body.add_child(UiKit.heading("Rubble", 20))
+		var l := UiKit.label("Nothing stands on it or passes through it.", 16, UiKit.MUTED, true)
+		l.custom_minimum_size = Vector2(260, 0)
+		_tip_body.add_child(l)
+		_tip.visible = true
+		return
 	if sq < 0 or not fight.board.has(sq):
-		_info.visible = false
+		_tip.visible = false
 		return
 	var letter := String(fight.board[sq])
 	var white := letter == letter.to_upper()
@@ -558,6 +584,7 @@ func _on_hover(sq: int) -> void:
 	h.add_child(UiKit.portrait(t, white, 72))
 	var col := UiKit.vbox(2)
 	h.add_child(col)
+	col.add_child(UiKit.caption("Yours" if white else "The engine's", 14, UiKit.SOUL if white else UiKit.EMBER))
 	if white:
 		var uid := fight.unit_map.unit_at(sq)
 		var u: Unit = Run.unit(uid)
@@ -573,12 +600,13 @@ func _on_hover(sq: int) -> void:
 		else:
 			col.add_child(UiKit.heading(UiKit.piece_name(t), 20))
 	else:
-		col.add_child(UiKit.heading("Engine %s" % UiKit.piece_name(t).to_lower(), 20, UiKit.EMBER))
+		col.add_child(UiKit.heading(UiKit.piece_name(t), 20, UiKit.EMBER))
 		col.add_child(UiKit.label("Worth %d XP if captured" % (def.value if def != null else 0), 17, UiKit.GOLD))
-	col.add_child(UiKit.label(UiKit.moves_text(t), 16, UiKit.DIM, true))
+	col.add_child(UiKit.label(UiKit.moves_text(t), 16, UiKit.MUTED, true))
 	col.custom_minimum_size = Vector2(250, 0)
-	_info_body.add_child(h)
-	_info.visible = true
+	_tip_body.add_child(h)
+	_tip_body.add_child(UiKit.centered(MoveDiagram.make(t, 13.0)))
+	_tip.visible = true
 
 
 func _show_relic_info(r: RelicDef) -> void:
@@ -597,6 +625,8 @@ func _show_relic_info(r: RelicDef) -> void:
 
 func _on_finished(outcome: Dictionary) -> void:
 	board.interactive = false
+	board.hover_enabled = false
+	_tip.visible = false
 	_thinking = false
 	_think.text = ""
 	await get_tree().create_timer(1.0 if not autoplay else 0.2).timeout

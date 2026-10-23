@@ -4,6 +4,7 @@ extends Node3D
 ## -> yaw (facing) -> glb root (its own clips animate height, pitch and scale).
 
 const CLIP_LEN := {"move": 0.55, "leap": 0.75, "capture": 0.9, "drop": 0.6, "spawn": 0.5}
+const STANDARD := [&"pawn", &"knight", &"bishop", &"rook", &"queen", &"king"]
 
 var letter: String = ""
 var white: bool = true
@@ -17,6 +18,8 @@ var _body: Node3D
 var _anim: AnimationPlayer
 var _meshes: Array[MeshInstance3D] = []
 var _glow: float = 0.0
+var _plate: Label3D
+var _plate_mode := "off"
 
 static var _scene_cache: Dictionary = {}
 static var _fallback_cache: Dictionary = {}
@@ -40,6 +43,52 @@ func setup(p_letter: String, p_unit_id: int = 0) -> void:
 
 func height() -> float:
 	return def.height if def != null else 1.0
+
+
+## Fairy pieces (and stitched ones) wear their own model on a familiar silhouette.
+func is_special() -> bool:
+	return not STANDARD.has(type)
+
+
+## A floating name over the piece: mode "fairy" (special pieces only), "all" or "off".
+func set_nameplate(mode: String) -> void:
+	_plate_mode = mode
+	var on := mode == "all" or (mode == "fairy" and is_special())
+	if not on:
+		if _plate != null:
+			_plate.visible = false
+		return
+	if _plate == null:
+		_plate = Label3D.new()
+		_plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		_plate.no_depth_test = true
+		_plate.pixel_size = 0.0043
+		_plate.font = UiKit.font_head
+		_plate.font_size = 44
+		_plate.outline_size = 16
+		_plate.width = 1.85 / _plate.pixel_size
+		_plate.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_plate.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		_plate.outline_modulate = Color(0.02, 0.015, 0.03, 0.95)
+		_plate.render_priority = 10
+		_plate.outline_render_priority = 9
+		add_child(_plate)
+	_plate.text = def.display_name if def != null else String(type).capitalize()
+	_plate.modulate = Color(0.78, 0.86, 1.0) if white else Color(1.0, 0.62, 0.36)
+	_plate.visible = true
+	_place_plate()
+
+
+## Plates on neighbouring squares sit at different heights (by square colour) so they never overlap.
+func _place_plate() -> void:
+	var f := roundi(global_position.x + 3.5)
+	var r := roundi(global_position.z + 3.5)
+	_plate.position = Vector3(0, height() + 0.12 + (0.3 if (f + r) % 2 == 1 else 0.0), 0)
+
+
+func _process(_dt: float) -> void:
+	if _plate != null and _plate.visible:
+		_place_plate()
 
 
 ## The model family (pawn, knight, ...) used for stand-ins and facing.
@@ -187,6 +236,7 @@ func morph(new_letter: String) -> void:
 		def = nd
 		type = nd.id
 	_build_body()
+	set_nameplate(_plate_mode)
 	var tw2 := create_tween()
 	tw2.tween_property(_yaw, "scale", Vector3.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	await tw2.finished

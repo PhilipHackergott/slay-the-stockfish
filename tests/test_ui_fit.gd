@@ -175,3 +175,9 @@ func test_formation_and_codex_fit() -> void:
 	var c := CodexModal.open_codex(_host)
 	await _show(Control.new())
 	_check(c, "codex")
+
+
+func test_settings_fit() -> void:
+	var s := SettingsModal.open_settings(_host)
+	await _show(Control.new())
+	_check(s, "settings")

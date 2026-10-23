@@ -3,9 +3,9 @@ extends Node
 ## shop, guardian) -> next act ... -> boss -> end. The run is saved whenever the map shows.
 ## Command line (after `--`): --seed=N, --difficulty=N, --screen=title|relic|map|fight|elite|guardian|
 ## boss|roamer|unknown|reward|campfire|event|shop|treasure|codex|settings|formation|pause|act|end, --act=N (0-based),
-## --omen=id, --arena=id (on the node the screen enters), --event=id (the event screen shows this one),
+## --omen=id, --arena=id, --encounter=id (on the node the screen enters), --event=id (the event screen shows this one),
 ## --relics=id,id, --units=type,type, --kind=elite|guardian (reward screen), --gold=N, --autoplay (plays a whole run unattended), --shot=path.png
-## [--shot-delay=s], --quit-after-shot, --quit-on-end, --isolated (separate profile and save files).
+## [--shot-delay=s], --click=sq,sq, --hover=sq (mouse over a square in a fight), --quit-after-shot, --quit-on-end, --isolated (separate profile and save files).
 
 var world: World
 var ui_root: Control
@@ -99,6 +99,8 @@ func _jump(where: String) -> void:
 				Run.map.node(id)["omen"] = StringName(args["omen"])
 			if args.has("arena"):
 				Run.map.node(id)["arena"] = StringName(args["arena"])
+			if args.has("encounter"):
+				Run.map.node(id)["encounter"] = StringName(args["encounter"])
 			_enter(id)
 		"roamer":
 			if Run.roamer_node() < 0:
@@ -189,7 +191,14 @@ func _show_board_tableau() -> void:
 		b[8 + f] = "P"
 		b[48 + f] = "p"
 		b[56 + f] = back[f]
+	_board_idle()
 	world.board_view.setup_position(b, null, false)
+
+
+## Outside fights the board shows no names and reports no hover.
+func _board_idle() -> void:
+	world.board_view.hover_enabled = false
+	world.board_view.set_names("off")
 
 
 func _show_start_relics() -> void:
@@ -262,6 +271,7 @@ func _show_map() -> void:
 
 func _display_army() -> void:
 	var dp := Run.display_position()
+	_board_idle()
 	world.board_view.setup_position(dp["board"], dp["units"], true)
 
 
@@ -356,6 +366,8 @@ func _start_fight(node: Dictionary) -> void:
 		push_warning("fight setup failed for %s" % enc.id)
 		_show_map()
 		return
+	world.board_view.names = String(Profile.setting("piece_names", "fairy"))
+	world.board_view.hover_enabled = true
 	world.board_view.setup_position(fight.board, fight.unit_map, true)
 	world.board_view.set_arena(fight.walls, fight.arena.zone if fight.arena != null else PackedStringArray())
 	fight.presenter = world.board_view
@@ -367,6 +379,13 @@ func _start_fight(node: Dictionary) -> void:
 	fight.begin()
 	if args.has("click"):
 		_scripted_clicks(String(args["click"]).split(",", false))
+	if args.has("hover"):
+		await get_tree().create_timer(2.5).timeout
+		var ev := InputEventMouseMotion.new()
+		ev.position = get_viewport().get_final_transform() * world.rig.cam.unproject_position(BoardView.sq_pos(Fen.sq(String(args["hover"]))))
+		ev.global_position = ev.position
+		Input.parse_input_event(ev)
+		Input.warp_mouse(ev.position)
 
 
 ## Real mouse clicks at the squares' screen positions (exercises picking and the HUD).
@@ -386,6 +405,7 @@ func _scripted_clicks(squares: PackedStringArray) -> void:
 
 func _after_fight(outcome: Dictionary, node: Dictionary) -> void:
 	var kind: StringName = node["type"]
+	_board_idle()
 	if node.has("event"):
 		print("STS FIGHT act=%d row=%d kind=%s enc=%s result=%s (%s) plies=%d" % [Run.act_index + 1, int(node["row"]), kind,
 			node["encounter"], outcome.get("state"), outcome.get("reason"), int(outcome.get("plies", 0))])
