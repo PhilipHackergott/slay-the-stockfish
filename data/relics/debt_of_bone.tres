@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"debt_of_bone"
+display_name = "Debt of Bone"
+kind = &"curse"
+tier = &"curse"
+description = "Won fights pay 15 gold less."
+gold_flat = -15
+icon = "res://assets/ui/icons/icon_curse_debt_256.png"

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"merchants_ledger"
+display_name = "Merchant's Ledger"
+kind = &"gold"
+tier = &"common"
+description = "Everything at the Bone Merchant costs 20 % less."
+price_mult = 0.8
+kindle_text = "Everything at the Bone Merchant costs 30 % less."
+icon = "res://assets/ui/icons/icon_relic_ledger_256.png"

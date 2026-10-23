@@ -83,7 +83,7 @@ func test_scripted_run_crosses_three_acts_to_the_boss() -> void:
 				Run.add_unit(rewards[0])
 				assert_true(Run.command_used() <= Run.command_cap(), "the deployed army fits its Command")
 				if node["type"] != &"fight":
-					Run.add_relic(Run.relic_choices(2)[0])
+					Run.add_relic(Run.relic_choices(2, "guardian" if node["type"] == &"guardian" else "elite")[0])
 				if node["type"] == &"guardian":
 					guardians += 1
 					assert_eq(node["encounter"], Run.current_act().final_encounter)

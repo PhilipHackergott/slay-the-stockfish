@@ -6,8 +6,9 @@
 script = ExtResource("1")
 id = &"candle_of_patience"
 display_name = "Candle of Patience"
+tier = &"common"
 kind = &"clock"
-description = "Clock relic. +2 s increment on every move."
+description = "+2 s increment on every move."
 increment_bonus_s = 2
-price = 70
+kindle_text = "+3 s increment on every move."
 icon = "res://assets/ui/icons/icon_relic_candle_256.png"

@@ -27,11 +27,16 @@ const KIT_SCALE := {"modal": 0.78, "modal_crest": 0.62, "title_plaque": 0.7, "pa
 ## Darkens the big stone fills (and their frames) so bone and gold text keep their contrast.
 const KIT_TINT := {"modal": Color(0.7, 0.68, 0.72), "panel": Color(0.72, 0.7, 0.75), "card": Color(0.84, 0.82, 0.84)}
 
-const RARITY_COLOR := {&"common": Color(0.78, 0.74, 0.66), &"uncommon": SOUL, &"legendary": Color(1.0, 0.62, 0.22)}
+const RARITY_COLOR := {&"common": Color(0.78, 0.74, 0.66), &"uncommon": SOUL, &"rare": Color(0.78, 0.6, 1.0),
+	&"legendary": Color(1.0, 0.62, 0.22), &"boss": Color(1.0, 0.42, 0.3), &"curse": Color(0.62, 0.82, 0.38)}
+const TIER_LABEL := {&"common": "Common", &"uncommon": "Uncommon", &"rare": "Rare", &"boss": "Guardian", &"curse": "Curse"}
 const KIND_LABEL := {&"rule": "Rule relic", &"pocket": "Pocket relic", &"edit": "Edit relic", &"clock": "Clock relic",
-	&"hybrid": "Hybrid relic", &"gold": "Tithe relic"}
+	&"hybrid": "Hybrid relic", &"gold": "Tithe relic", &"xp": "Training relic", &"army": "Army relic",
+	&"engine": "Engine relic", &"reward": "Fortune relic", &"curse": "Curse"}
 const KIND_COLOR := {&"rule": SOUL, &"pocket": GOLD, &"edit": Color(0.72, 0.56, 1.0), &"clock": Color(0.6, 0.9, 0.8),
-	&"hybrid": Color(1.0, 0.62, 0.36), &"gold": Color(1.0, 0.84, 0.4)}
+	&"hybrid": Color(1.0, 0.62, 0.36), &"gold": Color(1.0, 0.84, 0.4), &"xp": Color(0.55, 0.85, 1.0),
+	&"army": Color(0.95, 0.78, 0.55), &"engine": Color(1.0, 0.5, 0.42), &"reward": Color(0.9, 0.9, 0.6),
+	&"curse": Color(0.62, 0.82, 0.38)}
 const GLYPH := {&"king": "♚", &"queen": "♛", &"rook": "♜", &"bishop": "♝", &"knight": "♞", &"pawn": "♟"}
 
 static var _theme: Theme
@@ -816,9 +821,26 @@ static func relic_info(r: RelicDef, width: int = 0, desc_size: int = 16) -> VBox
 	if width > 0:
 		c.custom_minimum_size = Vector2(width, 0)
 	c.add_child(heading(r.display_name, 20))
-	c.add_child(caption(String(KIND_LABEL.get(r.kind, r.kind)), 13, KIND_COLOR.get(r.kind, MUTED)))
+	c.add_child(caption(relic_tag(r), 13, KIND_COLOR.get(r.kind, MUTED)))
 	c.add_child(label(r.description, desc_size, MUTED, true))
 	return c
+
+
+## A clickable relic: icon, name, tier and kind, description.
+static func relic_card(r: RelicDef, cb: Callable, width: int = 340) -> Control:
+	var parts := card(width, 0, cb, KIND_COLOR.get(r.kind, EDGE))
+	var h := hbox(12)
+	h.add_child(icon(r.icon, 96))
+	h.add_child(relic_info(r, width - 140, 15))
+	parts[1].add_child(h)
+	return parts[0]
+
+
+## "Rare · Engine relic" (a curse just says Curse).
+static func relic_tag(r: RelicDef) -> String:
+	if r.tier == &"curse":
+		return "Curse"
+	return "%s · %s" % [TIER_LABEL.get(r.tier, String(r.tier)), KIND_LABEL.get(r.kind, String(r.kind))]
 
 
 ## An iron slot frame for small items (relics in the HUD, shop wares).

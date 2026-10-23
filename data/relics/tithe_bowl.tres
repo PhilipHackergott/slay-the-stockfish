@@ -6,8 +6,9 @@
 script = ExtResource("1")
 id = &"tithe_bowl"
 display_name = "Tithe Bowl"
+tier = &"common"
 kind = &"gold"
-description = "Gold relic. +50 % gold from every won fight."
+description = "+50 % gold from every won fight."
 gold_bonus = 0.5
-price = 80
+kindle_text = "+75 % gold from every won fight."
 icon = "res://assets/ui/icons/icon_relic_gold_256.png"

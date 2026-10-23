@@ -6,9 +6,10 @@
 script = ExtResource("1")
 id = &"soul_lantern"
 display_name = "Soul Lantern"
+tier = &"rare"
 kind = &"hybrid"
-description = "Hybrid relic. Once per fight, as a free action, lift one of your pieces (not the king) into your pocket. Dropping it back is a move the engine can see."
+description = "Once per fight, as a free action, lift one of your pieces (not the king) into your pocket. Dropping it back is a move the engine can see."
 charges_per_fight = 1
-price = 110
 unlock = &"guardian_1"
+kindle_text = "Twice per fight, as a free action, lift one of your pieces (not the king) into your pocket. Dropping it back is a move the engine can see."
 icon = "res://assets/ui/icons/icon_relic_lantern_256.png"

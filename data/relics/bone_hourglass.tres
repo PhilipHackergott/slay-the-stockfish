@@ -6,8 +6,9 @@
 script = ExtResource("1")
 id = &"bone_hourglass"
 display_name = "Bone Hourglass"
+tier = &"common"
 kind = &"clock"
-description = "Clock relic. +60 seconds on your clock in every fight."
+description = "+60 seconds on your clock in every fight."
 clock_bonus_s = 60
-price = 70
+kindle_text = "+90 seconds on your clock in every fight."
 icon = "res://assets/ui/icons/icon_relic_clock_256.png"

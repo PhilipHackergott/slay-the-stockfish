@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"choir_crown"
+display_name = "Crown of the Choir"
+kind = &"army"
+tier = &"boss"
+description = "+6 Command. The engine moves first in every fight."
+command_bonus = 6
+engine_first = true
+kindle_text = "+9 Command. The engine moves first in every fight."
+icon = "res://assets/ui/icons/icon_relic_crown_256.png"

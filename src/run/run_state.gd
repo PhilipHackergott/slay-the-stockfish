@@ -35,6 +35,10 @@ var formation_prefs: Dictionary = {}
 var shops: Dictionary = {}
 ## The profile's unlock keys when the run began: what a run unlocks applies from the next run on.
 var unlocks: Array = []
+## Relic ids kindled at a campfire (their numbers are raised by half).
+var kindled: Array = []
+## Per-run scratch the campfire and the map share: study previews, used rites.
+var flags: Dictionary = {}
 
 
 func cfg() -> RunConfig:
@@ -51,6 +55,8 @@ func new_run(p_seed: int, p_difficulty: int = 0) -> void:
 	difficulty = p_difficulty
 	units.clear()
 	relics.clear()
+	kindled.clear()
+	flags.clear()
 	visited.clear()
 	used_events.clear()
 	formation_prefs.clear()
@@ -416,7 +422,10 @@ func enemy_target(kind: StringName) -> float:
 	var act := current_act()
 	if act == null:
 		return 0.0
-	return float(act.enemy_ratio.get(String(kind), 0.0)) * command_cap()
+	var mult := 1.0
+	for r in relic_defs():
+		mult *= r.enemy_ratio_mult
+	return float(act.enemy_ratio.get(String(kind), 0.0)) * mult * command_cap()
 
 
 ## Reinforcements that join an encounter, in order: [[square, piece id], ...].
@@ -452,20 +461,44 @@ func reinforcements(enc: EncounterDef, kind: StringName) -> Array:
 	return out
 
 
-## Everything a fight needs from the run besides units and relics: difficulty, reinforcements.
+## Everything a fight needs from the run besides units and relics: difficulty, reinforcements,
+## relic effects on XP and the engine (relics never weaken the final boss), temporary pieces.
 func fight_mods(kind: StringName, enc: EncounterDef) -> Dictionary:
 	var m := difficulty_mods()
 	m["reinforcements"] = reinforcements(enc, kind) if enc != null else []
-	m["xp_mult"] = 1.0
+	var xp_mult := 1.0
+	var skill := 0
+	var think := 1.0
+	var first := false
+	var extra: Array = []
+	for r in relic_defs():
+		xp_mult *= r.xp_mult
+		skill += r.engine_skill_delta
+		think *= r.movetime_mult
+		first = first or r.engine_first
+		extra.append_array(Array(r.start_pieces))
+	m["xp_mult"] = xp_mult
+	if kind != &"boss":
+		m["relic_skill"] = skill
+		m["movetime_mult"] = float(m["movetime_mult"]) * think
+	m["engine_first"] = first
+	m["start_pieces"] = extra
 	return m
 
 
-## XP for one capture by a unit: the captured piece's value, perks and fight modifiers applied.
+## XP for one capture by a unit: the captured piece's value, perks, relics and fight modifiers.
 func capture_xp(u: Unit, base: int, mods: Dictionary) -> int:
+	if base <= 0:
+		return 0
 	var x := float(base) * float(mods.get("xp_mult", 1.0))
 	if u.has_perk(&"veteran"):
 		x *= 1.5
-	return maxi(0, ceili(x - 0.001))
+	var bonus := 0
+	var d := Content.piece(u.type)
+	for r in relic_defs():
+		if r.xp_bonus != 0 and (r.xp_family == &"" or (d != null and d.base == r.xp_family)):
+			bonus += r.xp_bonus
+	return maxi(1, ceili(x - 0.001) + bonus)
 
 
 # --- gold -------------------------------------------------------------------------------------
@@ -511,22 +544,60 @@ func has_relic(id: StringName) -> bool:
 func add_relic(id: StringName) -> void:
 	if not relics.has(id) and Content.relic(id) != null:
 		relics.append(id)
+		enforce_command()
 		changed.emit()
 
 
+func remove_relic(id: StringName) -> void:
+	relics.erase(id)
+	kindled.erase(id)
+	enforce_command()
+	changed.emit()
+
+
+## The relics in effect (kindled ones with their stronger numbers).
 func relic_defs() -> Array:
-	return relics.map(func(id): return Content.relic(id)).filter(func(r): return r != null)
+	var out: Array = []
+	for id in relics:
+		var r := Content.relic(id)
+		if r != null:
+			out.append(r.kindled() if kindled.has(id) else r)
+	return out
 
 
-## Relics not yet owned and unlocked in the profile, drawn without repeats.
-func relic_choices(n: int) -> Array:
+func curses() -> Array:
+	return relics.filter(func(id): return Content.relic(id) != null and Content.relic(id).tier == &"curse")
+
+
+## Relic cards for a source (start, elite, guardian, treasure, shop, flawless, event): n distinct,
+## not owned, unlocked, by the source's tier odds; a short tier hands its slot to the others.
+## Curses are never offered.
+func relic_choices(n: int, source: String = "event") -> Array:
+	var odds: Dictionary = cfg().relic_odds.get(source, {"common": 1, "uncommon": 1, "rare": 1})
 	var pool: Array = Content.relics.keys().filter(func(id):
-		return not relics.has(id) and is_unlocked(Content.relic(id).unlock))
+		var r := Content.relic(id)
+		return not relics.has(id) and is_unlocked(r.unlock) and odds.has(String(r.tier)))
 	pool.sort()
 	var out: Array = []
 	while not pool.is_empty() and out.size() < n:
-		out.append(pool.pop_at(rng.randi_range(0, pool.size() - 1)))
+		var w := {}
+		for id in pool:
+			var t := String(Content.relic(id).tier)
+			w[t] = int(odds[t])
+		var tier := StringName(_weighted(w))
+		var of_tier: Array = pool.filter(func(id): return Content.relic(id).tier == tier)
+		var pick: StringName = of_tier[rng.randi_range(0, of_tier.size() - 1)]
+		out.append(pick)
+		pool.erase(pick)
 	return out
+
+
+## How many relic cards a source shows (Black Candle adds one).
+func relic_card_count(base: int) -> int:
+	var n := base
+	for r in relic_defs():
+		n += r.relic_choice_bonus
+	return n
 
 
 # --- events -----------------------------------------------------------------------------------
@@ -592,7 +663,7 @@ func apply_event_option(opt: Dictionary) -> String:
 				var nu := add_unit(ids[0])
 				text += " %s joins you%s." % [_name(nu), " on the bench" if nu.is_benched() else ""]
 		"gain_relic":
-			var choices := relic_choices(1)
+			var choices := relic_choices(1, "event")
 			if choices.is_empty():
 				text += " The reliquary is empty."
 			else:
@@ -658,7 +729,11 @@ func is_boss_node(id: int) -> bool:
 func apply_fight(outcome: Dictionary, kind: StringName = &"fight") -> void:
 	last_outcome = outcome
 	var won: bool = outcome.get("state") == "win"
+	var defs := relic_defs()
+	var veil := won and defs.any(func(r): return r.save_first_slain)
 	var saved: Array = []
+	var fell: Array = []
+	var notes: Array = []
 	for id in outcome.get("slain", []):
 		var u := unit(int(id))
 		if u == null or Content.piece(u.type).is_royal():
@@ -666,13 +741,38 @@ func apply_fight(outcome: Dictionary, kind: StringName = &"fight") -> void:
 		if won and u.has_perk(&"bulwark"):
 			saved.append(u.id)
 			continue
+		if veil:
+			veil = false
+			saved.append(u.id)
+			notes.append("Mourning Veil: %s gets back up." % _name(u))
+			continue
 		u.state = &"slain"
+		fell.append(u)
 		stats["units_lost"] = int(stats.get("units_lost", 0)) + 1
 	outcome["saved"] = saved
+	outcome["flawless"] = won and fell.is_empty()
+	var fought: Array = []
 	for id in outcome.get("fought", []):
 		var u := unit(int(id))
 		if u != null and u.is_healthy():
 			u.fights += 1
+			fought.append(u)
+	var on_loss := 0
+	var after := 0
+	for r in defs:
+		on_loss += r.xp_on_loss
+		after += r.xp_after_fight
+	if on_loss > 0 and not fell.is_empty():
+		for u in fought:
+			u.xp += on_loss * fell.size()
+		notes.append("Martyr's Locket: +%d XP to %d pieces." % [on_loss * fell.size(), fought.size()])
+	if after > 0 and won:
+		for u in fought:
+			u.xp += after
+		notes.append("Drill Whistle: +%d XP to %d pieces." % [after, fought.size()])
+	outcome["relic_notes"] = notes
+	var chance := float(cfg().flawless_relic_chance.get(String(kind), 0.0))
+	outcome["flawless_relic"] = bool(outcome["flawless"]) and chance > 0.0 and rng.randf() < chance
 	var overflow := 0
 	var bounty := 0
 	for e in outcome.get("xp", []):
@@ -687,7 +787,10 @@ func apply_fight(outcome: Dictionary, kind: StringName = &"fight") -> void:
 	outcome["gold"] = 0
 	if won:
 		stats["fights_won"] = int(stats.get("fights_won", 0)) + 1
-		outcome["gold"] = roll_fight_gold(kind)
+		var flat := 0
+		for r in defs:
+			flat += r.gold_flat
+		outcome["gold"] = maxi(0, roll_fight_gold(kind) + flat)
 	add_gold(int(outcome["gold"]) + overflow + bounty)
 	autofill()
 
@@ -701,6 +804,8 @@ func reward_offer(kind: StringName) -> Dictionary:
 		tiers = Array(act.reward_tiers.get(String(kind), act.reward_tiers.get("fight", [1])))
 	var tier := int(tiers[rng.randi_range(0, tiers.size() - 1)])
 	var n := cfg().reward_choices
+	for r in relic_defs():
+		n += r.extra_reward_choice
 	var pieces := draw_tier(tier, n)
 	var train_xp := 0
 	if pieces.size() >= n and rng.randf() < cfg().train_chance:
@@ -754,16 +859,27 @@ func piece_price(id: StringName) -> int:
 	var p := cfg().piece_price_base + cfg().piece_price_per_value * d.value
 	if d.rarity == &"legendary":
 		p += cfg().legendary_markup
-	return int(round(p * float(difficulty_mods()["price_mult"])))
+	return int(round(p * price_mult()))
 
 
 func relic_price(id: StringName) -> int:
 	var r := Content.relic(id)
-	return int(round((r.price if r != null else 100) * float(difficulty_mods()["price_mult"])))
+	var base := 100
+	if r != null:
+		base = r.price if r.price > 0 else int(cfg().relic_prices.get(String(r.tier), 100))
+	return int(round(base * price_mult()))
+
+
+## Shop prices: difficulty times relics (Ledger, Engine Shard).
+func price_mult() -> float:
+	var m := float(difficulty_mods()["price_mult"])
+	for r in relic_defs():
+		m *= r.price_mult
+	return m
 
 
 func restore_price() -> int:
-	return int(round(cfg().restore_price * float(difficulty_mods()["price_mult"])))
+	return int(round(cfg().restore_price * price_mult()))
 
 
 ## The stock of the shop at node_id (rolled once, then kept until rerolled).
@@ -785,14 +901,14 @@ func _roll_stock() -> Dictionary:
 		ids.append_array(draw_tier(int(tiers[rng.randi_range(0, tiers.size() - 1)]), 1, ids))
 	for id in ids:
 		stock["pieces"].append({"id": String(id), "price": piece_price(id), "sold": false})
-	for id in relic_choices(cfg().shop_relics):
+	for id in relic_choices(cfg().shop_relics, "shop"):
 		stock["relics"].append({"id": String(id), "price": relic_price(id), "sold": false})
 	return stock
 
 
 func reroll_price(node_id: int) -> int:
 	var n := int(shop(node_id).get("rerolls", 0))
-	return int(round((cfg().reroll_price + cfg().reroll_step * n) * float(difficulty_mods()["price_mult"])))
+	return int(round((cfg().reroll_price + cfg().reroll_step * n) * price_mult()))
 
 
 ## New wares for gold (the price rises with every reroll at this shop).
@@ -808,7 +924,7 @@ func reroll_shop(node_id: int) -> bool:
 
 
 func surgeon_price() -> int:
-	return int(round(cfg().surgeon_price * float(difficulty_mods()["price_mult"])))
+	return int(round(cfg().surgeon_price * price_mult()))
 
 
 ## The Bone Surgeon raises a healthy piece one tier for gold.
@@ -956,6 +1072,7 @@ func to_save() -> Dictionary:
 		"current_node": current_node, "visited": visited.duplicate(), "next_unit_id": next_unit_id,
 		"stats": stats.duplicate(), "used_events": used_events.map(func(e): return String(e)),
 		"formation_prefs": prefs, "shops": shop_out, "unlocks": unlocks.duplicate(),
+		"kindled": kindled.map(func(r): return String(r)), "flags": flags.duplicate(true),
 	}
 
 
@@ -979,6 +1096,8 @@ func from_save(d: Dictionary) -> bool:
 		stats[k] = int(stats[k])
 	used_events = Array(d.get("used_events", [])).map(func(x): return StringName(x))
 	unlocks = Array(d.get("unlocks", [])).map(func(x): return String(x))
+	kindled = Array(d.get("kindled", [])).map(func(x): return StringName(x))
+	flags = d.get("flags", {})
 	formation_prefs.clear()
 	var prefs: Dictionary = d.get("formation_prefs", {})
 	for k in prefs:

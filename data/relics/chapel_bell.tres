@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"chapel_bell"
+display_name = "Chapel Bell"
+kind = &"army"
+tier = &"common"
+description = "A temporary pawn joins every fight on your third rank. It earns no XP and is gone afterwards."
+start_pieces = PackedStringArray("pawn")
+icon = "res://assets/ui/icons/icon_relic_bell_256.png"

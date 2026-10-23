@@ -6,8 +6,8 @@
 script = ExtResource("1")
 id = &"reliquary_knight"
 display_name = "Reliquary Knight"
+tier = &"uncommon"
 kind = &"pocket"
-description = "Pocket relic. Start each fight with a knight in your pocket. Drop it on ranks 1-4 as a move."
+description = "Start each fight with a knight in your pocket. Drop it on ranks 1-4 as a move."
 pocket = "N"
-price = 100
 icon = "res://assets/ui/icons/icon_relic_pocket_knight_256.png"

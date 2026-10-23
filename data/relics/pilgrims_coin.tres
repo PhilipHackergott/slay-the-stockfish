@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"pilgrims_coin"
+display_name = "Pilgrim's Coin"
+kind = &"gold"
+tier = &"common"
+description = "+8 gold after every won fight."
+gold_flat = 8
+kindle_text = "+12 gold after every won fight."
+icon = "res://assets/ui/icons/icon_relic_coin_256.png"

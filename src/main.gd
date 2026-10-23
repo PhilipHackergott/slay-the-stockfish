@@ -2,7 +2,7 @@ extends Node
 ## Game flow: title -> starting relic -> act intro -> map -> nodes (fight, elite, campfire, event,
 ## shop, guardian) -> next act ... -> boss -> end. The run is saved whenever the map shows.
 ## Command line (after `--`): --seed=N, --difficulty=N, --screen=title|relic|map|fight|elite|guardian|
-## boss|reward|campfire|event|shop|codex|settings|formation|pause|act|end, --act=N (0-based),
+## boss|reward|campfire|event|shop|treasure|codex|settings|formation|pause|act|end, --act=N (0-based),
 ## --relics=id,id, --units=type,type, --kind=elite|guardian (reward screen), --gold=N, --autoplay (plays a whole run unattended), --shot=path.png
 ## [--shot-delay=s], --quit-after-shot, --quit-on-end, --isolated (separate profile and save files).
 
@@ -92,7 +92,7 @@ func _jump(where: String) -> void:
 			_show_start_relics()
 		"map":
 			_show_map()
-		"fight", "elite", "guardian", "boss", "shop":
+		"fight", "elite", "guardian", "boss", "shop", "treasure":
 			_enter(_first_node_of(StringName(where)))
 		"reward":
 			Run.unit(2).xp += 3
@@ -175,7 +175,7 @@ func _show_board_tableau() -> void:
 
 func _show_start_relics() -> void:
 	var pick := RelicPick.new().setup("Choose a Relic", "Every run begins with one. Choose how you will cheat the engine.",
-		Run.relic_choices(Content.config.start_relic_choices), false)
+		Run.relic_choices(Content.config.start_relic_choices, "start"), false)
 	pick.picked.connect(func(id: StringName):
 		Run.add_relic(id)
 		_show_act_intro(_show_map))
@@ -183,7 +183,7 @@ func _show_start_relics() -> void:
 	if autoplay:
 		await get_tree().create_timer(0.3).timeout
 		if is_instance_valid(pick):
-			pick.picked.emit(Run.relic_choices(1)[0])
+			pick.picked.emit(pick.ids[0])
 
 
 ## A card for the act about to begin (name, subtitle, flavour), then `then`.
@@ -257,6 +257,8 @@ func _enter(id: int) -> void:
 			_show_event()
 		&"shop":
 			_show_shop(id)
+		&"treasure":
+			_show_treasure()
 		_:
 			_show_map()
 
@@ -275,6 +277,14 @@ func _show_shop(id: int) -> void:
 	s.autoplay = autoplay
 	s.done.connect(_after_node)
 	_set_screen(s)
+
+
+func _show_treasure() -> void:
+	world.rig.set_mode("map")
+	var t := TreasureScreen.new()
+	t.autoplay = autoplay
+	t.done.connect(_after_node)
+	_set_screen(t)
 
 
 func _show_event() -> void:

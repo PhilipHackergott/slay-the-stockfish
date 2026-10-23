@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"creeping_rot"
+display_name = "Creeping Rot"
+kind = &"curse"
+tier = &"curse"
+description = "Every capture gives 1 XP less (at least 1)."
+xp_bonus = -1
+icon = "res://assets/ui/icons/icon_curse_rot_256.png"

@@ -4,6 +4,7 @@ extends RefCounted
 ## turns a tier-5 piece into a legend), a detail panel with the move diagram, and every relic.
 ## Locked entries say what unlocks them.
 
+const RELIC_TIERS := [&"common", &"uncommon", &"rare", &"boss", &"curse"]
 const TIER_NAMES := ["King", "Tier 1 · recruits", "Tier 2", "Tier 3", "Tier 4", "Tier 5 · queens", "Legends · Ascension only"]
 
 
@@ -41,25 +42,30 @@ static func open_codex(parent: Node) -> UiModal:
 		ladder.add_child(row)
 	_show(detail, &"pawn")
 	m.body.add_child(UiKit.divider(800, true))
-	m.body.add_child(UiKit.caption("Relics", 20, UiKit.GOLD))
-	var grid := GridContainer.new()
-	grid.columns = 3
-	grid.add_theme_constant_override("h_separation", 22)
-	grid.add_theme_constant_override("v_separation", 14)
-	var relics: Array = Content.relics.values()
-	relics.sort_custom(func(a, b): return String(a.id) < String(b.id))
-	for r in relics:
-		var locked := not Profile.is_unlocked(r.unlock)
-		var h := UiKit.hbox(10)
-		h.custom_minimum_size = Vector2(440, 0)
-		h.add_child(UiKit.icon(r.icon, 72, 0.5 if locked else 0.0, 1.0 if locked else 0.0))
-		var c := UiKit.vbox(0)
-		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		c.add_child(UiKit.heading(r.display_name, 19, UiKit.DIM if locked else UiKit.BONE))
-		c.add_child(UiKit.label(("Locked: " + String(Profile.UNLOCKS.get(r.unlock, r.unlock))) if locked else r.description, 15, UiKit.MUTED, true))
-		h.add_child(c)
-		grid.add_child(h)
-	m.body.add_child(grid)
+	for tier in RELIC_TIERS:
+		var relics: Array = Content.relics.values().filter(func(r): return r.tier == tier)
+		if relics.is_empty():
+			continue
+		relics.sort_custom(func(a, b): return a.display_name < b.display_name)
+		var title := "%s relics" % UiKit.TIER_LABEL[tier] if tier != &"curse" else "Curses · from pacts, cleansed at campfires"
+		m.body.add_child(UiKit.caption(title, 20, UiKit.RARITY_COLOR.get(tier, UiKit.GOLD)))
+		var grid := GridContainer.new()
+		grid.columns = 3
+		grid.add_theme_constant_override("h_separation", 22)
+		grid.add_theme_constant_override("v_separation", 14)
+		for r in relics:
+			var locked := not Profile.is_unlocked(r.unlock)
+			var h := UiKit.hbox(10)
+			h.custom_minimum_size = Vector2(440, 0)
+			h.add_child(UiKit.icon(r.icon, 72, 0.5 if locked else 0.0, 1.0 if locked else 0.0))
+			var c := UiKit.vbox(0)
+			c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			c.add_child(UiKit.heading(r.display_name, 19, UiKit.DIM if locked else UiKit.BONE))
+			c.add_child(UiKit.caption(UiKit.relic_tag(r), 13, UiKit.KIND_COLOR.get(r.kind, UiKit.MUTED)))
+			c.add_child(UiKit.label(("Locked: " + String(Profile.UNLOCKS.get(r.unlock, r.unlock))) if locked else r.description, 15, UiKit.MUTED, true))
+			h.add_child(c)
+			grid.add_child(h)
+		m.body.add_child(grid)
 	return m
 
 

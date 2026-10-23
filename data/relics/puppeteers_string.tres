@@ -6,10 +6,11 @@
 script = ExtResource("1")
 id = &"puppeteers_string"
 display_name = "Puppeteer's String"
+tier = &"rare"
 kind = &"edit"
-description = "Edit relic. Once per fight, instead of moving, pull one of your pieces (not the king) to any empty square on ranks 1-4. The engine only sees it afterwards."
+description = "Once per fight, instead of moving, pull one of your pieces (not the king) to any empty square on ranks 1-4. The engine only sees it afterwards."
 charges_per_fight = 1
 edit_kind = &"move"
-price = 110
 unlock = &"runs_2"
+kindle_text = "Twice per fight, instead of moving, pull one of your pieces (not the king) to any empty square on ranks 1-4."
 icon = "res://assets/ui/icons/icon_relic_string_256.png"

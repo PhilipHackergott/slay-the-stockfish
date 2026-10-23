@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"pocket_rook"
+display_name = "Pocket Rook"
+kind = &"pocket"
+tier = &"uncommon"
+description = "Start each fight with a rook in your pocket. Drop it on ranks 1-4 as a move."
+pocket = "R"
+icon = "res://assets/ui/icons/icon_relic_pocket_rook_256.png"

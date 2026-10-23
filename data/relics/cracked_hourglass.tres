@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cracked_hourglass"
+display_name = "Cracked Hourglass"
+kind = &"curse"
+tier = &"curse"
+description = "Your clock starts 60 seconds shorter and gains 1 s less per move."
+clock_bonus_s = -60
+increment_bonus_s = -1
+icon = "res://assets/ui/icons/icon_curse_hourglass_256.png"

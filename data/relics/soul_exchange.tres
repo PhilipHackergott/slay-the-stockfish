@@ -6,8 +6,9 @@
 script = ExtResource("1")
 id = &"soul_exchange"
 display_name = "Soul Exchange"
+tier = &"uncommon"
 kind = &"edit"
-description = "Position-edit relic. Once per fight, swap two of your own pieces instead of moving. The engine only sees it once it has happened."
+description = "Once per fight, swap two of your own pieces instead of moving. The engine only sees it once it has happened."
 charges_per_fight = 1
-price = 110
+kindle_text = "Twice per fight, swap two of your own pieces instead of moving."
 icon = "res://assets/ui/icons/icon_relic_swap_256.png"

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"abbots_censer"
+display_name = "Abbot's Censer"
+kind = &"xp"
+tier = &"boss"
+description = "Captures give double XP. Your clock starts 60 seconds shorter."
+xp_mult = 2.0
+clock_bonus_s = -60
+kindle_text = "Captures give 2.5 times the XP. Your clock starts 60 seconds shorter."
+icon = "res://assets/ui/icons/icon_relic_censer_256.png"

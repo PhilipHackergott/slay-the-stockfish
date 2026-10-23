@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"tattered_standard"
+display_name = "Tattered Standard"
+kind = &"army"
+tier = &"common"
+description = "+2 Command."
+command_bonus = 2
+kindle_text = "+3 Command."
+icon = "res://assets/ui/icons/icon_relic_standard_256.png"

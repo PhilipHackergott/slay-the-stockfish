@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"black_candle"
+display_name = "Black Candle"
+kind = &"reward"
+tier = &"boss"
+description = "One more card whenever relics are offered. Enemy armies are 15 % stronger."
+relic_choice_bonus = 1
+enemy_ratio_mult = 1.15
+icon = "res://assets/ui/icons/icon_relic_black_candle_256.png"

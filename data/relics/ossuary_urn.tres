@@ -6,8 +6,8 @@
 script = ExtResource("1")
 id = &"ossuary_urn"
 display_name = "Ossuary Urn"
+tier = &"common"
 kind = &"pocket"
-description = "Pocket relic. Start each fight with two pawns in your pocket. Drop them on ranks 2-4 as moves."
+description = "Start each fight with two pawns in your pocket. Drop them on ranks 2-4 as moves."
 pocket = "PP"
-price = 90
 icon = "res://assets/ui/icons/icon_relic_urn_256.png"

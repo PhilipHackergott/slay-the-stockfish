@@ -6,9 +6,10 @@ signal node_chosen(id: int)
 signal formation_changed
 
 const ICONS := {&"fight": "icon_fight", &"elite": "icon_elite", &"campfire": "icon_campfire",
-	&"event": "icon_event", &"boss": "icon_boss", &"guardian": "icon_guardian", &"shop": "icon_shop"}
+	&"event": "icon_event", &"boss": "icon_boss", &"guardian": "icon_guardian", &"shop": "icon_shop",
+	&"treasure": "icon_treasure"}
 const TYPE_NAME := {&"fight": "Fight", &"elite": "Elite fight", &"campfire": "Campfire", &"event": "Event",
-	&"boss": "Boss", &"guardian": "Guardian", &"shop": "The Bone Merchant"}
+	&"boss": "Boss", &"guardian": "Guardian", &"shop": "The Bone Merchant", &"treasure": "Sealed reliquary"}
 const ROMAN := ["I", "II", "III", "IV", "V"]
 
 var _map_area: Control
@@ -175,6 +176,8 @@ func _node_button(n: Dictionary) -> Control:
 			tip += ": %s\n%s" % [e.display_name, e.flavor]
 	elif t == &"shop":
 		tip += "\nBuy pieces and relics, or raise the fallen."
+	elif t == &"treasure":
+		tip += "\nGold and a relic of your choice."
 	b.tooltip_text = tip
 	b.pivot_offset = Vector2(size, size) * 0.5
 	if avail:

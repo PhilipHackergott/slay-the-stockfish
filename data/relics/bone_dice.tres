@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bone_dice"
+display_name = "Bone Dice"
+kind = &"reward"
+tier = &"uncommon"
+description = "One more recruit card after every won fight."
+extra_reward_choice = 1
+icon = "res://assets/ui/icons/icon_relic_dice_256.png"

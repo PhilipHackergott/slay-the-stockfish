@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"engine_shard"
+display_name = "Engine Shard"
+kind = &"engine"
+tier = &"boss"
+description = "The engine plays 3 skill levels weaker (never the final boss). The Bone Merchant charges 30 % more."
+engine_skill_delta = -3
+price_mult = 1.3
+kindle_text = "The engine plays 5 skill levels weaker (never the final boss). The Bone Merchant charges 30 % more."
+icon = "res://assets/ui/icons/icon_relic_shard_256.png"

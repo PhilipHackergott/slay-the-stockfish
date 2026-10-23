@@ -52,3 +52,14 @@ extends Resource
 ## The Bone Surgeon: promote a piece one tier for gold, or dismiss one for a little gold.
 @export var surgeon_price: int = 60
 @export var dismiss_gold: int = 10
+## Relic tier weights per source (start, elite, guardian, treasure, shop, flawless, event).
+@export var relic_odds: Dictionary = {
+	"start": {"common": 60, "uncommon": 40}, "elite": {"uncommon": 60, "rare": 40}, "guardian": {"boss": 1},
+	"treasure": {"common": 65, "uncommon": 35}, "shop": {"common": 50, "uncommon": 35, "rare": 15},
+	"flawless": {"common": 70, "uncommon": 30}, "event": {"common": 60, "uncommon": 40}}
+## Shop price of a relic by tier (a relic's own price, if set, wins).
+@export var relic_prices: Dictionary = {"common": 50, "uncommon": 85, "rare": 130, "boss": 200}
+## A won fight without losses may offer a relic (chance per node kind; elites offer one more card).
+@export var flawless_relic_chance: Dictionary = {"fight": 0.35, "elite": 1.0}
+@export var treasure_relic_choices: int = 2
+@export var treasure_gold: PackedInt32Array = PackedInt32Array([15, 30])

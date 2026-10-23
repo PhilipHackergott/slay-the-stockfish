@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"drill_whistle"
+display_name = "Drill Whistle"
+kind = &"xp"
+tier = &"uncommon"
+description = "After a won fight, every piece that fought gains 1 XP."
+xp_after_fight = 1
+kindle_text = "After a won fight, every piece that fought gains 2 XP."
+icon = "res://assets/ui/icons/icon_relic_whistle_256.png"

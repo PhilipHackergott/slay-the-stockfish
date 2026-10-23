@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"martyrs_locket"
+display_name = "Martyr's Locket"
+kind = &"xp"
+tier = &"uncommon"
+description = "Whenever one of your pieces falls, every other piece that fought gains 2 XP."
+xp_on_loss = 2
+kindle_text = "Whenever one of your pieces falls, every other piece that fought gains 3 XP."
+icon = "res://assets/ui/icons/icon_relic_locket_256.png"

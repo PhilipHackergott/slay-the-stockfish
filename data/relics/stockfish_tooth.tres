@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"stockfish_tooth"
+display_name = "Stockfish's Tooth"
+kind = &"engine"
+tier = &"rare"
+description = "The engine plays 2 skill levels weaker (never the final boss)."
+engine_skill_delta = -2
+kindle_text = "The engine plays 3 skill levels weaker (never the final boss)."
+icon = "res://assets/ui/icons/icon_relic_tooth_256.png"

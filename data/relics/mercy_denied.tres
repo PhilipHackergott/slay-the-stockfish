@@ -6,8 +6,8 @@
 script = ExtResource("1")
 id = &"mercy_denied"
 display_name = "Mercy Denied"
+tier = &"uncommon"
 kind = &"rule"
-description = "Rule relic. A stalemated side loses instead of drawing. This cuts both ways."
+description = "A stalemated side loses instead of drawing. This cuts both ways."
 ini_lines = PackedStringArray("stalemateValue = loss")
-price = 80
 icon = "res://assets/ui/icons/icon_relic_stalemate_256.png"

@@ -66,11 +66,14 @@ var last_engine_score: Dictionary = {}
 var slain: Array = []
 var xp_log: Array = []
 var ply_count := 0
-var _next_temp_id := -1
+## Temporary units count down from -2 (UnitMap uses -1 for an empty square).
+var _next_temp_id := -2
 ## Lines the HUD shows under the enemy: omens and relics that change this fight.
 var banner := PackedStringArray()
 ## Run units that stood on the board at the start.
 var fought: Array = []
+## The engine opens the fight (a relic's drawback).
+var engine_first := false
 
 
 func banner_lines() -> PackedStringArray:
@@ -155,6 +158,8 @@ func setup(p_encounter: EncounterDef, units: Array, relics: Array, p_cfg: RunCon
 		unit_map.place(int(sq), u.id)
 	if royal_def != null and royal_def.twin_king:
 		_place_twin()
+	for t in mods.get("start_pieces", []):
+		_place_temp(StringName(t))
 	for sq_name in encounter.layout:
 		board[Fen.sq(String(sq_name))] = _letter_for(StringName(encounter.layout[sq_name]), false)
 	var added: Array = []
@@ -165,7 +170,13 @@ func setup(p_encounter: EncounterDef, units: Array, relics: Array, p_cfg: RunCon
 			added.append(i)
 	if not added.is_empty():
 		banner.append("Reinforced: %d more enemy pieces stand ready." % added.size())
-	var st := {"board": board, "pocket": pocket, "has_pocket": has_pocket, "side": "w", "castling": "-",
+	engine_first = bool(mods.get("engine_first", false))
+	if engine_first:
+		banner.append("Crown of the Choir: the engine moves first.")
+	var rs := int(mods.get("relic_skill", 0))
+	if rs != 0:
+		banner.append("Your relics: the engine plays %d skill levels %s." % [absi(rs), "weaker" if rs < 0 else "stronger"])
+	var st := {"board": board, "pocket": pocket, "has_pocket": has_pocket, "side": "b" if engine_first else "w", "castling": "-",
 		"ep": "-", "halfmove": 0, "fullmove": 1}
 	# Reinforcements never check your king or box theirs into a mate in one: the last ones step back.
 	while true:
@@ -174,6 +185,10 @@ func setup(p_encounter: EncounterDef, units: Array, relics: Array, p_cfg: RunCon
 		var ok: bool = v.get("valid", false)
 		if ok and not added.is_empty():
 			ok = not await ChessCore.in_check(base_fen, "w") and (await ChessCore.mates_in_one(base_fen)).is_empty()
+			if ok and engine_first:
+				st["side"] = "w"
+				ok = (await ChessCore.mates_in_one(Fen.serialize(st))).is_empty()
+				st["side"] = "b"
 		if ok:
 			break
 		if added.is_empty():
@@ -207,6 +222,21 @@ func _place_twin() -> void:
 		return
 
 
+## A relic's temporary piece on the first free square of your third rank, centre first.
+func _place_temp(type: StringName) -> void:
+	for f in [3, 4, 2, 5, 1, 6, 0, 7]:
+		var i: int = 16 + f
+		if board.has(i):
+			continue
+		board[i] = _letter_for(type, true)
+		var t := Unit.make(_next_temp_id, type)
+		t.temporary = true
+		temp_units[t.id] = t
+		unit_map.place(i, t.id)
+		_next_temp_id -= 1
+		return
+
+
 ## Every non-standard, non-royal piece type on either side: {id, betza, pawn_like, ep, ini_extra}.
 func _custom_pieces(units: Array) -> Array:
 	var out: Array = []
@@ -220,6 +250,9 @@ func _custom_pieces(units: Array) -> Array:
 	for e in mods.get("reinforcements", []):
 		if not ids.has(StringName(e[1])):
 			ids.append(StringName(e[1]))
+	for t in mods.get("start_pieces", []):
+		if not ids.has(StringName(t)):
+			ids.append(StringName(t))
 	for id in ids:
 		var def: PieceDef = Content.piece(id)
 		if def != null and def.betza != "" and not def.is_royal():
@@ -248,7 +281,10 @@ func _letter_for(type: StringName, white: bool) -> String:
 
 
 func begin() -> void:
-	await _start_player_turn()
+	if engine_first:
+		await _engine_turn()
+	else:
+		await _start_player_turn()
 
 
 # --- player -----------------------------------------------------------------------------------
@@ -437,6 +473,7 @@ func engine_skill() -> int:
 		s += int(mods.get("skill_bonus", 0))
 	if encounter.kind == &"elite":
 		s += int(mods.get("elite_skill_bonus", 0))
+	s += int(mods.get("relic_skill", 0))
 	return clampi(s, -20, 20)
 
 

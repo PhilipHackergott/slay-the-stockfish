@@ -217,7 +217,7 @@ func _relic_card(i: int, item: Dictionary) -> Control:
 	var info := UiKit.vbox(2)
 	info.custom_minimum_size = Vector2(210, 0)
 	info.add_child(UiKit.heading(r.display_name, 20))
-	info.add_child(UiKit.caption(String(UiKit.KIND_LABEL.get(r.kind, r.kind)), 13, UiKit.KIND_COLOR.get(r.kind, UiKit.MUTED)))
+	info.add_child(UiKit.caption(UiKit.relic_tag(r), 13, UiKit.KIND_COLOR.get(r.kind, UiKit.MUTED)))
 	info.add_child(UiKit.label(r.description, 15, UiKit.MUTED, true))
 	h.add_child(info)
 	c.add_child(h)

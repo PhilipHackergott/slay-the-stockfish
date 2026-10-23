@@ -109,6 +109,14 @@ func test_shop_fits() -> void:
 	_check(s, "shop")
 
 
+func test_treasure_fits() -> void:
+	_worst_case()
+	Run.add_relic(&"black_candle")
+	var t := TreasureScreen.new()
+	await _show(t)
+	_check(t, "treasure")
+
+
 func test_every_event_fits() -> void:
 	_worst_case()
 	for id in Content.events:

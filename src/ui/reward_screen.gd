@@ -31,7 +31,7 @@ func setup(p_outcome: Dictionary, p_kind: StringName) -> RewardScreen:
 
 
 func _has_relic() -> bool:
-	return kind == &"elite" or kind == &"guardian" or kind == &"roamer"
+	return kind == &"elite" or kind == &"guardian" or kind == &"roamer" or bool(outcome.get("flawless_relic", false))
 
 
 func _ready() -> void:
@@ -137,8 +137,10 @@ func _xp_summary() -> Control:
 		box.add_child(h)
 	for id in outcome.get("saved", []):
 		var u := Run.unit(int(id))
-		if u != null:
+		if u != null and u.has_perk(&"bulwark"):
 			box.add_child(UiKit.label("%s gets back up (Bulwark)" % UiKit.unit_name(u), 20, UiKit.SOUL))
+	for note in outcome.get("relic_notes", []):
+		box.add_child(UiKit.label(String(note), 19, UiKit.SOUL))
 	return box
 
 
@@ -365,13 +367,27 @@ func _take_ascension(u: Unit, legend: StringName) -> void:
 
 # --- relics -----------------------------------------------------------------------------------
 
+func _flawless() -> bool:
+	return bool(outcome.get("flawless", false))
+
+
 func _relic_caption() -> String:
-	return "The guardian's relic" if kind == &"guardian" else "The elite's relic"
+	match kind:
+		&"guardian":
+			return "The guardian's relic"
+		&"elite", &"roamer":
+			return "The elite's relic" + (" · flawless: one more card" if _flawless() else "")
+	return "A flawless victory: a relic"
 
 
 func _relic_ids_for_kind() -> Array:
-	var n := Content.config.guardian_relic_choices if kind == &"guardian" else Content.config.elite_relic_choices
-	return Run.relic_choices(n)
+	var c := Content.config
+	match kind:
+		&"guardian":
+			return Run.relic_choices(Run.relic_card_count(c.guardian_relic_choices), "guardian")
+		&"elite", &"roamer":
+			return Run.relic_choices(Run.relic_card_count(c.elite_relic_choices + (1 if _flawless() else 0)), "elite")
+	return Run.relic_choices(Run.relic_card_count(2), "flawless")
 
 
 func _build_relics() -> void:
@@ -384,12 +400,7 @@ func _build_relics() -> void:
 	_relic.add_child(flow)
 	for id in _relic_ids:
 		var r: RelicDef = Content.relic(id)
-		var parts := UiKit.card(340, 0, func(): _take_relic(r.id), UiKit.KIND_COLOR.get(r.kind, UiKit.EDGE))
-		var h := UiKit.hbox(12)
-		h.add_child(UiKit.icon(r.icon, 96))
-		h.add_child(UiKit.relic_info(r, 200, 15))
-		parts[1].add_child(h)
-		flow.add_child(parts[0])
+		flow.add_child(UiKit.relic_card(r, func(): _take_relic(r.id)))
 	flow.add_child(UiKit.centered(UiKit.button("Skip", func(): _take_relic(&""))))
 
 

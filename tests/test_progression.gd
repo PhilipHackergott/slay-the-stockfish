@@ -134,11 +134,11 @@ func test_rewards_are_one_tier_distinct_and_respect_unlocks() -> void:
 func test_locked_relics_are_not_offered_until_unlocked() -> void:
 	Run.new_run(5)
 	for i in 20:
-		assert_false(Run.relic_choices(40).has(&"puppeteers_string"))
+		assert_false(Run.relic_choices(40, "shop").has(&"puppeteers_string"))
 	Profile.unlock(&"runs_2")
-	assert_false(Run.relic_choices(40).has(&"puppeteers_string"), "unlocks apply from the next run on")
+	assert_false(Run.relic_choices(40, "shop").has(&"puppeteers_string"), "unlocks apply from the next run on")
 	Run.new_run(6)
-	assert_true(Run.relic_choices(40).has(&"puppeteers_string"))
+	assert_true(Run.relic_choices(40, "shop").has(&"puppeteers_string"))
 
 
 # --- shop ---------------------------------------------------------------------------------------

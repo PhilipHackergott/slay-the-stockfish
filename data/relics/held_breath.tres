@@ -6,8 +6,8 @@
 script = ExtResource("1")
 id = &"held_breath"
 display_name = "The Held Breath"
+tier = &"rare"
 kind = &"rule"
-description = "Rule relic. You may pass instead of moving. The engine may not."
+description = "You may pass instead of moving. The engine may not."
 ini_lines = PackedStringArray("passWhite = true")
-price = 90
 icon = "res://assets/ui/icons/icon_relic_pass_256.png"

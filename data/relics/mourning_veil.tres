@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"mourning_veil"
+display_name = "Mourning Veil"
+kind = &"army"
+tier = &"common"
+description = "The first of your pieces slain in a won fight gets back up."
+save_first_slain = true
+icon = "res://assets/ui/icons/icon_relic_veil_256.png"

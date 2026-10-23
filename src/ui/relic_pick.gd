@@ -39,7 +39,7 @@ func _ready() -> void:
 		var n := UiKit.heading(r.display_name, 26)
 		n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		c.add_child(n)
-		var k := UiKit.caption(String(UiKit.KIND_LABEL.get(r.kind, r.kind)), 15, kind_col)
+		var k := UiKit.caption(UiKit.relic_tag(r), 15, kind_col)
 		k.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		c.add_child(k)
 		c.add_child(UiKit.divider(200, true))

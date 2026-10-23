@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"chalk_circle"
+display_name = "Chalk Circle"
+kind = &"clock"
+tier = &"common"
+description = "+30 seconds and +1 s increment on your clock."
+clock_bonus_s = 30
+increment_bonus_s = 1
+kindle_text = "+45 seconds and +2 s increment on your clock."
+icon = "res://assets/ui/icons/icon_relic_chalk_256.png"

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RelicDef" format=3]
+
+[ext_resource type="Script" path="res://src/data/relic_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"whetstone"
+display_name = "Knight's Whetstone"
+kind = &"xp"
+tier = &"common"
+description = "Knight-family pieces gain +1 XP per capture."
+xp_family = &"knight"
+xp_bonus = 1
+kindle_text = "Knight-family pieces gain +2 XP per capture."
+icon = "res://assets/ui/icons/icon_relic_whetstone_256.png"
