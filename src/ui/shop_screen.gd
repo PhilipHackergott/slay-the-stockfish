@@ -104,8 +104,8 @@ func _rebuild() -> void:
 		flow.add_child(h)
 	_wares.add_child(UiKit.divider(700, true))
 	_wares.add_child(UiKit.caption("The Bone Surgeon", 20, UiKit.GOLD))
-	_wares.add_child(UiKit.label("Raise a piece one tier for %d gold, or let one go for %d gold. Pick a piece:" % [
-		Run.surgeon_price(), Content.config.dismiss_gold], 18, UiKit.MUTED, true))
+	_wares.add_child(UiKit.label("Raise a piece one tier for %d gold, graft it to a partner for %d gold, or let it go for %d gold. Pick a piece:" % [
+		Run.surgeon_price(), Run.graft_price(), Content.config.dismiss_gold], 18, UiKit.MUTED, true))
 	_wares.add_child(_surgeon())
 
 
@@ -155,6 +155,20 @@ func _surgeon() -> Control:
 					Audio.play("level_up")
 					_rebuild(), UiKit.GOLD, Run.gold >= price, 280)
 		opts.add_child(ob)
+	var graft_cost := Run.graft_price()
+	for u in Run.healthy_units():
+		var other: Unit = u
+		var into := Run.fusion_result(su, other)
+		if into == &"":
+			continue
+		var cmd := maxi(Content.piece(su.type).value, Content.piece(other.type).value) + 1
+		opts.add_child(UiKit.option_button("Graft with %s → %s" % [UiKit.unit_name(other), UiKit.piece_name(into)],
+			"Command %d · %d gold" % [cmd, graft_cost], func():
+				var fused := Run.buy_graft(su, other)
+				if fused != null:
+					_surgeon_sel = fused.id
+					Audio.play("level_up")
+				_rebuild(), UiKit.GOLD, Run.gold >= graft_cost, 280))
 	var dismiss := UiKit.option_button("Let %s go" % UiKit.unit_name(su), "+%d gold · gone for the run" % Content.config.dismiss_gold,
 		func():
 			Run.dismiss(su)

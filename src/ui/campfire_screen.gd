@@ -387,6 +387,11 @@ func _auto() -> void:
 	elif not Run.curses().is_empty():
 		Run.remove_relic(Run.curses()[0])
 		_finish("cleansed", "cleanse")
+	elif Run.can_graft() and not Run.fusion_pairs().is_empty():
+		var best := Run.best_fusion_pair()
+		var fused := Run.fuse(best[0], best[1])
+		print("STS GRAFT %s" % fused.type)
+		_finish("grafted", "graft", [fused.type])
 	else:
 		var done_it := false
 		for u in Run.healthy_units():

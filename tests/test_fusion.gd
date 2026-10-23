@@ -63,3 +63,30 @@ func test_the_knife_opens_graft_and_the_grafter_fuses_the_best_pair() -> void:
 	var text := Run.apply_event_option(opts[0])
 	assert_true(text.contains("queen"), "bishop + rook is worth most: " + text)
 	assert_eq(Run.stats.get("fusions"), 1)
+
+
+func test_the_surgeon_grafts_for_gold() -> void:
+	var n := _unit(&"knight", 0)
+	var b := _unit(&"bishop", 0)
+	Run.gold = Run.graft_price() - 1
+	assert_null(Run.buy_graft(n, b), "too poor")
+	Run.gold = Run.graft_price()
+	assert_eq(Run.buy_graft(n, b).type, &"archbishop")
+	assert_eq(Run.gold, 0)
+
+
+func test_affixes_raise_elite_gold() -> void:
+	var o := {"state": "win", "slain": [], "xp": [], "fought": []}
+	var golds := []
+	for affixes in [[], ["brutal", "legion"]]:
+		var sum := 0
+		for i in 30:
+			Run.new_run(9)
+			var elite: int = range(Run.map.nodes.size()).filter(func(k): return Run.map.node(k)["type"] == &"elite")[0]
+			Run.current_node = elite
+			Run.map.node(elite)["affixes"] = affixes
+			Run.rng.seed = i
+			Run.apply_fight(o.duplicate(true), &"elite")
+			sum += int(Run.last_outcome["gold"])
+		golds.append(sum)
+	assert_almost_eq(float(golds[1]) / golds[0], 1.5, 0.05, "two affixes: +50%")

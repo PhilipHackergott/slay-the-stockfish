@@ -353,7 +353,11 @@ are a one-file edit. Mirrored to Notion: Project Slay the Stockfish → Build de
   value + 1 Command (`Unit.command_override`, kept until the unit changes type), so a graft is a
   Command bargain, not a free upgrade. Sources: the Grafting Knife relic (uncommon; campfires offer
   Graft) and the Grafter event in act 2 (fuse the best-valued pair, or buy the knife for 60 gold).
-  A shop service is left for later.
+  The Bone Surgeon in the shop also grafts (`shop_graft_price` 65, scaled like other prices; the
+  survivor keeps its first perk). Autoplay grafts the best-valued pair at a campfire when it holds
+  the knife and has nothing to mend or cleanse.
+- **Affixes pay**: each affix on a won elite adds `affix_gold_bonus` (25 %) of its gold, noted on
+  the reward screen.
 
 ## Known gaps in v0.1
 

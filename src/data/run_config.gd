@@ -74,6 +74,10 @@ extends Resource
 @export var fusions: Dictionary = {"bishop+knight": "archbishop", "knight+rook": "chancellor",
 	"knight+queen": "amazon", "bishop+rook": "queen"}
 @export var fusion_tier_band: int = 3
+## The Bone Surgeon grafts two pieces for this much gold (scaled like other prices).
+@export var shop_graft_price: int = 65
+## Each affix on a won elite adds this share of its gold.
+@export var affix_gold_bonus: float = 0.25
 ## What a "?" node turns into when entered (weights); every non-fight adds fight_pity to the fight weight.
 @export var unknown_odds: Dictionary = {"event": 65, "fight": 15, "treasure": 10, "shop": 10}
 @export var unknown_fight_pity: int = 10

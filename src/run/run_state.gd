@@ -477,6 +477,13 @@ func fusion_pairs() -> Array:
 	return out
 
 
+## The pair whose result is worth most, or [] when nothing fits.
+func best_fusion_pair() -> Array:
+	var pairs := fusion_pairs()
+	pairs.sort_custom(func(x, y): return Content.piece(x[2]).value > Content.piece(y[2]).value)
+	return pairs[0] if not pairs.is_empty() else []
+
+
 ## Fuses b into a's line or a into b's: the part with more XP survives with XP = higher + half the
 ## lower, the higher level, one perk (keep_perk if either has it, else the first), both lineages,
 ## and a Command cost of the higher part's value + 1. Returns the fused unit, or null.
@@ -1011,11 +1018,10 @@ func apply_event_option(opt: Dictionary) -> String:
 				var nu := add_unit(ids[0])
 				text += " %s joins you%s." % [_name(nu), " on the bench" if nu.is_benched() else ""]
 		"graft":
-			var pairs := fusion_pairs()
-			pairs.sort_custom(func(x, y): return Content.piece(x[2]).value > Content.piece(y[2]).value)
-			if not pairs.is_empty():
-				var names := "%s and %s" % [_name(pairs[0][0]), _name(pairs[0][1])]
-				var fused := fuse(pairs[0][0], pairs[0][1])
+			var best := best_fusion_pair()
+			if not best.is_empty():
+				var names := "%s and %s" % [_name(best[0]), _name(best[1])]
+				var fused := fuse(best[0], best[1])
 				text += " %s become one %s." % [names, Content.piece(fused.type).display_name.to_lower()]
 		"gain_relic":
 			var choices := [StringName(opt["relic"])] if opt.has("relic") else relic_choices(1, String(opt.get("source", "event")))
@@ -1247,9 +1253,13 @@ func apply_fight(outcome: Dictionary, kind: StringName = &"fight") -> void:
 		for r in defs:
 			flat += r.gold_flat
 		var gold_mult := omen.gold_mult if omen != null else 1.0
-		outcome["gold"] = maxi(0, int(round(roll_fight_gold(kind) * gold_mult)) + flat)
+		var affixes := current_affixes().size() if kind == &"elite" else 0
+		var affix_mult := 1.0 + cfg().affix_gold_bonus * affixes
+		outcome["gold"] = maxi(0, int(round(roll_fight_gold(kind) * gold_mult * affix_mult)) + flat)
 		if gold_mult != 1.0:
 			notes.append("%s: %d%% gold." % [omen.display_name, int(round(gold_mult * 100.0))])
+		if affixes > 0:
+			notes.append("Affixes: +%d%% gold." % int(round((affix_mult - 1.0) * 100.0)))
 	add_gold(int(outcome["gold"]) + overflow + bounty + int(outcome["time_gold"]))
 	autofill()
 
@@ -1385,6 +1395,17 @@ func reroll_shop(node_id: int) -> bool:
 	shops[node_id] = stock
 	changed.emit()
 	return true
+
+
+func graft_price() -> int:
+	return int(round(cfg().shop_graft_price * price_mult()))
+
+
+## Shop: the Bone Surgeon fuses two pieces (the surviving piece keeps its first perk).
+func buy_graft(a: Unit, b: Unit) -> Unit:
+	if fusion_result(a, b) == &"" or not spend_gold(graft_price()):
+		return null
+	return fuse(a, b)
 
 
 func surgeon_price() -> int:
