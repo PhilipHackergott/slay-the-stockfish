@@ -119,6 +119,10 @@ func _build_act_map() -> void:
 	for n in map.nodes:
 		if n["type"] == &"fight" or n["type"] == &"elite":
 			_roll_omen(n)
+		elif n["type"] == &"guardian":
+			var g := Content.encounter(n["encounter"])
+			if g != null and Content.arena(g.arena) != null:
+				n["arena"] = g.arena
 	_roll_arenas(act)
 	_spawn_roamer()
 
@@ -685,7 +689,7 @@ func fight_mods(kind: StringName, enc: EncounterDef) -> Dictionary:
 	if kind == &"guardian" and flags.has("roamer_joined"):
 		var re := roamer_encounter()
 		banner.append("%s has joined the guardian: more enemy pieces." % (re.display_name if re != null else "The roaming elite"))
-	var arena := current_arena() if kind == &"fight" or kind == &"elite" else null
+	var arena := current_arena() if kind == &"fight" or kind == &"elite" or kind == &"guardian" else null
 	if arena != null:
 		m["arena"] = arena.id
 	if omen != null:

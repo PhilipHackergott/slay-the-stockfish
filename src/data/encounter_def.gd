@@ -22,3 +22,5 @@ extends Resource
 @export var skill: int = 0
 @export var depth: int = 0
 @export_multiline var flavor: String
+## Guardians: the arena they always fight on (data/arenas), shown on their map node.
+@export var arena: StringName

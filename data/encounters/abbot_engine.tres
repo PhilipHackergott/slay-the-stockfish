@@ -12,3 +12,4 @@ layout = {"a7": &"pawn", "b7": &"pawn", "c7": &"pawn", "c8": &"archbishop", "d7"
 movetime_ms = 500
 skill = 8
 flavor = "It keeps the old monastery's ledgers: every piece it has ever taken, in perfect order."
+arena = &"gorgon_cloister"

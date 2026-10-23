@@ -96,7 +96,7 @@ func test_arenas_follow_each_acts_placement_and_survive_a_save() -> void:
 				Run.act_index = a
 				Run._build_act_map()
 			var act := Run.current_act()
-			var nodes: Array = Run.map.nodes.filter(func(n): return n.get("arena", &"") != &"")
+			var nodes: Array = Run.map.nodes.filter(func(n): return n.get("arena", &"") != &"" and n["type"] != &"guardian")
 			seen += nodes.size()
 			assert_lte(nodes.size(), act.arena_max)
 			for n in nodes:
@@ -122,7 +122,20 @@ func test_the_node_arena_reaches_the_fight() -> void:
 	Run.current_node = id
 	var enc := Content.encounter(Run.map.node(id)["encounter"])
 	assert_eq(Run.fight_mods(&"fight", enc).get("arena"), &"tolling_bells")
-	assert_false(Run.fight_mods(&"guardian", enc).has("arena"), "guardians and the boss stay plain")
+	assert_false(Run.fight_mods(&"boss", enc).has("arena"), "the boss stays plain")
+
+
+func test_guardians_fight_on_their_signature_arena() -> void:
+	for a in 2:
+		if a > 0:
+			Run.act_index = a
+			Run._build_act_map()
+		var g: Dictionary = Run.map.nodes.filter(func(n): return n["type"] == &"guardian")[0]
+		var enc := Content.encounter(g["encounter"])
+		assert_ne(enc.arena, &"", "%s has a signature arena" % enc.id)
+		assert_eq(g["arena"], enc.arena)
+		Run.current_node = g["id"]
+		assert_eq(Run.fight_mods(&"guardian", enc).get("arena"), enc.arena)
 
 
 func test_every_arena_loads_into_a_fight_with_its_icon() -> void:

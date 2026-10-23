@@ -12,3 +12,4 @@ layout = {"a7": &"pawn", "b7": &"pawn", "c7": &"pawn", "c8": &"bishop", "d6": &"
 movetime_ms = 250
 skill = 4
 flavor = "A lesser engine hums hymns in binary. It calculates four moves deep and sings about each one."
+arena = &"tolling_bells"
