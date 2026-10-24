@@ -3,7 +3,7 @@ extends GutTest
 
 
 func before_each() -> void:
-	Run.new_run(5)
+	RunFixture.classic(5)
 	Run.unlocks = []
 
 
@@ -81,7 +81,7 @@ func test_affixes_raise_elite_gold() -> void:
 	for affixes in [[], ["brutal", "legion"]]:
 		var sum := 0
 		for i in 30:
-			Run.new_run(9)
+			RunFixture.classic(9)
 			var elite: int = range(Run.map.nodes.size()).filter(func(k): return Run.map.node(k)["type"] == &"elite")[0]
 			Run.current_node = elite
 			Run.map.node(elite)["affixes"] = affixes

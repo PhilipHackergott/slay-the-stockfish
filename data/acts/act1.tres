@@ -19,6 +19,7 @@ gold = {"fight": [8, 13], "elite": [21, 30], "guardian": [36, 48]}
 command = 15
 final_uncapped = false
 enemy_ratio = {"elite": 1.0, "fight": 0.8, "guardian": 1.15}
+enemy_material_start = 6
 reward_tiers = {"elite": [2, 3], "fight": [1, 2], "guardian": [3]}
 shop_tiers = PackedInt32Array(1, 2, 3)
 train_xp = 4

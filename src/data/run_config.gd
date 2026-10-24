@@ -2,7 +2,17 @@ class_name RunConfig
 extends Resource
 ## Run-wide numbers. Philip tunes balance by playing; everything here is data.
 
-@export var starting_army: Array[StringName] = [&"king", &"pawn", &"pawn", &"pawn", &"pawn", &"knight", &"bishop"]
+## A run starts with this army, then the draft: draft_budget points buy pieces at their value
+## before the first map.
+@export var starting_army: Array[StringName] = [&"king"]
+@export var draft_budget: int = 7
+## Always on offer in the draft, any number of each.
+@export var draft_basics: Array[StringName] = [&"pawn", &"knight", &"bishop", &"rook"]
+## One-of offers next to the basics, rolled from these recruit tiers.
+@export var draft_specials: int = 2
+@export var draft_special_tiers: PackedInt32Array = PackedInt32Array([1, 2])
+## Each unspent draft point turns into this much gold.
+@export var draft_leftover_gold: int = 3
 @export var starting_gold: int = 30
 ## Total XP needed to reach level 2, 3, 4, ...
 @export var xp_thresholds: PackedInt32Array = PackedInt32Array([3, 9, 18, 30, 45, 65])

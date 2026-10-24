@@ -86,7 +86,7 @@ func test_a_large_fairy_army_loads_in_the_engine() -> void:
 # --- xp, gold, rewards --------------------------------------------------------------------------
 
 func test_level_ups_offer_every_child_and_maxed_xp_turns_into_gold() -> void:
-	Run.new_run(3)
+	RunFixture.classic(3)
 	var pawn: Unit = Run.units.filter(func(u): return u.type == &"pawn")[0]
 	pawn.xp = 3
 	assert_true(Run.can_level_up(pawn))
@@ -106,7 +106,7 @@ func test_level_ups_offer_every_child_and_maxed_xp_turns_into_gold() -> void:
 
 
 func test_rewards_are_one_tier_distinct_and_respect_unlocks() -> void:
-	Run.new_run(17)
+	RunFixture.classic(17)
 	var trains := 0
 	for act in 3:
 		Run.act_index = act
@@ -132,19 +132,19 @@ func test_rewards_are_one_tier_distinct_and_respect_unlocks() -> void:
 
 
 func test_locked_relics_are_not_offered_until_unlocked() -> void:
-	Run.new_run(5)
+	RunFixture.classic(5)
 	for i in 20:
 		assert_false(Run.relic_choices(40, "shop").has(&"puppeteers_string"))
 	Profile.unlock(&"runs_2")
 	assert_false(Run.relic_choices(40, "shop").has(&"puppeteers_string"), "unlocks apply from the next run on")
-	Run.new_run(6)
+	RunFixture.classic(6)
 	assert_true(Run.relic_choices(40, "shop").has(&"puppeteers_string"))
 
 
 # --- shop ---------------------------------------------------------------------------------------
 
 func test_shop_sells_once_and_charges_gold() -> void:
-	Run.new_run(8)
+	RunFixture.classic(8)
 	Run.add_gold(1000)
 	var stock := Run.shop(99)
 	assert_eq(stock["pieces"].size(), Content.config.shop_pieces)
@@ -163,7 +163,7 @@ func test_shop_sells_once_and_charges_gold() -> void:
 
 
 func test_shop_refuses_when_poor() -> void:
-	Run.new_run(8)
+	RunFixture.classic(8)
 	Run.gold = 0
 	assert_null(Run.buy(5, "pieces", 0))
 
@@ -171,7 +171,7 @@ func test_shop_refuses_when_poor() -> void:
 # --- acts and difficulty ------------------------------------------------------------------------
 
 func test_three_acts_end_in_guardians_then_the_boss() -> void:
-	Run.new_run(21)
+	RunFixture.classic(21)
 	assert_eq(Run.act_count(), 3)
 	for i in 3:
 		var last: Dictionary = Run.map.nodes.filter(func(n): return n["row"] == Run.map.rows - 1)[0]
@@ -185,9 +185,9 @@ func test_three_acts_end_in_guardians_then_the_boss() -> void:
 
 
 func test_difficulty_tiers_stack() -> void:
-	Run.new_run(4, 0)
+	RunFixture.classic(4, 0)
 	var base := Run.units.size()
-	Run.new_run(4, 5)
+	RunFixture.classic(4, 5)
 	var m := Run.difficulty_mods()
 	assert_eq(int(m["skill_bonus"]), 2)
 	assert_eq(int(m["clock_delta_s"]), -60)
@@ -199,7 +199,7 @@ func test_difficulty_tiers_stack() -> void:
 # --- formation ----------------------------------------------------------------------------------
 
 func test_formation_editor_prefs_are_kept_and_pawns_stay_off_rank_one() -> void:
-	Run.new_run(2)
+	RunFixture.classic(2)
 	var king := Run.king_unit()
 	var pawn: Unit = Run.units.filter(func(u): return u.type == &"pawn")[0]
 	assert_false(Run.formation_square_ok(pawn, Fen.sq("a1")))
@@ -213,7 +213,7 @@ func test_formation_editor_prefs_are_kept_and_pawns_stay_off_rank_one() -> void:
 # --- save and load ------------------------------------------------------------------------------
 
 func test_save_and_load_round_trip() -> void:
-	Run.new_run(77, 2)
+	RunFixture.classic(77, 2)
 	Run.add_relic(&"soul_exchange")
 	Run.add_gold(55)
 	Run.units[3].xp = 2
@@ -225,7 +225,7 @@ func test_save_and_load_round_trip() -> void:
 	Run.save_game()
 	var before := JSON.stringify(Run.to_save())
 	var next_roll := Run.rng.randi()
-	Run.new_run(1)
+	RunFixture.classic(1)
 	assert_true(Run.load_game())
 	assert_eq(JSON.stringify(Run.to_save()), before)
 	assert_eq(Run.rng.randi(), next_roll, "the rng continues where it was saved")

@@ -25,7 +25,7 @@ func _fight(units: Array, relics: Array, layout: Dictionary, formation: Dictiona
 
 
 func test_custom_pawn_promotes_on_the_last_rank() -> void:
-	Run.new_run(1)
+	RunFixture.classic(1)
 	var king := Run.king_unit()
 	var sb := Run.add_unit(&"shieldbearer")
 	var f := await _fight([king, sb], [], {"a8": &"king"}, {Fen.sq("e1"): king.id, Fen.sq("e7"): sb.id})
@@ -37,7 +37,7 @@ func test_custom_pawn_promotes_on_the_last_rank() -> void:
 
 
 func test_regent_brings_a_twin_king() -> void:
-	Run.new_run(1)
+	RunFixture.classic(1)
 	var king := Run.king_unit()
 	king.type = &"regent"
 	var f := await _fight([king], [], {"e8": &"king"}, {Fen.sq("e1"): king.id})
@@ -46,7 +46,7 @@ func test_regent_brings_a_twin_king() -> void:
 
 
 func test_held_breath_lets_you_pass() -> void:
-	Run.new_run(1)
+	RunFixture.classic(1)
 	var king := Run.king_unit()
 	var f := await _fight([king], [Content.relic(&"held_breath")], {"a8": &"king", "h7": &"pawn"}, {Fen.sq("e1"): king.id})
 	await f.begin()
@@ -77,7 +77,7 @@ func test_mercy_denied_makes_stalemate_lose() -> void:
 
 
 func test_puppeteers_string_moves_a_piece_to_an_empty_square() -> void:
-	Run.new_run(1)
+	RunFixture.classic(1)
 	var king := Run.king_unit()
 	var n: Unit = Run.units.filter(func(u): return u.type == &"knight")[0]
 	var f := await _fight([king, n], [Content.relic(&"puppeteers_string")], {"e8": &"king"},
@@ -92,7 +92,7 @@ func test_puppeteers_string_moves_a_piece_to_an_empty_square() -> void:
 
 
 func test_soul_lantern_lifts_into_the_pocket_and_drops_back() -> void:
-	Run.new_run(1)
+	RunFixture.classic(1)
 	var king := Run.king_unit()
 	var b: Unit = Run.units.filter(func(u): return u.type == &"bishop")[0]
 	var f := await _fight([king, b], [Content.relic(&"soul_lantern")], {"e8": &"king"},

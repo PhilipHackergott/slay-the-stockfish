@@ -25,6 +25,9 @@ extends Resource
 ## Enemy material target per node kind as a share of Command: {"fight": 0.8, "elite": 1.0, ...}.
 ## Reinforcements join an encounter until it reaches the target; 0 or missing = the layout as is.
 @export var enemy_ratio: Dictionary = {}
+## Early fights: the material the ratios apply to rises from this at row 0 to Command at the
+## guardian (0 = Command everywhere). Guardians and the boss always use Command.
+@export var enemy_material_start: int = 0
 ## Recruit tiers per node kind: {"fight": [1, 2], "elite": [2, 3], "guardian": [3]}. One tier is
 ## rolled per offer and every recruit on offer comes from it.
 @export var reward_tiers: Dictionary = {}

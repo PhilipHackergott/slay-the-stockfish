@@ -4,7 +4,7 @@ extends GutTest
 
 
 func test_scripted_game_against_engine_reaches_a_result() -> void:
-	Run.new_run(5)
+	RunFixture.classic(5)
 	var fight := FightController.new()
 	add_child_autofree(fight)
 	var boss: EncounterDef = Content.encounter(&"stockfish").duplicate()
@@ -30,7 +30,7 @@ func test_scripted_game_against_engine_reaches_a_result() -> void:
 
 
 func test_a_formation_that_mates_at_once_gives_the_engine_the_first_move() -> void:
-	Run.new_run(5)
+	RunFixture.classic(5)
 	var units: Array = [Unit.make(1, &"king"), Unit.make(2, &"queen"), Unit.make(3, &"queen")]
 	var fight := FightController.new()
 	add_child_autofree(fight)
@@ -45,7 +45,7 @@ func test_a_formation_that_mates_at_once_gives_the_engine_the_first_move() -> vo
 	assert_false(plain.engine_first)
 
 func test_xp_goes_to_the_capturing_unit() -> void:
-	Run.new_run(6)
+	RunFixture.classic(6)
 	var fight := FightController.new()
 	add_child_autofree(fight)
 	var enc := EncounterDef.new()
@@ -66,7 +66,7 @@ func test_xp_goes_to_the_capturing_unit() -> void:
 func test_scripted_run_crosses_three_acts_to_the_boss() -> void:
 	Profile.path = "user://profile_test.json"
 	Profile.reset()
-	Run.new_run(42)
+	RunFixture.classic(42)
 	var start_ids: Array = Run.units.map(func(u): return u.id)
 	var steps := 0
 	var guardians := 0
@@ -137,7 +137,7 @@ func test_scripted_run_crosses_three_acts_to_the_boss() -> void:
 
 
 func test_formation_places_every_unit_once() -> void:
-	Run.new_run(1)
+	RunFixture.classic(1)
 	for i in 10:
 		Run.add_unit(&"pawn")
 	Run.add_unit(&"rook")
@@ -152,7 +152,7 @@ func test_formation_places_every_unit_once() -> void:
 
 
 func _gold_after_win(clock_left_ms: float, state: String = "win") -> int:
-	Run.new_run(5)
+	RunFixture.classic(5)
 	var before := Run.gold
 	Run.apply_fight({"state": state, "slain": [], "xp": [], "clock_left_ms": clock_left_ms}, &"fight")
 	return Run.gold - before

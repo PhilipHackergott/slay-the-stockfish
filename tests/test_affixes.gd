@@ -9,7 +9,7 @@ func _elites() -> Array:
 func test_each_act_rolls_its_affix_count_from_its_pool() -> void:
 	var seen := 0
 	for s in 20:
-		Run.new_run(300 + s)
+		RunFixture.classic(300 + s)
 		for a in 3:
 			if a > 0:
 				Run.act_index = a
@@ -35,7 +35,7 @@ func test_each_act_rolls_its_affix_count_from_its_pool() -> void:
 
 
 func test_affixes_reach_the_elite_fight() -> void:
-	Run.new_run(5)
+	RunFixture.classic(5)
 	var n: Dictionary = _elites()[0]
 	Run.current_node = n["id"]
 	var enc := Content.encounter(n["encounter"])

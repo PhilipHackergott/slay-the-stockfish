@@ -52,7 +52,7 @@ func test_every_encounter_piece_exists_and_kinds_are_known() -> void:
 ## Every encounter an act can roll, with that act's reinforcements: valid, no check on the player,
 ## no mate in one from the classic first rank, and the enemy reaches its share of your Command.
 func test_reinforced_layouts_are_valid_and_safe() -> void:
-	Run.new_run(1)
+	RunFixture.classic(1)
 	var n := 0
 	for ai in Content.acts.size():
 		Run.act_index = ai
@@ -116,3 +116,28 @@ func test_no_encounter_allows_mate_in_one() -> void:
 			assert_true((await ChessCore.validate(fen)).get("valid", false), "%s position is valid (%s)" % [id, fen])
 			var mates: PackedStringArray = await ChessCore.mates_in_one(fen)
 			assert_eq(mates.size(), 0, "%s mated in one by %s (%s)" % [id, mates, fen])
+
+
+## Act 1 starts small: a first-row fight brings about 5 material, the enemy grows row by row.
+func test_act_one_enemies_grow_from_a_small_start() -> void:
+	RunFixture.classic(3)
+	var by_row := {}
+	for n in Run.map.nodes:
+		if n["type"] == &"fight" and not by_row.has(int(n["row"])):
+			by_row[int(n["row"])] = n["id"]
+	var rows := by_row.keys()
+	rows.sort()
+	var last := -1.0
+	for r in rows:
+		Run.current_node = by_row[r]
+		var target := Run.enemy_target(&"fight")
+		assert_gt(target, last, "row %d grows" % r)
+		last = target
+		var enc: EncounterDef = Content.encounter(Run.map.node(by_row[r])["encounter"])
+		var material := Run.layout_material(enc.layout)
+		for e in Run.reinforcements(enc, &"fight"):
+			material += Content.piece(StringName(e[1])).value
+		if r == 0:
+			assert_lte(material, 6, "%s opens with %d material" % [enc.id, material])
+	Run.current_node = -1
+	assert_almost_eq(Run.enemy_target(&"guardian"), 1.15 * Run.command_cap(), 0.01, "guardians keep the full target")

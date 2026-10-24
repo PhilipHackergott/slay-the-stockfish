@@ -7,7 +7,7 @@ const COSTS := ["", "gold", "lose_pawn", "lose_random"]
 
 
 func before_each() -> void:
-	Run.new_run(41)
+	RunFixture.classic(41)
 	Run.unlocks = Profile.UNLOCKS.keys().map(func(k): return String(k))
 
 
@@ -230,7 +230,7 @@ func test_the_tailor_stitches_a_step_that_lasts_until_the_piece_rises() -> void:
 	assert_false(Content.pieces.has(bishop.type), "no codex or shop entry")
 	assert_false(Run.stitch_options("F").has(bishop), "one stitch per piece")
 	var save: Dictionary = JSON.parse_string(JSON.stringify(Run.to_save()))
-	Run.new_run(2)
+	RunFixture.classic(2)
 	assert_true(Run.from_save(save))
 	assert_eq(Run.unit(bishop.id).type, &"bishop__W")
 	var fight := FightController.new()

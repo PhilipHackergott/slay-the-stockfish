@@ -5,7 +5,7 @@ var fight: FightController
 
 
 func before_each() -> void:
-	Run.new_run(11)
+	RunFixture.classic(11)
 	fight = FightController.new()
 	add_child_autofree(fight)
 
@@ -90,7 +90,7 @@ func test_tolling_bells_the_third_check_wins() -> void:
 func test_arenas_follow_each_acts_placement_and_survive_a_save() -> void:
 	var seen := 0
 	for s in 40:
-		Run.new_run(100 + s)
+		RunFixture.classic(100 + s)
 		for a in 3:
 			if a > 0:
 				Run.act_index = a
@@ -237,7 +237,7 @@ func test_locked_arenas_and_events_stay_out_until_unlocked() -> void:
 		var arenas := {}
 		var events := {}
 		for s in 30:
-			Run.new_run(500 + s)
+			RunFixture.classic(500 + s)
 			Run.unlocks = Profile.UNLOCKS.keys().map(func(k): return String(k)) if unlocked else []
 			for a in 3:
 				Run.act_index = a

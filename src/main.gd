@@ -83,6 +83,9 @@ func _jump(where: String) -> void:
 		_show_title()
 		return
 	_begin_run(int(args.get("seed", "7")), int(args.get("difficulty", "0")))
+	if where != "relic" and where != "draft":
+		Run.auto_draft()
+		Run.finish_draft()
 	for i in int(args.get("act", "0")):
 		Run.advance_act()
 	for id in String(args.get("relics", "")).split(",", false):
@@ -208,12 +211,19 @@ func _show_start_relics() -> void:
 		Run.relic_choices(Content.config.start_relic_choices, "start"), false)
 	pick.picked.connect(func(id: StringName):
 		Run.add_relic(id)
-		_show_act_intro(_show_map))
+		_show_draft())
 	_set_screen(pick)
 	if autoplay:
 		await get_tree().create_timer(0.3).timeout
 		if is_instance_valid(pick):
 			pick.picked.emit(pick.ids[0])
+
+
+## The run-start draft: spend the budget on pieces, then the first act.
+func _show_draft() -> void:
+	Run.auto_draft()
+	Run.finish_draft()
+	_show_act_intro(_show_map)
 
 
 ## A card for the act about to begin (name, subtitle, flavour), then `then`.

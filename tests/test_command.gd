@@ -3,7 +3,7 @@ extends GutTest
 
 
 func before_each() -> void:
-	Run.new_run(9)
+	RunFixture.classic(9)
 
 
 func test_the_starting_army_fits_and_extra_recruits_wait_on_the_bench() -> void:
@@ -97,7 +97,7 @@ func test_command_survives_save_and_load() -> void:
 	Run.set_benched(u, true)
 	u.perks = PackedStringArray(["vanguard"])
 	var data := Run.to_save()
-	Run.new_run(1)
+	RunFixture.classic(1)
 	Run.from_save(data)
 	var back := Run.unit(u.id)
 	assert_eq(back.post, &"held")

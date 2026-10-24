@@ -3,7 +3,7 @@ extends GutTest
 
 
 func before_each() -> void:
-	Run.new_run(31)
+	RunFixture.classic(31)
 
 
 func _fight_node() -> Dictionary:
@@ -51,7 +51,7 @@ func test_maps_have_unknown_nodes_and_omens_only_on_fights() -> void:
 	var fights := 0
 	var omens := 0
 	for seed_value in range(1, 31):
-		Run.new_run(seed_value)
+		RunFixture.classic(seed_value)
 		for a in Run.act_count():
 			assert_true(Run.map.nodes.any(func(n): return n["type"] == &"unknown"), "act %d has a ? node" % a)
 			for n in Run.map.nodes:
@@ -78,6 +78,7 @@ func test_every_omen_has_an_icon_and_text() -> void:
 
 func test_omen_effects_on_the_fight_and_its_outcome() -> void:
 	var enc: EncounterDef = Content.encounter(_fight_node()["encounter"])
+	Run.current_node = int(_fight_node()["id"])
 	var plain := Run.fight_mods(&"fight", enc)
 	_with_omen(&"blood_moon")
 	assert_almost_eq(float(Run.fight_mods(&"fight", enc)["xp_mult"]), float(plain["xp_mult"]) * 2.0, 0.001)
@@ -186,7 +187,7 @@ func test_the_roamer_survives_a_save_and_skips_the_final_act() -> void:
 	Run.enter_node(Run.available_nodes()[0])
 	var at := Run.roamer_node()
 	var save: Dictionary = JSON.parse_string(JSON.stringify(Run.to_save()))
-	Run.new_run(99)
+	RunFixture.classic(99)
 	assert_true(Run.from_save(save))
 	assert_eq(Run.roamer_node(), at)
 	Run.advance_act()

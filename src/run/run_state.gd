@@ -30,6 +30,9 @@ var stats := {}
 var last_outcome: Dictionary = {}
 var used_events: Array = []
 ## Player-arranged squares: unit id -> square index (formation editor).
+## The run-start draft while it is open: {"points", "specials" (still on offer), "rolled" (all
+## specials), "bought" (unit ids)}. Empty once the draft is closed.
+var draft: Dictionary = {}
 var formation_prefs: Dictionary = {}
 ## Shop stock per node id, so it survives leaving and continuing: {node_id: {pieces, relics}}.
 var shops: Dictionary = {}
@@ -61,6 +64,7 @@ func new_run(p_seed: int, p_difficulty: int = 0) -> void:
 	used_events.clear()
 	formation_prefs.clear()
 	shops.clear()
+	draft.clear()
 	current_node = -1
 	next_unit_id = 1
 	act_index = 0
@@ -68,14 +72,105 @@ func new_run(p_seed: int, p_difficulty: int = 0) -> void:
 	stats = {"fights_won": 0, "units_lost": 0, "captures": 0, "nodes": 0, "gold_earned": 0}
 	var mods := difficulty_mods()
 	gold = int(round(cfg().starting_gold * float(mods["gold_mult"])))
-	var army: Array = Array(cfg().starting_army)
-	for t in mods["remove_from_start"]:
-		army.erase(t)
-	for t in army:
+	for t in cfg().starting_army:
 		add_unit(t)
 	_build_act_map()
+	_open_draft(mods["remove_from_start"])
 	active = true
 	changed.emit()
+
+
+# --- draft ------------------------------------------------------------------------------------
+
+## The budget, less the value of what the difficulty takes from the start; specials rolled once.
+func _open_draft(removed: Array) -> void:
+	var points := cfg().draft_budget
+	for t in removed:
+		var d := Content.piece(StringName(t))
+		points -= d.value if d != null else 0
+	var specials: Array = []
+	var tiers := cfg().draft_special_tiers
+	for i in cfg().draft_specials:
+		if tiers.is_empty():
+			break
+		var ids := draw_tier(tiers[rng.randi_range(0, tiers.size() - 1)], 1, Array(cfg().draft_basics) + specials)
+		if not ids.is_empty() and Content.piece(ids[0]).value <= cfg().draft_budget:
+			specials.append(ids[0])
+	draft = {"points": maxi(0, points), "specials": specials, "rolled": specials.duplicate(), "bought": []}
+
+
+func draft_open() -> bool:
+	return not draft.is_empty()
+
+
+func draft_points() -> int:
+	return int(draft.get("points", 0))
+
+
+## What the draft sells right now: the basics, then the specials still on offer.
+func draft_offers() -> Array:
+	if not draft_open():
+		return []
+	return Array(cfg().draft_basics) + Array(draft["specials"])
+
+
+func can_draft(type: StringName) -> bool:
+	var d := Content.piece(type)
+	return draft_open() and d != null and draft_offers().has(type) and d.value <= draft_points()
+
+
+func draft_buy(type: StringName) -> Unit:
+	if not can_draft(type):
+		return null
+	draft["points"] = draft_points() - Content.piece(type).value
+	draft["specials"].erase(type)
+	var u := add_unit(type)
+	draft["bought"].append(u.id)
+	return u
+
+
+## A piece bought in this draft goes back for its full price.
+func draft_refund(u: Unit) -> bool:
+	if not draft_open() or u == null or not draft["bought"].has(u.id):
+		return false
+	draft["bought"].erase(u.id)
+	draft["points"] = draft_points() + Content.piece(u.type).value
+	if draft["rolled"].has(u.type) and not draft["specials"].has(u.type):
+		draft["specials"].append(u.type)
+	remove_unit(u)
+	return true
+
+
+## Closes the draft; unspent points become gold. Returns the gold.
+func finish_draft() -> int:
+	if not draft_open():
+		return 0
+	var g := draft_points() * cfg().draft_leftover_gold
+	draft.clear()
+	if g > 0:
+		add_gold(g)
+	changed.emit()
+	return g
+
+
+## Autoplay and dev jumps: offers the army lacks first, pieces before pawns, the cheapest first
+## (7 points buy a knight, a bishop and a pawn).
+func auto_draft() -> void:
+	while draft_open():
+		var can := draft_offers().filter(func(t): return can_draft(t))
+		if can.is_empty():
+			break
+		can.sort_custom(func(a, b):
+			var na: bool = units.any(func(u): return u.type == a)
+			var nb: bool = units.any(func(u): return u.type == b)
+			if na != nb:
+				return nb
+			var pa: bool = Content.piece(a).pawn_like or a == &"pawn"
+			var pb: bool = Content.piece(b).pawn_like or b == &"pawn"
+			if pa != pb:
+				return pb
+			return Content.piece(a).value < Content.piece(b).value if Content.piece(a).value != Content.piece(b).value else String(a) < String(b))
+		draft_buy(can[0])
 
 
 # --- acts -------------------------------------------------------------------------------------
@@ -702,7 +797,17 @@ func enemy_target(kind: StringName) -> float:
 	var ratio := float(act.enemy_ratio.get(base_kind(kind), 0.0))
 	if kind == &"guardian" and flags.has("roamer_joined"):
 		ratio += cfg().roamer_guardian_ratio
-	return ratio * mult * command_cap()
+	return ratio * mult * enemy_material(kind)
+
+
+## What the enemy ratios apply to: Command, or the act's ramp toward it by the current row.
+func enemy_material(kind: StringName) -> float:
+	var cap := float(command_cap())
+	var act := current_act()
+	if act == null or act.enemy_material_start <= 0 or kind == &"guardian" or kind == &"boss" or map == null or current_node < 0:
+		return cap
+	var t := clampf(float(map.node(current_node)["row"]) / float(maxi(1, act.map_rows.size())), 0.0, 1.0)
+	return lerpf(float(act.enemy_material_start), cap, t)
 
 
 ## Reinforcements that join an encounter, in order: [[square, piece id], ...]. extra_pawns come on

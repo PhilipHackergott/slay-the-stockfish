@@ -3,7 +3,7 @@ extends GutTest
 
 
 func before_each() -> void:
-	Run.new_run(21)
+	RunFixture.classic(21)
 
 
 func test_every_relic_has_a_tier_a_label_and_an_icon() -> void:
@@ -174,7 +174,7 @@ func test_bell_and_crown_in_a_real_fight() -> void:
 
 
 func test_phylactery_gives_one_second_chance() -> void:
-	Run.new_run(3)
+	RunFixture.classic(3)
 	assert_false(Run.take_second_chance(), "nothing to shatter")
 	Run.add_relic(&"lichs_phylactery")
 	assert_true(Run.take_second_chance())

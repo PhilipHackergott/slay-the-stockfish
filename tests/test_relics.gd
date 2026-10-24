@@ -5,7 +5,7 @@ var fight: FightController
 
 
 func before_each() -> void:
-	Run.new_run(11)
+	RunFixture.classic(11)
 	fight = FightController.new()
 	add_child_autofree(fight)
 

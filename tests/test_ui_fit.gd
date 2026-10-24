@@ -16,7 +16,7 @@ func before_all() -> void:
 
 func before_each() -> void:
 	Profile.reset()
-	Run.new_run(41)
+	RunFixture.classic(41)
 	_host = Control.new()
 	_host.size = SCREEN
 	_host.theme = UiKit.theme()
