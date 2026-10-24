@@ -195,6 +195,13 @@ func test_burning_stakes_leave_a_wall_where_a_piece_was() -> void:
 	assert_true(fight.statues.is_empty())
 
 
+func test_walling_arenas_shut_the_pocket() -> void:
+	for id in [&"burning_stakes", &"the_crow"]:
+		assert_true(await _setup(id, [&"reliquary_knight"]), "%s loads with a pocket relic" % id)
+		assert_eq(fight.pocket, "")
+		assert_ne(fight._sealed_note, "")
+
+
 func test_gorgon_cloister_a_capturing_rook_turns_to_stone_but_is_not_slain() -> void:
 	assert_true(await _setup(&"gorgon_cloister"))
 	var rook := Run.add_unit(&"rook")

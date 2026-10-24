@@ -57,6 +57,7 @@ var pawn_letters := "P"
 var ep_letters := "p"
 ## Run units lifted into the pocket (hybrid relic), waiting to be dropped: [{letter, unit}].
 var pocket_units: Array = []
+var _sealed_note := ""
 
 var player_ms := 0.0
 var increment_ms := 0
@@ -130,6 +131,13 @@ func setup(p_encounter: EncounterDef, units: Array, relics: Array, p_cfg: RunCon
 				clock_bonus += r.clock_bonus_s
 				inc_bonus += r.increment_bonus_s
 	arena = Content.arena(StringName(mods.get("arena", &"")))
+	_sealed_note = ""
+	if arena != null and has_pocket and Array(arena.ini_lines).any(func(l): return String(l).begins_with("wallingRule")):
+		# The engine cannot combine drops with walling; the arena the map promised wins this fight.
+		has_pocket = false
+		pocket = ""
+		lift_charges = 0
+		_sealed_note = "%s leaves no room for drops: your pocket stays shut this fight." % arena.display_name
 	if arena != null:
 		relic_lines.append_array(arena.ini_lines)
 		for rank in arena.promotion_ranks:
@@ -324,6 +332,8 @@ func _letter_for(type: StringName, white: bool) -> String:
 
 
 func begin() -> void:
+	if _sealed_note != "":
+		message.emit(_sealed_note)
 	if engine_first:
 		await _engine_turn()
 	else:
