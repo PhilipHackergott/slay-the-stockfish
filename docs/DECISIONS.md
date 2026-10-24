@@ -334,7 +334,7 @@ are a one-file edit. Mirrored to Notion: Project Slay the Stockfish → Build de
   drawn without repeats from the act's pool (act 1: Reinforced, Deep Thought, Vigilant, Hurried;
   act 2 adds Brutal, Legion; act 3 adds Relentless). Rolled with the map, saved with it, shown as a
   crown badge and tooltip lines on the node and as banner lines in the fight. Elites only; the
-  roaming elite and guardians carry none. Affixes do not raise gold yet.
+  roaming elite and guardians carry none.
 - **Guardian signature arenas** (`EncounterDef.arena`): the Choir Engine fights on Tolling Bells,
   the Abbot Engine on Gorgon Cloister. The boss stays plain chess.
 - **Lich's Phylactery** (rare relic, `RelicDef.second_chance`): a fight that would end the run
@@ -358,6 +358,31 @@ are a one-file edit. Mirrored to Notion: Project Slay the Stockfish → Build de
   the knife and has nothing to mend or cleanse.
 - **Affixes pay**: each affix on a won elite adds `affix_gold_bonus` (25 %) of its gold, noted on
   the reward screen.
+
+## Muster, small early enemies, the board stage
+
+- **The run starts with the king alone** (`RunConfig.starting_army = [king]`) and a muster after
+  the starting relic: `draft_budget` 7 points buy basics (pawn, knight, bishop, rook) in any number
+  plus `draft_specials` 2 one-of specials rolled from tiers 1-2. A bought piece can be returned for
+  its price; unspent points become `draft_leftover_gold` 3 gold each. Pieces the difficulty removes
+  from the classic start lower the budget by their value. Autoplay and dev jumps use `auto_draft`.
+- **Early enemies start small**: `ActDef.enemy_material_start` (act 1: 6) is the material the
+  encounter ratios apply to at row 0; it rises linearly to Command at the guardian. Guardians and
+  the boss always use Command. Act-1 layouts are small cores; reinforcements fill them up as the
+  target grows (act 2 and later fill them back to full).
+- **The board stage**: every recurring place happens over the board, with the army on it, a 3D
+  prop slammed onto the engine's half (merchant stall for the shop and the muster, campfire,
+  reliquary chest for treasure, shrine for events) and the panel docked on the right
+  (`UiModal.docked()`, the "stage" camera). The slam: an expo drop, squash and bounce, dust ring,
+  debris, flash, camera shake, every piece hops, then flickering lights at the prop's `light_`
+  empties. Leaving lifts it away. Props come from `tools/blender/world/places.py`; a missing glb
+  falls back to a box.
+- **Formation on the board** (`BoardStage`, replaces the 2D FormationModal): the map's Arrange and
+  the muster edit the army on the 3D board. Click a piece, then a square on ranks 1-2 (moves or
+  swaps), bench and deploy from the panel; every change is kept at once.
+- **Walling arenas and drops**: the engine cannot combine `wallingRule` with drops, so on Burning
+  Stakes and The Crow the pocket stays shut for that fight (the HUD says so); the arena the map
+  promised wins.
 
 ## Known gaps in v0.1
 
