@@ -206,6 +206,15 @@
       "peak_dbfs": -3.0,
       "lufs": -18.1
     },
+    "place_slam": {
+      "path": "res://assets/audio/sfx/place_slam.wav",
+      "category": "sfx",
+      "duration": 2.174,
+      "volume_db": 0.0,
+      "loop": false,
+      "peak_dbfs": -3.0,
+      "lufs": -23.3
+    },
     "promote": {
       "path": "res://assets/audio/sfx/promote.wav",
       "category": "sfx",

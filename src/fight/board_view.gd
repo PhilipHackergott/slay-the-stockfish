@@ -7,6 +7,8 @@ extends Node3D
 signal square_clicked(sq: int)
 signal square_hovered(sq: int)
 signal right_clicked
+## A place prop hit the board (camera shake strength).
+signal impact(strength: float)
 
 const BOARD_GLB := "res://models/board/board.glb"
 const MOVE_COLOR := Color(0.42, 0.74, 1.0)
@@ -16,6 +18,9 @@ const LAST_COLOR := Color(0.95, 0.72, 0.35)
 const CHECK_COLOR := Color(1.0, 0.15, 0.1)
 const SWAP_COLOR := Color(0.65, 0.5, 1.0)
 const HIGHLIGHT := preload("res://shaders/highlight.gdshader")
+const PLACE_GLB := "res://models/props/place_%s.glb"
+const PLACE_AT := Vector3(0, 0, -2.6)
+const PLACE_DROP := 9.0
 
 var camera: Camera3D
 var pieces: Dictionary = {}  # sq -> PieceView
@@ -37,6 +42,8 @@ var _arena_root: Node3D
 ## Props standing on wall squares {sq: Node3D}, and what a new wall gets: rubble, stake or crow.
 var _wall_props: Dictionary = {}
 var wall_prop: StringName = &"rubble"
+var place_kind: StringName = &""
+var _place: Node3D
 
 
 func _ready() -> void:
@@ -297,6 +304,114 @@ func _hop(prop: Node3D, to: Vector3) -> void:
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
+# --- places -------------------------------------------------------------------------------------
+
+## A recurring place (shop, campfire, chest, shrine) slammed down on the engine's half of the board.
+## The same place stays; another one lifts the old away first.
+func slam_place(kind: StringName) -> void:
+	if kind == place_kind and is_instance_valid(_place):
+		return
+	if is_instance_valid(_place):
+		await lift_place()
+	place_kind = kind
+	var p := _place_model(kind)
+	_place = p
+	add_child(p)
+	p.position = PLACE_AT + Vector3(0, PLACE_DROP, 0)
+	p.rotation = Vector3(deg_to_rad(-10.0), deg_to_rad(randf_range(-8.0, 8.0)), deg_to_rad(6.0))
+	var fall := 0.36
+	get_tree().create_timer(maxf(0.0, fall - 0.22)).timeout.connect(Audio.play.bind("place_slam"))
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(p, "position:y", 0.0, fall).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+	tw.tween_property(p, "rotation", Vector3.ZERO, fall).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	await tw.finished
+	if not is_instance_valid(p):
+		return
+	var sq := create_tween()
+	sq.tween_property(p, "scale", Vector3(1.12, 0.78, 1.12), 0.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	sq.tween_property(p, "scale", Vector3.ONE, 0.55).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	impact.emit(1.0)
+	Fx.burst(_fx_root, PLACE_AT + Vector3(0, 0.05, 0), Color(0.32, 0.28, 0.25, 0.9), "slam")
+	Fx.burst(_fx_root, PLACE_AT + Vector3(0, 0.05, 0), Color(1.0, 0.6, 0.3), "debris")
+	Fx.flash(_fx_root, PLACE_AT + Vector3(0, 0.6, 0.8), Color(1.0, 0.7, 0.45), 6.0, 0.6)
+	_quake(PLACE_AT)
+	_light_place(p, kind)
+
+
+## Pieces on the board jump with the impact, the nearer the higher.
+func _quake(at: Vector3) -> void:
+	for pv in pieces.values():
+		var piece := pv as PieceView
+		var d := Vector2(piece.position.x - at.x, piece.position.z - at.z).length()
+		var h := clampf(0.55 - d * 0.06, 0.08, 0.5)
+		var base := piece.position.y
+		var tw := piece.create_tween()
+		tw.tween_interval(d * 0.025)
+		tw.tween_property(piece, "position:y", base + h, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(piece, "position:y", base, 0.32).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+
+
+## The place rises off the board and is gone.
+func lift_place() -> void:
+	var p := _place
+	_place = null
+	place_kind = &""
+	if not is_instance_valid(p):
+		return
+	Audio.play("piece_leap", -2.0, 0.6)
+	Fx.burst(_fx_root, p.position + Vector3(0, 0.1, 0), Color(0.3, 0.27, 0.25, 0.8), "smoke")
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(p, "position:y", PLACE_DROP, 0.42).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tw.tween_property(p, "scale", Vector3(0.9, 1.15, 0.9), 0.42)
+	await tw.finished
+	p.queue_free()
+
+
+func _place_model(kind: StringName) -> Node3D:
+	var path := PLACE_GLB % kind
+	if ResourceLoader.exists(path):
+		var scene := load(path) as PackedScene
+		if scene != null:
+			var n := scene.instantiate() as Node3D
+			Mats.apply(n)
+			n.name = "Place_%s" % kind
+			return n
+	var root := Node3D.new()
+	root.name = "Place_%s" % kind
+	var m := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(2.2, 1.0, 1.0)
+	m.mesh = box
+	m.position.y = 0.5
+	m.set_surface_override_material(0, Mats.world("wood"))
+	root.add_child(m)
+	return root
+
+
+## Warm flickering lights at the model's light_ empties (embers above a campfire).
+func _light_place(p: Node3D, kind: StringName) -> void:
+	var fire := kind == &"campfire"
+	for e in p.find_children("light_*", "Node3D", true, false):
+		var spot := e as Node3D
+		var l := OmniLight3D.new()
+		l.light_color = Color(1.0, 0.55, 0.25) if fire else Color(1.0, 0.72, 0.42)
+		l.omni_range = 4.5 if fire else 2.2
+		l.shadow_enabled = false
+		l.light_energy = 0.0
+		spot.add_child(l)
+		var peak := 3.0 if fire else 1.1
+		var tw := l.create_tween()
+		tw.tween_property(l, "light_energy", peak, 0.4)
+		var fl := l.create_tween().set_loops()
+		fl.tween_interval(0.4)
+		fl.tween_property(l, "light_energy", peak * 0.72, randf_range(0.09, 0.17))
+		fl.tween_property(l, "light_energy", peak, randf_range(0.1, 0.22))
+		fl.tween_property(l, "light_energy", peak * 0.86, randf_range(0.06, 0.12))
+		fl.tween_property(l, "light_energy", peak * 1.05, randf_range(0.12, 0.25))
+		if fire:
+			Fx.embers(spot)
+
+
 # --- pieces -------------------------------------------------------------------------------------
 
 func clear() -> void:
@@ -490,6 +605,36 @@ func present_teleport(from: int, to: int) -> void:
 	Fx.burst(_fx_root, sq_pos(to) + Vector3(0, 0.05, 0), SWAP_COLOR, "land")
 	Fx.flash(_fx_root, sq_pos(to) + Vector3(0, 0.8, 0), SWAP_COLOR, 3.0, 0.5)
 	clear_marks()
+
+
+## A piece hops to an empty square (the board editor).
+func present_hop(from: int, to: int) -> void:
+	var p: PieceView = pieces.get(from)
+	if p == null:
+		return
+	pieces.erase(from)
+	pieces[to] = p
+	p.face(sq_pos(to) - sq_pos(from))
+	var d := p.play("leap")
+	Audio.play("piece_leap", 0.0, randf_range(0.94, 1.06))
+	var tw := create_tween()
+	tw.tween_property(p, "position", sq_pos(to), d).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await tw.finished
+	if is_instance_valid(p):
+		p.unface()
+	Fx.burst(_fx_root, sq_pos(to) + Vector3(0, 0.03, 0), MOVE_COLOR, "land")
+
+
+## A new piece drops onto a square (a draft buy, a piece leaving the bench).
+func present_drop(letter: String, sq: int, unit_id: int = 0) -> void:
+	if pieces.has(sq):
+		pieces[sq].queue_free()
+	var p := _spawn(letter, sq, unit_id)
+	var d := p.play("drop")
+	get_tree().create_timer(d * 0.6).timeout.connect(Audio.play.bind("piece_drop"))
+	await get_tree().create_timer(d * 0.75).timeout
+	Fx.burst(_fx_root, sq_pos(sq) + Vector3(0, 0.05, 0), MOVE_COLOR, "land")
+	Fx.flash(_fx_root, sq_pos(sq) + Vector3(0, 0.6, 0), MOVE_COLOR, 2.5, 0.4)
 
 
 ## The hybrid: the piece rises into the pocket and is gone from the board.

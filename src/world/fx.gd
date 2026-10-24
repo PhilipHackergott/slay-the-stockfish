@@ -45,7 +45,7 @@ static func burst(parent: Node3D, pos: Vector3, color: Color, kind: String = "la
 	p.local_coords = false
 	var pm := ParticleProcessMaterial.new()
 	var quad := QuadMesh.new()
-	var additive := kind != "smoke"
+	var additive := kind != "smoke" and kind != "slam"
 	quad.material = _draw_mat(additive)
 	var ramp := Gradient.new()
 	var energy := 3.0 if additive else 1.0
@@ -95,6 +95,37 @@ static func burst(parent: Node3D, pos: Vector3, color: Color, kind: String = "la
 			pm.scale_min = 0.8
 			pm.scale_max = 1.6
 			quad.size = Vector2(0.5, 0.5)
+		"slam":
+			p.amount = 90
+			p.lifetime = 1.8
+			pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_RING
+			pm.emission_ring_axis = Vector3.UP
+			pm.emission_ring_radius = 1.2
+			pm.emission_ring_inner_radius = 0.6
+			pm.emission_ring_height = 0.05
+			pm.direction = Vector3.UP
+			pm.spread = 15.0
+			pm.initial_velocity_min = 0.1
+			pm.initial_velocity_max = 0.5
+			pm.radial_velocity_min = 2.0
+			pm.radial_velocity_max = 4.5
+			pm.damping_min = 2.5
+			pm.damping_max = 4.0
+			pm.gravity = Vector3(0, 0.15, 0)
+			pm.scale_min = 0.8
+			pm.scale_max = 2.0
+			quad.size = Vector2(0.6, 0.6)
+		"debris":
+			p.amount = 50
+			p.lifetime = 1.1
+			pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+			pm.emission_box_extents = Vector3(1.1, 0.05, 0.5)
+			pm.direction = Vector3.UP
+			pm.spread = 60.0
+			pm.initial_velocity_min = 1.5
+			pm.initial_velocity_max = 4.0
+			pm.gravity = Vector3(0, -9.0, 0)
+			quad.size = Vector2(0.05, 0.05)
 		_:
 			p.amount = 36
 			p.lifetime = 1.0
@@ -112,6 +143,36 @@ static func burst(parent: Node3D, pos: Vector3, color: Color, kind: String = "la
 	p.global_position = pos
 	p.emitting = true
 	p.finished.connect(p.queue_free)
+
+
+## A steady stream of embers rising from a fire (parented, lives as long as the parent).
+static func embers(parent: Node3D) -> GPUParticles3D:
+	var p := GPUParticles3D.new()
+	p.amount = 40
+	p.lifetime = 2.2
+	var pm := ParticleProcessMaterial.new()
+	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+	pm.emission_sphere_radius = 0.18
+	pm.direction = Vector3.UP
+	pm.spread = 18.0
+	pm.initial_velocity_min = 0.4
+	pm.initial_velocity_max = 1.1
+	pm.gravity = Vector3(0, 0.25, 0)
+	pm.turbulence_enabled = true
+	pm.turbulence_noise_strength = 0.6
+	var ramp := Gradient.new()
+	ramp.set_color(0, Color(3.0, 1.3, 0.35, 1.0))
+	ramp.set_color(1, Color(1.0, 0.3, 0.05, 0.0))
+	var ramp_tex := GradientTexture1D.new()
+	ramp_tex.gradient = ramp
+	pm.color_ramp = ramp_tex
+	var quad := QuadMesh.new()
+	quad.size = Vector2(0.04, 0.04)
+	quad.material = _draw_mat(true)
+	p.process_material = pm
+	p.draw_pass_1 = quad
+	parent.add_child(p)
+	return p
 
 
 static func flash(parent: Node3D, pos: Vector3, color: Color, energy: float = 4.0, dur: float = 0.5) -> void:

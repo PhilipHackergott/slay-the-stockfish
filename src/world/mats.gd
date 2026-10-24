@@ -63,6 +63,14 @@ static func world(slot: String) -> Material:
 			m = _metal(Color(0.09, 0.085, 0.09), 0.5)
 		"wood_dead":
 			m = _flat(Color(0.14, 0.12, 0.11), 0.92)
+		"wood":
+			m = _flat(Color(0.30, 0.19, 0.11), 0.85)
+		"cloth":
+			m = _flat(Color(0.34, 0.05, 0.06), 0.95)
+		"gold":
+			m = _metal(Color(0.92, 0.68, 0.26), 0.3)
+		"fire":
+			m = _glow(Color(1.0, 0.45, 0.12), 6.0, 0.15, 3.0, 0.5)
 		"crow":
 			m = _flat(Color(0.03, 0.03, 0.04), 0.45)
 		"moss":

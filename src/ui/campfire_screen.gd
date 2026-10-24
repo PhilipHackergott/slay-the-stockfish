@@ -16,7 +16,7 @@ var _burn: Unit
 func _ready() -> void:
 	UiKit.full(self)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var m := UiModal.new().setup("The Campfire", 1560, false, "", 720)
+	var m := UiModal.new().setup("The Campfire", 1560, false, "", 720).docked()
 	m.accent = Color(1.0, 0.72, 0.45)
 	add_child(m)
 	var head := UiKit.hbox(18)
@@ -25,7 +25,7 @@ func _ready() -> void:
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(l)
 	m.body.add_child(head)
-	m.body.add_child(UiKit.divider(700, true))
+	m.body.add_child(UiKit.divider(560, true))
 	_body = UiKit.vbox(12)
 	m.body.add_child(_body)
 	_menu()
@@ -60,7 +60,10 @@ func _clear() -> void:
 ## The actions as one row of equal cards; unavailable ones say why.
 func _menu() -> void:
 	_clear()
-	var flow := UiKit.hbox(12)
+	var flow := GridContainer.new()
+	flow.columns = 3
+	flow.add_theme_constant_override("h_separation", 10)
+	flow.add_theme_constant_override("v_separation", 10)
 	_body.add_child(flow)
 	var c := Content.config
 	var slain := Run.slain_units().size()
@@ -92,7 +95,7 @@ func _menu() -> void:
 	if Run.can_graft():
 		flow.add_child(_card("graft", "Graft", "Fuse two pieces into one stronger piece.",
 			"No two pieces fit together." if Run.fusion_pairs().is_empty() else "", _pick_graft))
-	_same_size.call_deferred(flow, false)
+	_same_size.call_deferred(flow)
 
 
 ## Every card as large as the largest, so rows and grids line up.
@@ -371,7 +374,7 @@ func _finish(text: String, key: String, pieces: Array = []) -> void:
 	for t in pieces:
 		h.add_child(UiKit.portrait(StringName(t), true, 110))
 	var l := UiKit.label(text, 24, UiKit.BONE, true)
-	l.custom_minimum_size = Vector2(700, 0)
+	l.custom_minimum_size = Vector2(400, 0)
 	h.add_child(l)
 	_body.add_child(h)
 	_leave.text = "Continue"

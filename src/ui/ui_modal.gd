@@ -15,6 +15,10 @@ var max_body_height := 0
 var closable := false
 var accent := UiKit.GOLD
 var backdrop_dim := 0.55
+## Docked: a panel on the right edge over the board (places, the draft); no backdrop, and clicks
+## outside the panel reach the board.
+var dock := false
+const DOCK_WIDTH := 700
 var body: VBoxContainer
 var footer: HBoxContainer
 
@@ -43,6 +47,12 @@ func setup(p_title: String, p_width: int = 1100, p_closable: bool = false, p_sub
 	return self
 
 
+func docked() -> UiModal:
+	dock = true
+	width = DOCK_WIDTH
+	return self
+
+
 static func open(parent: Node, p_title: String, p_width: int = 900, p_closable: bool = true) -> UiModal:
 	var m := UiModal.new().setup(p_title, p_width, p_closable)
 	parent.add_child(m)
@@ -65,11 +75,16 @@ static func confirm(parent: Node, p_title: String, text: String, yes_text: Strin
 
 func _ready() -> void:
 	UiKit.full(self)
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	mouse_filter = Control.MOUSE_FILTER_IGNORE if dock else Control.MOUSE_FILTER_STOP
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	add_child(UiKit.backdrop(backdrop_dim))
+	if not dock:
+		add_child(UiKit.backdrop(backdrop_dim))
 	_root = CenterContainer.new()
 	UiKit.full(_root)
+	if dock:
+		_root.anchor_left = 1.0
+		_root.offset_left = -width - 70.0
+		_root.offset_right = -30.0
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_root)
 	_frame = PanelContainer.new()
@@ -197,6 +212,8 @@ func _draw_fade() -> void:
 func _place() -> void:
 	if _frame == null:
 		return
+	if dock:
+		_root.offset_left = _root.offset_right - maxf(_frame.size.x, float(width)) - 40.0
 	var half := _frame.size * 0.5
 	if _plaque != null:
 		var ps := _plaque.get_combined_minimum_size()

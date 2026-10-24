@@ -173,10 +173,19 @@ func test_relic_pick_fits() -> void:
 
 func test_formation_and_codex_fit() -> void:
 	_worst_case()
-	var f := FormationModal.new()
+	var bv := BoardView.new()
+	_host.add_child(bv)
+	var f := BoardStage.new().setup(bv)
 	await _show(f)
 	_check(f, "formation")
 	f.queue_free()
+	Run.draft = {"points": 7, "specials": [&"wazir", &"archbishop"], "rolled": [&"wazir", &"archbishop"], "bought": []}
+	var d := BoardStage.new().setup(bv, true)
+	await _show(d)
+	_check(d, "muster")
+	d.queue_free()
+	Run.draft.clear()
+	bv.queue_free()
 	var c := CodexModal.open_codex(_host)
 	await _show(Control.new())
 	_check(c, "codex")

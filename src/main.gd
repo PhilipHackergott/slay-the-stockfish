@@ -86,6 +86,11 @@ func _jump(where: String) -> void:
 	if where != "relic" and where != "draft":
 		Run.auto_draft()
 		Run.finish_draft()
+	if where == "draft":
+		_show_draft()
+		if args.has("click"):
+			_scripted_clicks(String(args["click"]).split(",", false))
+		return
 	for i in int(args.get("act", "0")):
 		Run.advance_act()
 	for id in String(args.get("relics", "")).split(",", false):
@@ -140,9 +145,9 @@ func _jump(where: String) -> void:
 			_show_map()
 			SettingsModal.open_settings(ui_root)
 		"formation":
-			_show_map()
-			var f := FormationModal.open_formation(ui_root)
-			f.saved.connect(_show_map)
+			_show_formation()
+			if args.has("click"):
+				_scripted_clicks(String(args["click"]).split(",", false))
 		"pause":
 			_show_map()
 			_toggle_pause()
@@ -167,6 +172,7 @@ func _first_node_of(t: StringName) -> int:
 
 
 func _show_title() -> void:
+	_unstage()
 	world.rig.set_mode("orbit")
 	_show_board_tableau()
 	var t := TitleScreen.new()
@@ -219,15 +225,28 @@ func _show_start_relics() -> void:
 			pick.picked.emit(pick.ids[0])
 
 
-## The run-start draft: spend the budget on pieces, then the first act.
+## The run-start muster: the king alone on the board, the merchant slammed onto the far side; spend
+## the budget and place the army, then the first act.
 func _show_draft() -> void:
-	Run.auto_draft()
-	Run.finish_draft()
-	_show_act_intro(_show_map)
+	_stage(&"shop")
+	var s := BoardStage.new().setup(world.board_view, true)
+	s.autoplay = autoplay
+	s.done.connect(func(): _show_act_intro(_show_map))
+	_set_screen(s)
+	Audio.music("music_map")
+
+
+## The formation editor outside fights: the army on the board, nothing on the far side.
+func _show_formation() -> void:
+	_stage(&"")
+	var s := BoardStage.new().setup(world.board_view)
+	s.done.connect(_show_map)
+	_set_screen(s)
 
 
 ## A card for the act about to begin (name, subtitle, flavour), then `then`.
 func _show_act_intro(then: Callable) -> void:
+	_unstage()
 	world.rig.set_mode("orbit")
 	var act := Run.current_act()
 	if act == null:
@@ -263,6 +282,7 @@ func _show_act_intro(then: Callable) -> void:
 
 
 func _show_map() -> void:
+	_unstage()
 	world.rig.set_mode("map")
 	Run.save_game()
 	_display_army()
@@ -270,7 +290,7 @@ func _show_map() -> void:
 	m.node_chosen.connect(func(id: int):
 		Audio.play("map_step")
 		_enter(id))
-	m.formation_changed.connect(_show_map)
+	m.arrange.connect(_show_formation)
 	_set_screen(m)
 	Audio.music("music_map")
 	Audio.ambience("ambience_wind")
@@ -304,8 +324,24 @@ func _enter(id: int) -> void:
 			_show_map()
 
 
+## Places and the draft: the army on the board, the place slammed onto the engine's half, the panel docked
+## on the right.
+func _stage(place: StringName) -> void:
+	world.rig.set_mode("stage")
+	_display_army()
+	if place != &"":
+		world.board_view.slam_place(place)
+
+
+func _unstage() -> void:
+	world.board_view.interactive = false
+	world.board_view.clear_marks()
+	if world.board_view.place_kind != &"":
+		world.board_view.lift_place()
+
+
 func _campfire() -> CampfireScreen:
-	world.rig.set_mode("map")
+	_stage(&"campfire")
 	var c := CampfireScreen.new()
 	c.autoplay = autoplay
 	c.done.connect(_after_node)
@@ -313,7 +349,7 @@ func _campfire() -> CampfireScreen:
 
 
 func _show_shop(id: int) -> void:
-	world.rig.set_mode("map")
+	_stage(&"shop")
 	var s := ShopScreen.new().setup(id)
 	s.autoplay = autoplay
 	s.done.connect(_after_node)
@@ -321,7 +357,7 @@ func _show_shop(id: int) -> void:
 
 
 func _show_treasure() -> void:
-	world.rig.set_mode("map")
+	_stage(&"chest")
 	var t := TreasureScreen.new()
 	t.autoplay = autoplay
 	t.done.connect(_after_node)
@@ -334,6 +370,7 @@ func _show_event(ev: EventDef = null) -> void:
 	if ev == null:
 		_after_node()
 		return
+	_stage(&"shrine")
 	var e := EventScreen.new().setup(ev)
 	e.autoplay = autoplay
 	e.done.connect(_after_node)
@@ -363,6 +400,7 @@ func _after_node() -> void:
 func _start_fight(node: Dictionary) -> void:
 	var enc: EncounterDef = Content.encounter(node["encounter"])
 	_set_screen(null)
+	_unstage()
 	world.rig.set_mode("fight")
 	if fight != null and is_instance_valid(fight):
 		fight.queue_free()
@@ -431,8 +469,7 @@ func _after_fight(outcome: Dictionary, node: Dictionary) -> void:
 			node["encounter"], outcome.get("state"), outcome.get("reason"), int(outcome.get("plies", 0))])
 		world.board_view.interactive = false
 		Content.clear_fight_letters()
-		world.rig.set_mode("map")
-		_display_army()
+		_stage(&"shrine")
 		var e := EventScreen.new().setup(node["event"], Run.apply_event_fight(outcome, node["opt"]))
 		e.autoplay = autoplay
 		e.done.connect(_after_node)
@@ -496,6 +533,7 @@ func _next_act() -> void:
 
 
 func _show_end(victory: bool, reason: String) -> void:
+	_unstage()
 	world.rig.set_mode("orbit")
 	Content.clear_fight_letters()
 	print("STS RUN END victory=%s reason=%s act=%d difficulty=%d fights_won=%d lost=%d gold_earned=%d" % [victory, reason,

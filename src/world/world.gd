@@ -31,6 +31,7 @@ func _ready() -> void:
 	rig.name = "CameraRig"
 	add_child(rig)
 	board_view.camera = rig.cam
+	board_view.impact.connect(func(s: float): rig.shake(s))
 
 
 func _build_environment() -> void:

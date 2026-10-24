@@ -915,6 +915,23 @@ def piece_drop(r):
     return verb(lp(y, 8000), "hall", 0.5)
 
 
+def place_slam(r):
+    """A heavy wooden and iron thing slammed onto the stone board: whoosh, a deep boom, a wooden crack,
+    iron rattle, debris and a long dusty rumble."""
+    N = n(3.0)
+    at = 0.22
+    wh = sweep_band(colored(N, r, 0.6), [0.0, at], [140, 700], 1.0) * env(N, [(0, 0), (at - 0.04, 1), (at, 0)])
+    boom = _thud(N, r, at, 42.0, [70, 118, 185, 260, 390], [0.6, 0.45, 0.3, 0.2, 0.12], 0.9, 1.4)
+    crack = burst(N, r, at, 0.05, 400, 3200, 0.012)
+    rattle = modal(pulse(N, at + 0.01, 0.0005), [820, 1310, 2150, 3400], [0.18, 0.14, 0.1, 0.06], [1.0, 0.7, 0.5, 0.3])
+    debris = _pebbles(N, r, at + 0.04, 34, 0.22)
+    rumble = lp(colored(N, r, 1.6), 260) * env(N, [(0, 0), (at, 0), (at + 0.05, 1), (2.6, 0)]) * decay(N, 1.6, at)
+    dust = bp(colored(N, r, 0.8), 250, 2200) * env(N, [(0, 0), (at, 0), (at + 0.03, 1), (2.2, 0)]) * decay(N, 1.2, at)
+    y = (fitm(wh, -24) + fitm(boom, -7) + fitm(crack, -15) + fitm(rattle, -19) + fitm(debris, -22)
+         + fitm(rumble, -16) + fitm(dust, -22))
+    return verb(lp(y, 7500), "hall", 0.55)
+
+
 def piece_spawn(r):
     N = n(2.6)
     t = tvec(N)
@@ -1195,6 +1212,7 @@ SFX = {
     "piece_capture": (piece_capture, 0.0, False, 2.0),
     "piece_drop": (piece_drop, -1.0, False, 2.2),
     "piece_spawn": (piece_spawn, -2.0, False, 3.5),
+    "place_slam": (place_slam, 0.0, False, 3.2),
     "swap": (swap, -2.0, False, 2.5),
     "pass": (pass_, -3.0, False, 6.0),
     "check_bell": (check_bell, -6.0, False, 9.0),

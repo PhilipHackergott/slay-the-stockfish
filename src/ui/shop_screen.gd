@@ -20,7 +20,7 @@ func _ready() -> void:
 	UiKit.full(self)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var m := UiModal.new().setup("The Bone Merchant", 1280, false,
-		"\"Everything here belonged to someone who lost to the engine. Prices are fair. Mostly.\"", 680)
+		"\"Everything here belonged to someone who lost to the engine. Prices are fair. Mostly.\"", 680).docked()
 	add_child(m)
 	var top := UiKit.hbox(10)
 	top.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -65,25 +65,23 @@ func _rebuild() -> void:
 	reroll.tooltip_text = "Restock pieces and relics. Each restock here costs %d more." % Content.config.reroll_step
 	head.add_child(reroll)
 	_wares.add_child(head)
-	var row := UiKit.hbox(18)
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	var row := _flow(14)
 	_wares.add_child(row)
 	var pieces: Array = stock["pieces"]
 	for i in pieces.size():
 		row.add_child(_piece_card(i, pieces[i]))
 	if pieces.is_empty():
 		row.add_child(UiKit.label("The shelves are bare.", 19, UiKit.MUTED))
-	_wares.add_child(UiKit.divider(700, true))
+	_wares.add_child(UiKit.divider(560, true))
 	_wares.add_child(UiKit.caption("Relics", 20, UiKit.GOLD))
-	var rrow := UiKit.hbox(18)
-	rrow.alignment = BoxContainer.ALIGNMENT_CENTER
+	var rrow := _flow(14)
 	_wares.add_child(rrow)
 	var relics: Array = stock["relics"]
 	for i in relics.size():
 		rrow.add_child(_relic_card(i, relics[i]))
 	if relics.is_empty():
 		rrow.add_child(UiKit.label("No relics for sale: you carry them all.", 19, UiKit.MUTED))
-	_wares.add_child(UiKit.divider(700, true))
+	_wares.add_child(UiKit.divider(560, true))
 	_wares.add_child(UiKit.caption("Raise the fallen", 20, UiKit.SOUL))
 	var slain := Run.slain_units()
 	if slain.is_empty():
@@ -102,7 +100,7 @@ func _rebuild() -> void:
 				_rebuild())
 		h.add_child(b)
 		flow.add_child(h)
-	_wares.add_child(UiKit.divider(700, true))
+	_wares.add_child(UiKit.divider(560, true))
 	_wares.add_child(UiKit.caption("The Bone Surgeon", 20, UiKit.GOLD))
 	_wares.add_child(UiKit.label("Raise a piece one tier for %d gold, graft it to a partner for %d gold, or let it go for %d gold. Pick a piece:" % [
 		Run.surgeon_price(), Run.graft_price(), Content.config.dismiss_gold], 18, UiKit.MUTED, true))
@@ -142,8 +140,7 @@ func _surgeon() -> Control:
 	var su := Run.unit(_surgeon_sel)
 	if su == null or not su.is_healthy():
 		return col
-	var opts := UiKit.hbox(12)
-	opts.alignment = BoxContainer.ALIGNMENT_CENTER
+	var opts := _flow(10)
 	col.add_child(opts)
 	var price := Run.surgeon_price()
 	for t in Run.upgrade_options(su):
@@ -179,6 +176,14 @@ func _surgeon() -> Control:
 	return col
 
 
+func _flow(gap: int) -> HFlowContainer:
+	var f := HFlowContainer.new()
+	f.alignment = FlowContainer.ALIGNMENT_CENTER
+	f.add_theme_constant_override("h_separation", gap)
+	f.add_theme_constant_override("v_separation", gap)
+	return f
+
+
 func _price_button(price: int, sold: bool, cb: Callable) -> Button:
 	var b := UiKit.button("Sold" if sold else "Buy  ·  %d gold" % price, cb, 18, not sold and Run.gold >= price)
 	b.disabled = sold or Run.gold < price
@@ -191,7 +196,7 @@ func _piece_card(i: int, item: Dictionary) -> Control:
 	var t := StringName(item["id"])
 	var def: PieceDef = Content.piece(t)
 	var box := UiKit.vbox(8)
-	var parts := UiKit.card(250, 0, func(): pass)
+	var parts := UiKit.card(196, 0, func(): pass)
 	parts[0].disabled = bool(item["sold"])
 	parts[0].mouse_default_cursor_shape = Control.CURSOR_ARROW
 	var c: VBoxContainer = parts[1]
@@ -220,14 +225,14 @@ func _piece_card(i: int, item: Dictionary) -> Control:
 func _relic_card(i: int, item: Dictionary) -> Control:
 	var r: RelicDef = Content.relic(StringName(item["id"]))
 	var box := UiKit.vbox(8)
-	var parts := UiKit.card(380, 0, func(): pass, UiKit.KIND_COLOR.get(r.kind, UiKit.EDGE))
+	var parts := UiKit.card(300, 0, func(): pass, UiKit.KIND_COLOR.get(r.kind, UiKit.EDGE))
 	parts[0].disabled = bool(item["sold"])
 	parts[0].mouse_default_cursor_shape = Control.CURSOR_ARROW
 	var c: VBoxContainer = parts[1]
 	var h := UiKit.hbox(12)
-	h.add_child(UiKit.icon(r.icon, 100, 0.5 if item["sold"] else 0.0))
+	h.add_child(UiKit.icon(r.icon, 72, 0.5 if item["sold"] else 0.0))
 	var info := UiKit.vbox(2)
-	info.custom_minimum_size = Vector2(210, 0)
+	info.custom_minimum_size = Vector2(180, 0)
 	info.add_child(UiKit.heading(r.display_name, 20))
 	info.add_child(UiKit.caption(UiKit.relic_tag(r), 13, UiKit.KIND_COLOR.get(r.kind, UiKit.MUTED)))
 	info.add_child(UiKit.label(r.description, 15, UiKit.MUTED, true))

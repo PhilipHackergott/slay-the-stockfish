@@ -23,7 +23,7 @@ func setup(p_event: EventDef, p_result: String = "") -> EventScreen:
 func _ready() -> void:
 	UiKit.full(self)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var m := UiModal.new().setup(event.title, 1000)
+	var m := UiModal.new().setup(event.title, 1000, false, "", 700).docked()
 	add_child(m)
 	Audio.play("event_page")
 	var head := UiKit.hbox(20)
@@ -32,7 +32,7 @@ func _ready() -> void:
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(text)
 	m.body.add_child(head)
-	m.body.add_child(UiKit.divider(600, true))
+	m.body.add_child(UiKit.divider(520, true))
 	_options = UiKit.vbox(10)
 	m.body.add_child(_options)
 	_continue = UiKit.button("Continue", func(): done.emit(), 24, true)
@@ -127,7 +127,7 @@ func _stitch_step(opt: Dictionary) -> void:
 		var d: PieceDef = Content.piece(Content.stitched_id(unit.type, atom))
 		flow.add_child(UiKit.option_button("%s → %s" % [UiKit.unit_name(unit), d.display_name],
 			"Value %d → %d. %s" % [Content.piece(unit.type).value, d.value, Content.STITCH_TEXT[atom].substr(0, 1).to_upper()
-				+ Content.STITCH_TEXT[atom].substr(1) + "."], func(): _stitch(opt, unit), UiKit.MUTED, true, 290))
+				+ Content.STITCH_TEXT[atom].substr(1) + "."], func(): _stitch(opt, unit), UiKit.MUTED, true, 250))
 
 
 func _stitch(opt: Dictionary, u: Unit) -> void:

@@ -18,7 +18,7 @@ func _ready() -> void:
 	Run.add_gold(gold)
 	_ids = Run.relic_choices(Run.relic_card_count(c.treasure_relic_choices), "treasure")
 	var m := UiModal.new().setup("A Sealed Reliquary", 1100, false,
-		"Someone hid this from the engine. The lock gives under your king's hand.")
+		"Someone hid this from the engine. The lock gives under your king's hand.").docked()
 	add_child(m)
 	var top := UiKit.hbox(12)
 	top.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -29,7 +29,7 @@ func _ready() -> void:
 	top.add_child(g)
 	m.body.add_child(top)
 	Audio.play("gold")
-	m.body.add_child(UiKit.divider(600, true))
+	m.body.add_child(UiKit.divider(520, true))
 	m.body.add_child(UiKit.caption("Take one relic", 20, UiKit.GOLD))
 	_relic = UiKit.vbox(10)
 	m.body.add_child(_relic)

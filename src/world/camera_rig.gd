@@ -36,6 +36,12 @@ func set_mode(m: String, snap: bool = false) -> void:
 		pitch = deg_to_rad(53.0)
 		dist = 15.2
 		target = Vector3(0, 0, 0.75)
+	elif m == "stage":
+		# Places and the draft: the board sits left of a panel docked on the right.
+		yaw = 0.0
+		pitch = deg_to_rad(52.0)
+		dist = 16.0
+		target = Vector3(3.1, 0, 0.35)
 	elif m == "map":
 		yaw = 0.0
 		pitch = deg_to_rad(62.0)

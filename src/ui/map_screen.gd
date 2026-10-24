@@ -3,7 +3,7 @@ extends Control
 ## The act map (Slay the Spire style, bottom to top) with the army roster and relics.
 
 signal node_chosen(id: int)
-signal formation_changed
+signal arrange
 
 const ICONS := {&"fight": "icon_fight", &"elite": "icon_elite", &"campfire": "icon_campfire",
 	&"event": "icon_event", &"boss": "icon_boss", &"guardian": "icon_guardian", &"shop": "icon_shop",
@@ -51,8 +51,7 @@ func _ready() -> void:
 	bar.add_child(UiKit.spacer(0, 0))
 	bar.get_child(bar.get_child_count() - 1).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar.add_child(UiKit.button("Arrange", func():
-		var f := FormationModal.open_formation(self)
-		f.saved.connect(func(): formation_changed.emit()), 18))
+		arrange.emit(), 18))
 	bar.add_child(UiKit.button("Codex", func(): CodexModal.open_codex(self), 18))
 	var head := UiKit.title(act.display_name if act else "The Descent", 46)
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
