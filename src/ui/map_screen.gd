@@ -189,17 +189,19 @@ func _node_button(n: Dictionary) -> Control:
 		tip += "\nMost often an event; sometimes a fight, a treasure or the merchant. The longer you go without a fight, the likelier one gets."
 	var omen := Content.omen(StringName(n.get("omen", &"")))
 	if omen != null and not visited:
-		tip += "\nOmen · %s: %s" % [omen.display_name, omen.description]
-		_badge(b, omen.icon, size, Vector2(0.62, -0.08), UiKit.SOUL)
+		var omen_tip := "Omen · %s: %s" % [omen.display_name, omen.description]
+		tip += "\n" + omen_tip
+		_badge(b, omen.icon, size, Vector2(0.62, -0.08), UiKit.SOUL, omen_tip)
 	var arena := Content.arena(StringName(n.get("arena", &"")))
 	if arena != null and not visited:
-		tip += "\nArena · %s: %s" % [arena.display_name, arena.description]
-		_badge(b, arena.icon, size, Vector2(0.62, 0.62), UiKit.GOLD)
+		var arena_tip := "Arena · %s: %s" % [arena.display_name, arena.description]
+		tip += "\n" + arena_tip
+		_badge(b, arena.icon, size, Vector2(0.62, 0.62), UiKit.GOLD, arena_tip)
 	var affixes: Array = Array(n.get("affixes", [])).map(func(a): return Content.affix(StringName(a))).filter(func(a): return a != null)
 	if not affixes.is_empty() and not visited:
-		for af in affixes:
-			tip += "\nElite · %s: %s" % [af.display_name, af.description]
-		_badge(b, "res://assets/ui/icons/icon_affix_256.png", size, Vector2(-0.08, 0.62), UiKit.BLOOD)
+		var affix_tip := "\n".join(affixes.map(func(af): return "Elite · %s: %s" % [af.display_name, af.description]))
+		tip += "\n" + affix_tip
+		_badge(b, "res://assets/ui/icons/icon_affix_256.png", size, Vector2(-0.08, 0.62), UiKit.BLOOD, affix_tip)
 		if affixes.size() > 1:
 			var count := UiKit.label("×%d" % affixes.size(), int(size * 0.2), UiKit.BLOOD)
 			count.position = Vector2(size * 0.24, size * 0.74)
@@ -207,12 +209,14 @@ func _node_button(n: Dictionary) -> Control:
 			b.add_child(count)
 	var re := Run.roamer_encounter()
 	if Run.roamer_node() == id and re != null:
-		tip += "\nThe roaming elite stands here: %s. Step here to fight it for a rare relic. It climbs one row every %d nodes you enter; if it reaches the guardian, it fights beside it." % [
+		var roamer_tip := "The roaming elite stands here: %s. Step here to fight it for a rare relic. It climbs one row every %d nodes you enter; if it reaches the guardian, it fights beside it." % [
 			re.display_name, Content.config.roamer_every]
-		_badge(b, "res://assets/ui/icons/icon_roamer_256.png", size, Vector2(-0.14, -0.1), UiKit.BLOOD, 0.56)
+		tip += "\n" + roamer_tip
+		_badge(b, "res://assets/ui/icons/icon_roamer_256.png", size, Vector2(-0.14, -0.1), UiKit.BLOOD, roamer_tip, 0.56)
 	elif big and Run.flags.has("roamer_joined") and re != null:
-		tip += "\n%s has joined the guardian." % re.display_name
-		_badge(b, "res://assets/ui/icons/icon_roamer_256.png", size, Vector2(-0.05, -0.02), UiKit.BLOOD, 0.4)
+		var joined_tip := "%s has joined the guardian." % re.display_name
+		tip += "\n" + joined_tip
+		_badge(b, "res://assets/ui/icons/icon_roamer_256.png", size, Vector2(-0.05, -0.02), UiKit.BLOOD, joined_tip, 0.4)
 	b.tooltip_text = tip
 	b.pivot_offset = Vector2(size, size) * 0.5
 	if avail:
@@ -228,7 +232,8 @@ func _node_button(n: Dictionary) -> Control:
 
 
 ## A small ringed icon on a node's corner (omen, arena, roaming elite); at is a share of the node size.
-func _badge(b: Control, path: String, size: int, at: Vector2, ring: Color, share: float = 0.42) -> void:
+## Hovering it shows tip; clicks pass through to the node.
+func _badge(b: Control, path: String, size: int, at: Vector2, ring: Color, tip: String, share: float = 0.42) -> void:
 	var s := int(size * share)
 	var disc := Panel.new()
 	var sb := StyleBoxFlat.new()
@@ -239,9 +244,11 @@ func _badge(b: Control, path: String, size: int, at: Vector2, ring: Color, share
 	disc.add_theme_stylebox_override("panel", sb)
 	disc.position = Vector2(size, size) * at
 	disc.size = Vector2(s, s)
-	disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	disc.mouse_filter = Control.MOUSE_FILTER_PASS
+	disc.tooltip_text = tip
 	b.add_child(disc)
 	var ic := UiKit.icon(path, s - 4)
+	ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ic.position = Vector2(2, 2)
 	ic.size = Vector2(s - 4, s - 4)
 	disc.add_child(ic)

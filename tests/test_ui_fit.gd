@@ -86,6 +86,11 @@ func test_map_fits() -> void:
 	var m := MapScreen.new()
 	await _show(m)
 	_check(m, "map")
+	var badges := m.find_children("*", "Panel", true, false).filter(func(p): return p.get_parent() is Button)
+	assert_gt(badges.size(), 0, "the map shows node badges")
+	for p in badges:
+		assert_ne(p.tooltip_text, "", "every badge explains itself on hover")
+		assert_eq(p.mouse_filter, Control.MOUSE_FILTER_PASS, "clicks reach the node")
 
 
 func test_reward_fits() -> void:
