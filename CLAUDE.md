@@ -5,6 +5,7 @@ events), then beat Fairy-Stockfish at full strength. The army is the deck; every
 lineage and losses for the whole run. Lose any fight (or your king) and the run ends.
 Scope: v0.1 MVP per the "Chess Roguelike — MVP Handover". Decisions and their reasons: Notion "Project Slay the
 Stockfish" → Build decisions (private to Philip). Kit and lessons from Felsenburg: `docs/kit/`.
+Current state, newest systems and open items: `HANDOVER.md`.
 
 ## Tech
 - Godot 4.7.1 (read `project.godot`, never guess), Forward+, GDScript with static types.
