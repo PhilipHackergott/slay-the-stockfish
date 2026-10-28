@@ -13,8 +13,8 @@ decisions (mirrored in Notion: Project Slay the Stockfish â†’ Build decisions â†
 - Released: v0.2 (tag `slay-the-stockfish/v0.2`). v0.3 is finished on main but **not tagged or released**.
   Local builds of the current main: `dist/slay-the-stockfish/v0.3/` (mac universal `.app` zip + Windows zip,
   from `tools/package/package.sh v0.3`). The Windows smoke workflow has not run for v0.3.
-- Checks at the last commit: `scripts/test.sh` rc 0 (140 GUT tests before the walling test was added, which
-  passes on its own); seed-7 autoplay wins the whole run with no warnings.
+- Checks on `7b29ae9`: `scripts/test.sh` rc 0 (pytest 15, parse gate 69 scripts, GUT 141/141 including
+  `test_walling_arenas_shut_the_pocket`); seed-7 autoplay wins the whole run with no warnings.
 
 ## v0.3 commits (newest first)
 
